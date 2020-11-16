@@ -1,0 +1,1 @@
+Mettre ici explications du code de 2A.
