@@ -12,7 +12,7 @@ def circleLineInter(lineEmitter, obj, vel2D):
     X = Symbol('x')
     Y = Symbol('y')
 
-    r = obj.radius+lineEmitter.radius +5
+    r = 2*obj.radius+lineEmitter.radius +5
     a = vel2D[0]
     b = -vel2D[1]
     c = -vel2D[0]*lineEmitter.y +vel2D[1]*lineEmitter.x
