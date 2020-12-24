@@ -9,7 +9,7 @@ win = pygame.display.set_mode((winWidth,winHeight))
 pygame.display.set_caption("First Game")
 
 clock = pygame.time.Clock()
-hz = 60
+hz = 100
 
 x = 50
 y = 50
@@ -24,16 +24,16 @@ class Room():
         self.height = height
         self.objects = []
     
-    def addObject(self, obj):
-        self.objects.append(obj)
+    def addObjects(self, objs):
+        self.objects+=objs
 
 
 room = Room(winWidth, winHeight)
 
 lidarBot = lb.LidarBot(x, y, radius, room)
-obstacle = lb.Obstacle(x, y, radius, room)
+obstacles = [lb.Obstacle(x+ 100 + i*50, y, 20, room) for i in range(4)]
 
-room.addObject(lidarBot)
+room.addObjects([lidarBot] + obstacles)
 
 def redrawGameWindow(win):
     win.fill((0,0,0))
@@ -48,19 +48,23 @@ while run:
         if event.type == pygame.QUIT:
             run = False
 
-    keys = pygame.key.get_pressed()
+    for obj in room.objects:
+        if isinstance(obj, lb.LidarBot):
+            obj.move()
+
+    # keys = pygame.key.get_pressed()
   
-    if keys[pygame.K_LEFT] and lidarBot.x > vel + radius: 
-        lidarBot.x -= vel
+    # if keys[pygame.K_LEFT] and lidarBot.x > vel + radius: 
+    #     lidarBot.x -= vel
 
-    if keys[pygame.K_RIGHT] and lidarBot.x < 500 - vel - radius:  
-        lidarBot.x += vel
+    # if keys[pygame.K_RIGHT] and lidarBot.x < 500 - vel - radius:  
+    #     lidarBot.x += vel
 
-    if keys[pygame.K_UP] and lidarBot.y > vel + radius: 
-        lidarBot.y -= vel
+    # if keys[pygame.K_UP] and lidarBot.y > vel + radius: 
+    #     lidarBot.y -= vel
 
-    if keys[pygame.K_DOWN] and lidarBot.y < 500 - radius - vel:
-        lidarBot.y += vel
+    # if keys[pygame.K_DOWN] and lidarBot.y < 500 - radius - vel:
+    #     lidarBot.y += vel
 
     redrawGameWindow(win)
     
