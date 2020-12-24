@@ -31,9 +31,10 @@ class Room():
 room = Room(winWidth, winHeight)
 
 lidarBot = lb.LidarBot(x, y, radius, room)
-obstacles = [lb.Obstacle(x+ 100 + i*50, y, 20, room) for i in range(4)]
+obstacles = [lb.Obstacle(x+ 100 +50*i , y + i*20, 20, room) for i in range(4)]
+obstacles2 = [lb.Obstacle(x+ 100 +50*i , y+150 - i*20, 20, room) for i in range(4)]
 
-room.addObjects([lidarBot] + obstacles)
+room.addObjects([lidarBot] + obstacles + obstacles2)
 
 def redrawGameWindow(win):
     win.fill((0,0,0))

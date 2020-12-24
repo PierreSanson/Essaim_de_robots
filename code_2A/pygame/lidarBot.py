@@ -18,6 +18,8 @@ class LidarBot():
         self.radiusDetection = 100
         self.rotationSpeed = 2
         self.speed = 1
+        self.groupObj = []
+        self.groupObjRadius = self.radius
 
 
     def draw(self, win):
@@ -53,6 +55,11 @@ class LidarBot():
     
     def goToObjective(self):
         collision = self.checkCollision()
+        for obj in self.groupObj:
+                angleCol = (signedAngle2Vects(self.vel2D, np.array([obj.x - self.x, obj.y - self.y])))
+                if abs(angleCol) > np.pi/2:
+                    self.groupObj.remove(obj)
+                    
         if collision :
             init = True
             minDist = None
@@ -64,12 +71,30 @@ class LidarBot():
                     init = False
                 else :
                     dist = distObjDict(self, collision[obj])
-                    if dist < minDist:
+                    angleCol = (signedAngle2Vects(self.vel2D, np.array([obj.x - self.x, obj.y - self.y])))
+                    if dist < minDist and abs(angleCol) <= np.pi/2:
                         minDist = dist
                         minObj = obj
+            if minObj not in self.groupObj :
+                self.groupObj.append(minObj)
+            i=0
             
-            angleCol = (signedAngle2Vects(self.vel2D, np.array([minObj.x - self.x, minObj.y - self.y])))
-            if abs(angleCol) <= np.pi/2:
+            
+
+
+            while i<len(self.groupObj):
+                for obj in collision : 
+                    if obj not in self.groupObj :
+                        print(obj.radius + self.groupObj[i].radius + 2*self.radius + 10)
+                        if distObj(obj, self.groupObj[i]) < obj.radius + self.groupObj[i].radius + 2*self.radius + 10:
+                            self.groupObj.append(obj)
+                            self.groupObjRadius += distObj(obj, self.groupObj[i])
+                i+=1
+            print("taille groupObj : ", len(self.groupObj))
+            barycenterGroupObj = { 'x' : (1/len(self.groupObj))*np.sum(np.array([obj.x for obj in self.groupObj])), 'y' : (1/len(self.groupObj))*np.sum(np.array([obj.y for obj in self.groupObj]))}
+            groupObjRadius = np.sum(np.array([obj.radius for obj in self.groupObj]))
+            angleCol = (signedAngle2Vects(self.vel2D, np.array([barycenterGroupObj['x'] - self.x, barycenterGroupObj['y'] - self.y])))
+            if abs(angleCol) <= np.pi/2 or distObjDict(self, barycenterGroupObj) < groupObjRadius:
                 if angleCol >= 0:
                     self.vel2D = rotate(self.vel2D, - self.rotationSpeed*np.pi/180)
                 elif angleCol < 0:
