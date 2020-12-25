@@ -11,7 +11,7 @@ def distObjList(obj1, list2):
     return np.sqrt((obj1.x-list2[0])**2 + (obj1.y-list2[1])**2)
 
 def circleLineInter(lineEmitter, obj, vel2D):
-    r = obj.radius+lineEmitter.radius +5
+    r = obj.radius+lineEmitter.radius +2.5
     a = vel2D[0]
     b = -vel2D[1]
     c = -vel2D[0]*lineEmitter.y +vel2D[1]*lineEmitter.x

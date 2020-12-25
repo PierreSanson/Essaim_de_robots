@@ -15,9 +15,9 @@ class LidarBot():
         self.radius = radius
         self.vel2D = np.asarray([0.1,0.1])
         self.objective = objective
-        self.radiusDetection = 150
-        self.rotationSpeed = 5
-        self.speed = 2.5
+        self.radiusDetection = 100
+        self.rotationSpeed = 3
+        self.speed = 3
         self.groupObj = []
         self.groupObjRadius = self.radius
         self.detectedObj = []
@@ -53,7 +53,7 @@ class LidarBot():
                 if distObj(self, obj) <= self.radiusDetection:
                     if (obj not in self.detectedObj):
                         self.detectedObj.append(obj)
-                    if distObj(self, obj) <= min (self.radiusDetection, 50):
+                    if distObj(self, obj) <= min (self.radiusDetection, 30 + obj.radius):
                         sols = circleLineInter(self, obj, self.vel2D)
                         if len(sols)>0:
                             if len(sols)>1:
@@ -85,10 +85,10 @@ class LidarBot():
         if distObjList(self, self.objective)<10:
             self.ontoObjectiveCoeff = self.ontoObjectiveCoeff/2
 
-        for obj in self.groupObj:
-            angleCol = (signedAngle2Vects2(self.vel2D, np.array([obj.x - self.x, obj.y - self.y])))
-            if abs(angleCol) > np.pi/2:
-                self.groupObj.remove(obj)
+        # for obj in self.groupObj:
+        #     angleCol = (signedAngle2Vects2(self.vel2D, np.array([obj.x - self.x, obj.y - self.y])))
+        #     if abs(angleCol) > np.pi/2:
+        #         self.groupObj.remove(obj)
         collision = self.checkCollision()
 
         
@@ -135,7 +135,7 @@ class LidarBot():
                 while i<len(checkedgroupObj):
                     for obj in self.groupObj:
                         if obj not in checkedgroupObj:
-                            if distObj(obj, checkedgroupObj[i]) < obj.radius + checkedgroupObj[i].radius + 2*self.radius + 10:
+                            if distObj(obj, checkedgroupObj[i]) < obj.radius + checkedgroupObj[i].radius + 2*self.radius:
                                 checkedgroupObj.append(obj)
                     i+=1
                 self.groupObj = checkedgroupObj
