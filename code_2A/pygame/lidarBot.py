@@ -139,7 +139,7 @@ class LidarBot():
                 barycenterGroupObj = { 'x' : (1/len(self.groupObj))*np.sum(np.array([obj.x for obj in self.groupObj])), 'y' : (1/len(self.groupObj))*np.sum(np.array([obj.y for obj in self.groupObj]))}
                 groupObjRadius = 0
                 for obj in self.groupObj :
-                    dist = distObjDict(obj, barycenterGroupObj) + obj.radius + 2*self.radius
+                    dist = distObjDict(obj, barycenterGroupObj) + obj.radius + self.radius
                     if dist > groupObjRadius:
                         groupObjRadius = dist
 

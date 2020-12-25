@@ -42,7 +42,7 @@ lidarBot4 = lb.LidarBot(x, y +400, radius, room, [x + 400, y+100])
 
 obstacles = [lb.Obstacle(random.randrange(80, 400) , random.randrange(0, 500), 20, room) for i in range(15)]
 
-#obstacles = [lb.Obstacle(x+ 100 +50*i , y , 20, room) for i in range(4)]
+# obstacles = [lb.Obstacle(x+ 100 +50*i , y , 20, room) for i in range(4)]
 # obstacles2 = [lb.Obstacle(x+ 100 +50*i , y+150 - i*20, 20, room) for i in range(4)]
 # obstacles3 = [lb.Obstacle(x+ 100 +50*i , y+150 + i*20, 20, room) for i in range(4)]
 # obstacles4 = [lb.Obstacle(x+ 100 +50*i , y+300 - i*20, 20, room) for i in range(4)]
