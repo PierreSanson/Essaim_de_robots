@@ -15,9 +15,9 @@ class LidarBot():
         self.radius = radius
         self.vel2D = np.asarray([0.1,0.1])
         self.objective = objective
-        self.radiusDetection = 100
-        self.rotationSpeed = 2
-        self.speed = 1
+        self.radiusDetection = 150
+        self.rotationSpeed = 5
+        self.speed = 2.5
         self.groupObj = []
         self.groupObjRadius = self.radius
         self.detectedObj = []
@@ -27,7 +27,7 @@ class LidarBot():
 
 
     def draw(self, win, surface1):
-        pygame.draw.circle(surface1, (0,0,255, 64), (self.x, self.y), self.radiusDetection)
+        pygame.draw.circle(surface1, (0,150,255, 64), (self.x, self.y), self.radiusDetection)
         
         pygame.draw.circle(win, (0,255,0), (self.x, self.y), self.radius)
         pygame.draw.circle(win, (255,255,255), (self.objective[0], self.objective[1]), self.radius)
@@ -53,20 +53,21 @@ class LidarBot():
                 if distObj(self, obj) <= self.radiusDetection:
                     if (obj not in self.detectedObj):
                         self.detectedObj.append(obj)
-                    sols = circleLineInter(self, obj, self.vel2D)
-                    if len(sols)>0:
-                        if len(sols)>1:
-                            minDist = distObjDict(self, sols[0])
-                            minIndex = 0
-                            for i in range(1, len(sols[1:])):
-                                dist = distObjDict(self, sols[i])
-                                if dist < minDist:
-                                    minDist = dist
-                                    minIndex = i
-                            
-                            collision[obj] = sols[minIndex]
-                        else:
-                            collision[obj] = sols[0]
+                    if distObj(self, obj) <= min (self.radiusDetection, 50):
+                        sols = circleLineInter(self, obj, self.vel2D)
+                        if len(sols)>0:
+                            if len(sols)>1:
+                                minDist = distObjDict(self, sols[0])
+                                minIndex = 0
+                                for i in range(1, len(sols[1:])):
+                                    dist = distObjDict(self, sols[i])
+                                    if dist < minDist:
+                                        minDist = dist
+                                        minIndex = i
+                                
+                                collision[obj] = sols[minIndex]
+                            else:
+                                collision[obj] = sols[0]
         return collision
 
     def noColgoToObjective(self):
@@ -122,12 +123,24 @@ class LidarBot():
             else:
                 self.safeCoeff = 1
 
-            i=0
+            
 
             for obj in checkedCollision:
                 if obj not in self.detectedObj:
                     self.detectedObj.append(obj)
+            
+            if minObj is not None:
+                checkedgroupObj = [minObj]
+                i=0
+                while i<len(checkedgroupObj):
+                    for obj in self.groupObj:
+                        if obj not in checkedgroupObj:
+                            if distObj(obj, checkedgroupObj[i]) < obj.radius + checkedgroupObj[i].radius + 2*self.radius + 10:
+                                checkedgroupObj.append(obj)
+                    i+=1
+                self.groupObj = checkedgroupObj
 
+            i=0
             while i<len(self.groupObj):
                 for obj in self.detectedObj : 
                     if obj not in self.groupObj :

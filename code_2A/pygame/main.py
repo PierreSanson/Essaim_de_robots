@@ -6,15 +6,15 @@ import random
 
 pygame.init()
 
-winWidth = 500
-winHeight = 500
+winWidth = 1920
+winHeight = 1080
 win = pygame.display.set_mode((winWidth,winHeight))
-surface1 = pygame.Surface((500,500),  pygame.SRCALPHA) 
+surface1 = pygame.Surface((winWidth,winHeight),  pygame.SRCALPHA) 
 
 pygame.display.set_caption("First Game")
 
 clock = pygame.time.Clock()
-hz = 100
+hz = 144
 
 x = 60
 y = 60
@@ -35,12 +35,12 @@ class Room():
 
 room = Room(winWidth, winHeight)
 
-lidarBot = lb.LidarBot(x, y , radius, room, [x + 400, y+400])
-lidarBot2 = lb.LidarBot(x+400, y +400, radius, room, [x, y+100])
-lidarBot3 = lb.LidarBot(x+400, y +100, radius, room, [x, y+400])
-lidarBot4 = lb.LidarBot(x, y +400, radius, room, [x + 400, y+100])
+lidarBot = lb.LidarBot(x, y , radius, room, [x + 1850, y+950])
+lidarBot2 = lb.LidarBot(x+1850, y +950, radius, room, [x, y+100])
+lidarBot3 = lb.LidarBot(x+1850, y +100, radius, room, [x, y+950])
+lidarBot4 = lb.LidarBot(x, y +950, radius, room, [x + 1850, y+100])
 
-obstacles = [lb.Obstacle(random.randrange(80, 400) , random.randrange(0, 500), 20, room) for i in range(15)]
+obstacles = [lb.Obstacle(random.randrange(150, 1800) , random.randrange(0, 1050), 20, room) for i in range(200)]
 
 # obstacles = [lb.Obstacle(x+ 100 +50*i , y , 20, room) for i in range(4)]
 # obstacles2 = [lb.Obstacle(x+ 100 +50*i , y+150 - i*20, 20, room) for i in range(4)]

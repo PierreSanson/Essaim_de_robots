@@ -58,58 +58,6 @@ def circleLineInter(lineEmitter, obj, vel2D):
 
     return dictSol
 
-def signedAngle2Vects(vect1, vect2):
-    vect1U = np.zeros(2)
-    vect2U = np.zeros(2)
-    if np.linalg.norm(vect1) !=0:
-        vect1U = vect1/np.linalg.norm(vect1)
-    if np.linalg.norm(vect2) !=0:
-        vect2U = vect2/np.linalg.norm(vect2)
-    dotV = np.dot(vect1U, vect2U)
-    if dotV == 1 :
-        return 0
-    elif dotV == -1:
-        return np.pi
-    else:
-        return (np.arctan2(vect2U[1], vect2U[0]) - np.arctan2(vect1U[1], vect1U[0]))
-
-def signedAngle2Vects3(vect1, vect2):
-    vect1U = np.zeros(2)
-    vect2U = np.zeros(2)
-    if np.linalg.norm(vect1) !=0:
-        vect1U = vect1/np.linalg.norm(vect1)
-    if np.linalg.norm(vect2) !=0:
-        vect2U = vect2/np.linalg.norm(vect2)
-    def length(v):
-        return np.sqrt(v[0]**2+v[1]**2)
-    def dot_product(v,w):
-        return v[0]*w[0]+v[1]*w[1]
-    def determinant(v,w):
-        return v[0]*w[1]-v[1]*w[0]
-    def inner_angle(v,w):
-        dotV = dot_product(v,w)
-        if dotV == 1 :
-            print('dotV 1')
-            return 0
-        elif dotV == -1:
-            print('dotV -1')
-            return np.pi
-        cosx=dotV/(length(v)*length(w))
-        rad=np.arccos(cosx) # in radians
-        return rad
-    
-    inner=inner_angle(vect1U,vect2U)
-    if inner == 0 :
-        return 0
-    elif inner == np.pi:
-        return np.pi
-    det = determinant(vect1U,vect2U)
-    if det<0: #this is a property of the det. If the det < 0 then B is clockwise of A
-        return inner
-    else: # if the det > 0 then A is immediately clockwise of B
-        return 2*np.pi-inner
-    
-
 def signedAngle2Vects2(vect1, vect2):
     angle = np.arctan2( vect1[0]*vect2[1] -vect1[1]*vect2[0], vect1[0]*vect2[0] + vect1[1]*vect2[1])
     return angle
