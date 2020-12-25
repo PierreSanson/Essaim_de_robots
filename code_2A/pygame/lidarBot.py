@@ -7,6 +7,8 @@ from sympy import Symbol
 
 from utilities import *
 
+import random
+
 class LidarBot():
     def __init__(self, x, y, radius, room, objective):
         self.room = room
@@ -27,7 +29,7 @@ class LidarBot():
 
 
     def draw(self, win, surface1):
-        pygame.draw.circle(surface1, (0,150,255, 64), (self.x, self.y), self.radiusDetection)
+        # pygame.draw.circle(surface1, (0,150,255, 64), (self.x, self.y), self.radiusDetection)
         
         pygame.draw.circle(win, (0,255,0), (self.x, self.y), self.radius)
         pygame.draw.circle(win, (255,255,255), (self.objective[0], self.objective[1]), self.radius)
@@ -38,6 +40,11 @@ class LidarBot():
         
 
     def move(self, win):
+
+        if random.random() > 0.995 :
+            self.objective[0] = random.randrange(50, win.get_width() - 50)
+            self.objective[1] = random.randrange(50, win.get_height() - 50)
+
         self.goToObjective(win)
         if np.linalg.norm(self.vel2D) !=0:
             vel2DU = self.vel2D/np.linalg.norm(self.vel2D)
@@ -50,10 +57,15 @@ class LidarBot():
         self.detectedObj = []
         for obj in self.room.objects:
             if obj != self :
-                if distObj(self, obj) <= self.radiusDetection:
+                distO = distObj(self, obj)
+                if distO <= self.radiusDetection:
+
+                    if distO < self.radius + obj.radius :
+                        print("COLLISION")
+
                     if (obj not in self.detectedObj):
                         self.detectedObj.append(obj)
-                    if distObj(self, obj) <= min (self.radiusDetection, 30 + obj.radius):
+                    if distO <= min (self.radiusDetection, 40 + obj.radius):
                         sols = circleLineInter(self, obj, self.vel2D)
                         if len(sols)>0:
                             if len(sols)>1:
@@ -84,6 +96,8 @@ class LidarBot():
     def goToObjective(self, surface1):
         if distObjList(self, self.objective)<10:
             self.ontoObjectiveCoeff = self.ontoObjectiveCoeff/2
+        else :
+            self.ontoObjectiveCoeff = 1
 
         # for obj in self.groupObj:
         #     angleCol = (signedAngle2Vects2(self.vel2D, np.array([obj.x - self.x, obj.y - self.y])))
@@ -144,7 +158,7 @@ class LidarBot():
             while i<len(self.groupObj):
                 for obj in self.detectedObj : 
                     if obj not in self.groupObj :
-                        if distObj(obj, self.groupObj[i]) < obj.radius + self.groupObj[i].radius + 2*self.radius + 10:
+                        if distObj(obj, self.groupObj[i]) < obj.radius + self.groupObj[i].radius + 2*self.radius:
                             self.groupObj.append(obj)
                 i+=1
 
@@ -157,8 +171,8 @@ class LidarBot():
                         groupObjRadius = dist
 
                 
-                pygame.draw.circle(surface1, (200,50,50, 64), (barycenterGroupObj['x'], barycenterGroupObj['y']), groupObjRadius)
-                pygame.draw.circle(surface1, (20,20,20, 64), (barycenterGroupObj['x'], barycenterGroupObj['y']), 4)
+                # pygame.draw.circle(surface1, (200,50,50, 64), (barycenterGroupObj['x'], barycenterGroupObj['y']), groupObjRadius)
+                # pygame.draw.circle(surface1, (20,20,20, 64), (barycenterGroupObj['x'], barycenterGroupObj['y']), 4)
                 
 
                 angleCol = (signedAngle2Vects2(self.vel2D, np.array([barycenterGroupObj['x'] - self.x, barycenterGroupObj['y'] - self.y])))
@@ -178,11 +192,29 @@ class LidarBot():
 
 
 class Obstacle():
-    def __init__(self, x, y, radius, room):
+    def __init__(self, x, y, radius, room, movable = False, vel = 0):
         self.room = room
         self.x = x
         self.y = y
         self.radius = radius
+        self.vel = vel
+        self.movable = movable
+
+    def move(self, surface1):
+        keys = pygame.key.get_pressed()
+    
+        if keys[pygame.K_LEFT] and self.x > self.vel + self.radius: 
+            self.x -= self.vel
+
+        if keys[pygame.K_RIGHT] and self.x < surface1.get_width() - self.vel - self.radius:  
+            self.x += self.vel
+
+        if keys[pygame.K_UP] and self.y > self.vel + self.radius: 
+            self.y -= self.vel
+
+        if keys[pygame.K_DOWN] and self.y < surface1.get_height() - self.radius - self.vel:
+            self.y += self.vel
+
 
     def draw(self, win, surface1):
         pygame.draw.circle(win, (100,100,100), (self.x, self.y), self.radius)
