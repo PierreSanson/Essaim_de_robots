@@ -10,14 +10,19 @@ def distObjDict(obj1, dict2):
 def distObjList(obj1, list2):
     return np.sqrt((obj1.x-list2[0])**2 + (obj1.y-list2[1])**2)
 
-def circleLineInter(lineEmitter, obj, vel2D):
-    r = obj.radius+lineEmitter.radius +2.5
+def circleLineInter(lineEmitter, obj, vel2D, objDict = False, objRadius = 0):
+    r = 0
     a = vel2D[0]
     b = -vel2D[1]
     c = -vel2D[0]*lineEmitter.y +vel2D[1]*lineEmitter.x
-
-    x1 = obj.x
-    y1 = obj.y
+    if objDict:
+        x1 = obj['x']
+        y1 = obj['y']
+        r = objRadius + 2.5
+    else:
+        x1 = obj.x
+        y1 = obj.y
+        r = obj.radius+lineEmitter.radius + 2.5
 
     dictSol = []
 

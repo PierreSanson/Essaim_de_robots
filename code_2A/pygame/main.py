@@ -18,7 +18,7 @@ hz = 144
 
 x = 60
 y = 60
-radius = 10
+radius = 20
 vel = 5*(60/hz)
 
 
@@ -40,11 +40,11 @@ lidarBot2 = lb.LidarBot(x+1850, y +950, radius, room, [x, y+100])
 lidarBot3 = lb.LidarBot(x+1850, y +100, radius, room, [x, y+950])
 lidarBot4 = lb.LidarBot(x, y +950, radius, room, [x + 1850, y+100])
 
-lidarBots = [lb.LidarBot(x, y + i*50 , radius, room, [x + 1850, y+950 - i*50]) for i in range(20)]
+lidarBots = [lb.LidarBot(x, y + i*50 , radius, room, [x + 1850, y + i*50], randomObjective = True) for i in range(30)]
 
-obstacles = [lb.Obstacle(random.randrange(150, 1800) , random.randrange(0, 1050), 30, room, movable = True, vel = vel)]
+# obstacles = [lb.Obstacle(random.randrange(150, 1800) , random.randrange(0, 1050), 30, room, movable = True, vel = vel)]
 
-# obstacles = [lb.Obstacle(random.randrange(150, 1800) , random.randrange(0, 1050), 30, room) for i in range(100)]
+# obstacles = [lb.Obstacle(random.randrange(150, 1800) , random.randrange(0, 1050), 30, room) for i in range(150)]
 # obstacles2 = [lb.Obstacle(random.randrange(150, 1800) , random.randrange(0, 1050), 10, room) for i in range(100)]
 
 # obstacles = [lb.Obstacle(x+ 100 +50*i , y , 20, room) for i in range(10)]
@@ -55,7 +55,7 @@ obstacles = [lb.Obstacle(random.randrange(150, 1800) , random.randrange(0, 1050)
 # room.addObjects([lidarBot] + obstacles + obstacles2 + obstacles3 )
 # room.addObjects([lidarBot,lidarBot2, lidarBot3, lidarBot4] + obstacles)
 
-room.addObjects(lidarBots + obstacles)
+room.addObjects(lidarBots)
 
 def redrawGameWindow(win, surface1):
     win.fill((0,0,0))
@@ -63,6 +63,8 @@ def redrawGameWindow(win, surface1):
     for obj in room.objects:
         obj.draw(win, surface1)
     win.blit(surface1, (0,0))
+    pygame.display.update() 
+
 
 run = True 
 while run:
@@ -75,8 +77,6 @@ while run:
     for obj in room.objects:
         if isinstance(obj, lb.LidarBot) or (isinstance(obj, lb.Obstacle) and obj.movable):
             obj.move(surface1)
-    win.blit(surface1, (0,0))
-    pygame.display.update() 
 
     
     
