@@ -17,9 +17,9 @@ class LidarBot():
         self.radius = radius
         self.vel2D = np.asarray([0.1,0.1])
         self.objective = objective
-        self.radiusDetection = 300
-        self.rotationSpeed = 4
-        self.speed = 4
+        self.radiusDetection = 150
+        self.rotationSpeed = 2
+        self.speed = 2
         self.groupObj = []
         self.detectedObj = []
         self.safeCoeff = 1
@@ -36,15 +36,15 @@ class LidarBot():
 
         # Uncomment for more details about the process !
 
-        # pygame.draw.circle(surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
-        # pygame.draw.circle(surface1, (200,50,50, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
-        # pygame.draw.circle(surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
+        pygame.draw.circle(surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
+        pygame.draw.circle(surface1, (200,50,50, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
+        pygame.draw.circle(surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
         
         pygame.draw.circle(win, (0,255,0), (self.x, self.y), self.radius)
         pygame.draw.circle(win, (255,255,255), (self.objective[0], self.objective[1]), self.radius)
         if np.linalg.norm(self.vel2D) !=0:
             vel2DU = self.vel2D/np.linalg.norm(self.vel2D)
-            # pygame.draw.line(win, (200,200,200), (self.x, self.y), (self.x + vel2DU[0]*self.radiusDetection, self.y + vel2DU[1]*self.radiusDetection))
+            pygame.draw.line(win, (200,200,200), (self.x, self.y), (self.x + vel2DU[0]*self.radiusDetection, self.y + vel2DU[1]*self.radiusDetection))
         
         
 
@@ -94,7 +94,7 @@ class LidarBot():
         col = False
         for obj in self.groupObj:
             angleColObj = signedAngle2Vects2(np.array([obj.x- self.objective[0], obj.y - self.objective[1]]), -1*np.array([self.objective[0]- self.x, self.objective[1] - self.y]))
-            if len(circleLineInter(self, obj, np.array([self.objective[0]- self.x, self.objective[1] - self.y]))) == 2 and abs(angleColObj) < np.pi/2:
+            if len(circleLineInter(self, obj, np.array([self.objective[0]- self.x, self.objective[1] - self.y]))) >0 and abs(angleColObj) < np.pi/2:
                 col = True
                 return col
         return col
@@ -112,10 +112,13 @@ class LidarBot():
             elif angleObj < 0:
                 self.vel2D = rotate(self.vel2D, - rotationSpeed)
 
+        # TODO : change groupObj Hitbox from circle to polygon
         elif distObjDict(self, self.barycenterGroupObj) < self.groupObjRadius:
             if random.random() > 0.999 :
                 self.turnAroundCoeff *= -1
             self.vel2D = self.vel2D
+        
+        # TODO : change groupObj Hitbox from circle to polygon
         elif len(circleLineInter(self, self.barycenterGroupObj, self.vel2D, objDict = True, objRadius = self.groupObjRadius)) == 2 and abs(angleCol) < np.pi/2:
             if angleCol > 0:
                 self.vel2D = rotate(self.vel2D, - self.rotationSpeed*np.pi/180)
@@ -131,31 +134,15 @@ class LidarBot():
 
 
     def goToObjective(self, surface1):
-        if distObjList(self, self.objective)< 200/self.rotationSpeed:
-            self.ontoObjectiveCoeff = distObjList(self, self.objective)/((200/self.rotationSpeed)**(1.25))
+        if distObjList(self, self.objective) < 40*self.speed/self.rotationSpeed + self.radius*2:
+            self.ontoObjectiveCoeff = distObjList(self, self.objective)/((40*self.speed/self.rotationSpeed)**(1.25))
         else :
             self.ontoObjectiveCoeff = 1
 
-        # for obj in self.groupObj:
-        #     angleCol = (signedAngle2Vects2(self.vel2D, np.array([obj.x - self.x, obj.y - self.y])))
-        #     if abs(angleCol) > np.pi/2:
-        #         self.groupObj.remove(obj)
         collision = self.checkCollision()
-
-        # angleCol = (signedAngle2Vects2(self.vel2D, np.array([self.barycenterGroupObj['x'] - self.x, self.barycenterGroupObj['y'] - self.y])))
-        # if abs(angleCol) > np.pi/2 and distObjDict(self, self.barycenterGroupObj) < self.groupObjRadius:
-        #     if angleCol > 0:
-        #         self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
-        #     elif angleCol <= 0:
-        #         self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
-        # if abs(angleCol) <= np.pi/2 and distObjDict(self, self.barycenterGroupObj) < self.groupObjRadius:
-        #     if angleCol > 0:
-        #         self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
-        #     elif angleCol <= 0:
-        #         self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
-
         
         checkedCollision = []
+        
         if collision :
             init = True
             minDist = None
@@ -211,20 +198,31 @@ class LidarBot():
                             self.groupObj.append(obj)
                 i+=1
 
+
+            # TODO : change groupObj Hitbox from circle to polygon
+
             if (len(self.groupObj)) > 0:
                 self.barycenterGroupObj = { 'x' : (1/len(self.groupObj))*np.sum(np.array([obj.x for obj in self.groupObj])), 'y' : (1/len(self.groupObj))*np.sum(np.array([obj.y for obj in self.groupObj]))}
                 self.groupObjRadius = 0
                 for obj in self.groupObj :
-                    dist = distObjDict(obj, self.barycenterGroupObj) + obj.radius + self.radius + 5
+                    dist = distObjDict(obj, self.barycenterGroupObj) + obj.radius + self.radius
                     if dist > self.groupObjRadius:
                         self.groupObjRadius = dist
 
                 
                 
                 
-
                 angleCol = (signedAngle2Vects2(self.vel2D, np.array([self.barycenterGroupObj['x'] - self.x, self.barycenterGroupObj['y'] - self.y])))
-                if abs(angleCol) > np.pi/2 and distObjDict(self, self.barycenterGroupObj) < self.groupObjRadius:
+
+                if not self.checkColObjective():
+                    angleObj = signedAngle2Vects2(self.vel2D, np.array([self.objective[0]- self.x, self.objective[1] - self.y]))
+                    rotationSpeed = min(self.rotationSpeed*np.pi/180, abs(angleObj))
+                    if angleObj >= 0:
+                        self.vel2D = rotate(self.vel2D, rotationSpeed)
+                    elif angleObj < 0:
+                        self.vel2D = rotate(self.vel2D, - rotationSpeed)
+                # TODO : change groupObj Hitbox from circle to polygon
+                elif abs(angleCol) > np.pi/2 and distObjDict(self, self.barycenterGroupObj) < self.groupObjRadius:
                     if angleCol > 0:
                         self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
                     elif angleCol <= 0:

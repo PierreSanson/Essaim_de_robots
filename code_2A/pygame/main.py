@@ -43,12 +43,12 @@ def demos(nb = 1):
         room.addObjects(lidarBots)
 
     elif nb == 2 :
-        lidarBots = [lb.LidarBot(x, y + i*50 , radius, room, [x + 1850, y + 50 + i*50], randomObjective = False) for i in range(1)]
+        lidarBots = [lb.LidarBot(x+300, y +300 + i*50 , radius, room, [x + 300, y + 50 + i*50], randomObjective = False) for i in range(1)]
         obstacles = [lb.Obstacle(x+ 100 +50*i , y , 20, room) for i in range(10)]
-        obstacles2 = [lb.Obstacle(x+ 100 +50*i , y+450 , 20, room) for i in range(10)]
-        obstacles3 = [lb.Obstacle(x+ 600 , y+i*50, 20, room) for i in range(10)]
+        obstacles2 = [lb.Obstacle(x+ 100 +50*i , y+100 , 20, room) for i in range(10)]
+        # obstacles3 = [lb.Obstacle(x+ 600 , y+i*50, 20, room) for i in range(10)]
 
-        room.addObjects(lidarBots + obstacles + obstacles2 + obstacles3 )
+        room.addObjects(lidarBots + obstacles + obstacles2 )
 
     elif nb == 3 :
         lidarBot = lb.LidarBot(x, y , radius, room, [x + 1850, y+950])
@@ -56,7 +56,7 @@ def demos(nb = 1):
         lidarBot3 = lb.LidarBot(x+1850, y +100, radius, room, [x, y+950])
         lidarBot4 = lb.LidarBot(x, y +950, radius, room, [x + 1850, y+100])
         lidarBots = [lidarBot, lidarBot2, lidarBot3, lidarBot4]
-        obstacles = [lb.Obstacle(random.randrange(150, 1800) , random.randrange(0, 1050), 30, room) for i in range(100)]
+        obstacles = [lb.Obstacle(random.randrange(150, 1800) , random.randrange(0, 1050), 30, room) for i in range(150)]
         room.addObjects(lidarBots + obstacles)
 
 
@@ -72,7 +72,7 @@ def redrawGameWindow(win, surface1):
 
 
 if __name__ == "__main__":
-    demos(2)
+    demos(3)
 
     run = True 
     while run:
