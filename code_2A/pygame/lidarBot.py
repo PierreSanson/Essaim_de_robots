@@ -1,12 +1,7 @@
-
-import pygame
-
-import numpy as np
-from sympy.solvers import solve
-from sympy import Symbol
-
 from utilities import *
 
+import pygame
+import numpy as np
 import random
 
 class LidarBot():
@@ -18,8 +13,8 @@ class LidarBot():
         self.vel2D = np.asarray([0.1,0.1])
         self.objective = objective
         self.radiusDetection = 150
-        self.rotationSpeed = 2
-        self.speed = 2
+        self.rotationSpeed = 3
+        self.speed = 1.5
         self.groupObj = []
         self.detectedObj = []
         self.safeCoeff = 1
@@ -73,7 +68,7 @@ class LidarBot():
 
                     if (obj not in self.detectedObj):
                         self.detectedObj.append(obj)
-                    if distO <= min (self.radiusDetection, 50 + obj.radius):
+                    if distO <= min (self.radiusDetection, 75 + obj.radius*1.5 + self.radius):
                         sols = circleLineInter(self, obj, self.vel2D)
                         if len(sols)>0:
                             if len(sols)>1:
@@ -112,13 +107,13 @@ class LidarBot():
             elif angleObj < 0:
                 self.vel2D = rotate(self.vel2D, - rotationSpeed)
 
-        # TODO : change groupObj Hitbox from circle to polygon
+        # TODO : change groupObj Hitbox from circle to polygon (SEE CONVEX HULL)
         elif distObjDict(self, self.barycenterGroupObj) < self.groupObjRadius:
-            if random.random() > 0.999 :
+            if random.random() > (1 - 1/(10000/self.speed))  :
                 self.turnAroundCoeff *= -1
             self.vel2D = self.vel2D
         
-        # TODO : change groupObj Hitbox from circle to polygon
+        # TODO : change groupObj Hitbox from circle to polygon (SEE CONVEX HULL)
         elif len(circleLineInter(self, self.barycenterGroupObj, self.vel2D, objDict = True, objRadius = self.groupObjRadius)) == 2 and abs(angleCol) < np.pi/2:
             if angleCol > 0:
                 self.vel2D = rotate(self.vel2D, - self.rotationSpeed*np.pi/180)
@@ -199,7 +194,7 @@ class LidarBot():
                 i+=1
 
 
-            # TODO : change groupObj Hitbox from circle to polygon
+            # TODO : change groupObj Hitbox from circle to polygon (SEE CONVEX HULL)
 
             if (len(self.groupObj)) > 0:
                 self.barycenterGroupObj = { 'x' : (1/len(self.groupObj))*np.sum(np.array([obj.x for obj in self.groupObj])), 'y' : (1/len(self.groupObj))*np.sum(np.array([obj.y for obj in self.groupObj]))}
@@ -221,7 +216,7 @@ class LidarBot():
                         self.vel2D = rotate(self.vel2D, rotationSpeed)
                     elif angleObj < 0:
                         self.vel2D = rotate(self.vel2D, - rotationSpeed)
-                # TODO : change groupObj Hitbox from circle to polygon
+                # TODO : change groupObj Hitbox from circle to polygon (SEE CONVEX HULL)
                 elif abs(angleCol) > np.pi/2 and distObjDict(self, self.barycenterGroupObj) < self.groupObjRadius:
                     if angleCol > 0:
                         self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
@@ -248,7 +243,7 @@ class LidarBot():
 
 
 class Obstacle():
-    def __init__(self, x, y, radius, room, movable = False, vel = 0):
+    def __init__(self, x, y, radius, room, movable = False, vel = 2):
         self.room = room
         self.x = x
         self.y = y

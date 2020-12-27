@@ -38,17 +38,17 @@ room = Room(winWidth, winHeight)
 def demos(nb = 1):
 
     if nb == 1 :
-        lidarBots = [lb.LidarBot(x, y + i*50 , radius, room, [x + 1850, y + i*50], randomObjective = True, randomInterval = 5) for i in range(30)]
+        lidarBots = [lb.LidarBot(x, y + i*100 , radius, room, [x + 1850, y + i*50], randomObjective = True, randomInterval = 5) for i in range(10)]
 
         room.addObjects(lidarBots)
 
     elif nb == 2 :
-        lidarBots = [lb.LidarBot(x+300, y +300 + i*50 , radius, room, [x + 300, y + 50 + i*50], randomObjective = False) for i in range(1)]
-        obstacles = [lb.Obstacle(x+ 100 +50*i , y , 20, room) for i in range(10)]
-        obstacles2 = [lb.Obstacle(x+ 100 +50*i , y+100 , 20, room) for i in range(10)]
-        # obstacles3 = [lb.Obstacle(x+ 600 , y+i*50, 20, room) for i in range(10)]
+        lidarBots = [lb.LidarBot(x+350, y +300 + i*50 , radius, room, [x + 1800, y + 50 + i*50], randomObjective = False) for i in range(1)]
+        obstacles = [lb.Obstacle(x+ 300 +50*i , y , 20, room) for i in range(6)]
+        obstacles2 = [lb.Obstacle(x+ 300 +50*i , y+450 , 20, room) for i in range(6)]
+        obstacles3 = [lb.Obstacle(x+ 600 , y+i*50, 20, room) for i in range(10)]
 
-        room.addObjects(lidarBots + obstacles + obstacles2 )
+        room.addObjects(lidarBots + obstacles + obstacles2 + obstacles3)
 
     elif nb == 3 :
         lidarBot = lb.LidarBot(x, y , radius, room, [x + 1850, y+950])
@@ -56,7 +56,13 @@ def demos(nb = 1):
         lidarBot3 = lb.LidarBot(x+1850, y +100, radius, room, [x, y+950])
         lidarBot4 = lb.LidarBot(x, y +950, radius, room, [x + 1850, y+100])
         lidarBots = [lidarBot, lidarBot2, lidarBot3, lidarBot4]
-        obstacles = [lb.Obstacle(random.randrange(150, 1800) , random.randrange(0, 1050), 30, room) for i in range(150)]
+        obstacles = [lb.Obstacle(random.randrange(150, 1800) , random.randrange(0, 1050), 30, room) for i in range(50)]
+        room.addObjects(lidarBots + obstacles)
+
+    elif nb == 4 :
+        lidarBots = [lb.LidarBot(x, y + i*100 , radius, room, [random.randrange(150, 1800),random.randrange(0, 1050)], randomObjective = True, randomInterval = 10) for i in range(5)]
+        obstacles = [lb.Obstacle(x + 300, y + 300, 50, room, movable = True) for i in range(1)]
+
         room.addObjects(lidarBots + obstacles)
 
 

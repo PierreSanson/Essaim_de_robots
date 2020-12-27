@@ -1,4 +1,3 @@
-from sympy import Symbol
 import numpy as np
 
 def distObj(obj1, obj2):
