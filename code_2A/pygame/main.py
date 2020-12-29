@@ -18,7 +18,7 @@ hz = 144
 
 x = 60
 y = 60
-radius = 10
+radius = 20
 vel = 5*(60/hz)
 
 
@@ -78,7 +78,7 @@ def redrawGameWindow(win, surface1):
 
 
 if __name__ == "__main__":
-    demos(3)
+    demos(4)
 
     run = True 
     while run:

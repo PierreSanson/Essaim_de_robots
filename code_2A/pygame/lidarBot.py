@@ -12,9 +12,9 @@ class LidarBot():
         self.radius = radius
         self.vel2D = np.asarray([0.1,0.1])
         self.objective = objective
-        self.radiusDetection = 150
-        self.rotationSpeed = 3
-        self.speed = 1.5
+        self.radiusDetection = 200
+        self.rotationSpeed = 2
+        self.speed = 2
         self.groupObj = []
         self.detectedObj = []
         self.safeCoeff = 1
@@ -24,6 +24,7 @@ class LidarBot():
         self.barycenterGroupObj = {'x' : 0, 'y' : 0}
         self.groupObjRadius = 0
         self.randomInterval = randomInterval
+        self.margin=5
          
 
 
@@ -114,7 +115,7 @@ class LidarBot():
             self.vel2D = self.vel2D
         
         # TODO : change groupObj Hitbox from circle to polygon (SEE CONVEX HULL)
-        elif len(circleLineInter(self, self.barycenterGroupObj, self.vel2D, objDict = True, objRadius = self.groupObjRadius)) == 2 and abs(angleCol) < np.pi/2:
+        elif len(circleLineInter(self, self.barycenterGroupObj, self.vel2D, objDict = True, objRadius = self.groupObjRadius)) >0 and abs(angleCol) < np.pi/2:
             if angleCol > 0:
                 self.vel2D = rotate(self.vel2D, - self.rotationSpeed*np.pi/180)
             elif angleCol <= 0:
@@ -180,7 +181,7 @@ class LidarBot():
                 while i<len(checkedgroupObj):
                     for obj in self.groupObj:
                         if obj not in checkedgroupObj:
-                            if distObj(obj, checkedgroupObj[i]) < obj.radius + checkedgroupObj[i].radius + 2*self.radius:
+                            if distObj(obj, checkedgroupObj[i]) < obj.radius + checkedgroupObj[i].radius + 2*self.radius + 2*self.margin:
                                 checkedgroupObj.append(obj)
                     i+=1
                 self.groupObj = checkedgroupObj
@@ -189,7 +190,7 @@ class LidarBot():
             while i<len(self.groupObj):
                 for obj in self.detectedObj : 
                     if obj not in self.groupObj :
-                        if distObj(obj, self.groupObj[i]) < obj.radius + self.groupObj[i].radius + 2*self.radius:
+                        if distObj(obj, self.groupObj[i]) < obj.radius + self.groupObj[i].radius + 2*self.radius + 2*self.margin:
                             self.groupObj.append(obj)
                 i+=1
 
@@ -200,7 +201,7 @@ class LidarBot():
                 self.barycenterGroupObj = { 'x' : (1/len(self.groupObj))*np.sum(np.array([obj.x for obj in self.groupObj])), 'y' : (1/len(self.groupObj))*np.sum(np.array([obj.y for obj in self.groupObj]))}
                 self.groupObjRadius = 0
                 for obj in self.groupObj :
-                    dist = distObjDict(obj, self.barycenterGroupObj) + obj.radius + self.radius
+                    dist = distObjDict(obj, self.barycenterGroupObj) + obj.radius + self.radius + self.margin*(1 + self.rotationSpeed/10)
                     if dist > self.groupObjRadius:
                         self.groupObjRadius = dist
 

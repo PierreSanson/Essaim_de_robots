@@ -17,11 +17,11 @@ def circleLineInter(lineEmitter, obj, vel2D, objDict = False, objRadius = 0):
     if objDict:
         x1 = obj['x']
         y1 = obj['y']
-        r = objRadius + 2.5
+        r = objRadius
     else:
         x1 = obj.x
         y1 = obj.y
-        r = obj.radius+lineEmitter.radius + 2.5
+        r = obj.radius+lineEmitter.radius + lineEmitter.margin
 
     dictSol = []
 
