@@ -38,7 +38,7 @@ room = Room(winWidth, winHeight)
 def demos(nb = 1):
 
     if nb == 1 :
-        lidarBots = [lb.LidarBot(x, y + i*100 , radius, room, [x + 1850, y + i*50], randomObjective = True, randomInterval = 5) for i in range(10)]
+        lidarBots = [lb.LidarBot(x, y + i*100 , radius, room, [x + 1850, y + i*50], randomObjective = True, randomInterval =10) for i in range(10)]
 
         room.addObjects(lidarBots)
 
@@ -64,6 +64,12 @@ def demos(nb = 1):
         obstacles = [lb.Obstacle(x + 300, y + 300, 50, room, movable = True) for i in range(1)]
 
         room.addObjects(lidarBots + obstacles)
+    
+    elif nb == 5 :
+        lidarBots = [lb.LidarBot(x, y, radius, room, [x+1500,y])]
+        obstacles = [lb.Obstacle(x + 200 + i*50, y, 20, room) for i in range(15)]
+
+        room.addObjects(lidarBots + obstacles)
 
 
 
@@ -73,12 +79,13 @@ def redrawGameWindow(win, surface1):
     surface1.fill((255,255,255,64))  
     for obj in room.objects:
         obj.draw(win, surface1)
-    win.blit(surface1, (0,0))
-    pygame.display.update() 
+    # win.blit(surface1, (0,0))
+    # pygame.display.update() 
+    
 
 
 if __name__ == "__main__":
-    demos(4)
+    demos(2)
 
     run = True 
     while run:
@@ -91,6 +98,8 @@ if __name__ == "__main__":
         for obj in room.objects:
             if isinstance(obj, lb.LidarBot) or (isinstance(obj, lb.Obstacle) and obj.movable):
                 obj.move(surface1)
+        win.blit(surface1, (0,0))
+        pygame.display.update() 
 
     
     

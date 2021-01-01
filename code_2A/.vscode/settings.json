@@ -1,7 +1,7 @@
 {
     "python.pythonPath": "C:\\Users\\Yoni\\anaconda3\\python.exe",
     "python.linting.pylintArgs": [
-        "--extension-pkg-whitelist=pygame",
+        "--extension-pkg-whitelist=pygame, scipy",
         "--disable=C0103",
         "--disable=trailing-whitespace",
         "--disable=missing-function-docstring",
