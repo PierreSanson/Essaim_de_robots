@@ -14,7 +14,7 @@ class LidarBot():
         self.radius = radius
         self.vel2D = np.asarray([0.1,0.1])
         self.objective = objective
-        self.radiusDetection = 300
+        self.radiusDetection = 200
         self.rotationSpeed = 2
         self.speed = 2
         self.groupObj = []
@@ -41,25 +41,20 @@ class LidarBot():
 
         # Uncomment for more details about the process !
 
-        # pygame.draw.circle(surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
+        pygame.draw.circle(surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
         if self.mode == "circle" :
             pygame.draw.circle(surface1, (255,0,255, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
             pygame.draw.circle(surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
             
         pygame.draw.circle(win, (0,255,0), (self.x, self.y), self.radius)
         pygame.draw.circle(win, (255,255,255), (self.objective[0], self.objective[1]), self.radius)
-        # if np.linalg.norm(self.vel2D) !=0:
-        #     vel2DU = self.vel2D/np.linalg.norm(self.vel2D)
-        #     pygame.draw.line(win, (200,200,200), (self.x, self.y), (self.x + vel2DU[0]*self.radiusDetection, self.y + vel2DU[1]*self.radiusDetection))
-        # if self.mode == "polygon":
-        #     if self.convexHullObstacles is not None:
-        #         pygame.draw.polygon(surface1, (200,50,50, 64), self.groupPolygonPoints)
-        #         pygame.draw.circle(surface1, (200,200,200, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
-
-
-
-
-        
+        if np.linalg.norm(self.vel2D) !=0:
+            vel2DU = self.vel2D/np.linalg.norm(self.vel2D)
+            pygame.draw.line(win, (200,200,200), (self.x, self.y), (self.x + vel2DU[0]*self.radiusDetection, self.y + vel2DU[1]*self.radiusDetection))
+        if self.mode == "polygon":
+            if self.convexHullObstacles is not None:
+                pygame.draw.polygon(surface1, (200,50,50, 64), self.groupPolygonPoints)
+                pygame.draw.circle(surface1, (200,200,200, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
         
 
     def move(self, win):
@@ -90,7 +85,7 @@ class LidarBot():
 
                     if (obj not in self.detectedObj):
                         self.detectedObj.append(obj)
-                    if distO <= min (self.radiusDetection, 50 + obj.radius*1.5 + self.radius):
+                    if distO <= 50 + obj.radius*1.5 + self.radius:
                         sols = circleLineInter(self, obj, self.vel2D)
                         if len(sols)>0:
                             if len(sols)>1:
@@ -212,7 +207,7 @@ class LidarBot():
             minObj = None
             for obj in collision:
                 dist = distObjDict(self, collision[obj])
-                angleCol = (signedAngle2Vects2(self.vel2D, np.array([obj.x - self.x, obj.y - self.y])))
+                angleCol = signedAngle2Vects2(self.vel2D, np.array([obj.x - self.x, obj.y - self.y]))
                 if init : 
                     if abs(angleCol) <= np.pi/2:
                         checkedCollision.append(obj)
@@ -273,11 +268,11 @@ class LidarBot():
 
             if (len(self.groupObj)) > 0:
                 self.barycenterGroupObj = { 'x' : (1/len(self.groupObj))*np.sum(np.array([obj.x for obj in self.groupObj])), 'y' : (1/len(self.groupObj))*np.sum(np.array([obj.y for obj in self.groupObj]))}
-                self.groupObjRadius = 0
-                for obj in self.groupObj :
-                    dist = distObjDict(obj, self.barycenterGroupObj) + obj.radius + self.radius + self.margin*(1 + self.rotationSpeed/10)
-                    if dist > self.groupObjRadius:
-                        self.groupObjRadius = dist
+                # self.groupObjRadius = 0
+                # for obj in self.groupObj :
+                #     dist = distObjDict(obj, self.barycenterGroupObj) + obj.radius + self.radius + self.margin*(1 + self.rotationSpeed/10)
+                #     if dist > self.groupObjRadius:
+                #         self.groupObjRadius = dist
                 self.convexHullObstacles = ConvexHull(self.groupObjPoints)
                 if self.convexHullObstacles is not None:
                     self.groupPolygonPoints = [self.groupObjPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
