@@ -7,7 +7,7 @@ from copy import deepcopy
 from scipy.spatial import ConvexHull
 
 class LidarBot():
-    def __init__(self, x, y, radius, room, objective, randomObjective = False, randomInterval = 10, color = (0,255,0), haveObjective = False):
+    def __init__(self, x, y, radius, room, objective, randomObjective = False, randomInterval = 10, color = (0,255,0), haveObjective = True):
         self.room = room
         self.x = x
         self.y = y
@@ -67,10 +67,13 @@ class LidarBot():
         for i in range(len(self.polygonPoints)):
             self.polygonPoints[i][0] = self.polygonPointsAbsolute[i][0] + self.x
             self.polygonPoints[i][1] = self.polygonPointsAbsolute[i][1] + self.y
-        if self.randomObjective and self.haveObjective:
+        if self.randomObjective:
             if random.random() > (1 - 1/(100*self.randomInterval)) :
                 self.objective[0] = random.randrange(50, win.get_width() - 50)
                 self.objective[1] = random.randrange(50, win.get_height() - 50)
+                self.haveObjective = True
+                self.ontoObjective = False
+                self.vel2D = np.asarray([0.01,0.01])
         if self.haveObjective:
             self.goToObjective(win)
         if np.linalg.norm(self.vel2D) !=0:

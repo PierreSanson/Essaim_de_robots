@@ -54,8 +54,10 @@ def scenario():
 
     room.addObjects(refPointBots)
     measurerBot = lb.LidarBot(100 + 3*distRefPointBots[0]/2, 100 + distRefPointBots[1]/2 , 20, room, color =(255, 0, 0), objective=None, haveObjective=False)
+    lidarBots = [lb.LidarBot(300 + 60*i,  350 , radius, room, [300 + 60*i, 700], randomObjective = True, randomInterval =1, color=(255, 255, 0)) for i in range(3)]
+    room.addObjects(lidarBots)
     room.addObjects([measurerBot])
-
+    
 
     run = True 
     t = 0 
