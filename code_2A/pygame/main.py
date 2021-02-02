@@ -1,7 +1,9 @@
 import bot as Bot
 import pygame
 import random
-import lidarBot as lb
+import explorerBot as eb
+import refPointBot as rpb
+import measuringBot as mb
 
 pygame.init()
 
@@ -45,7 +47,7 @@ def scenario():
     objectives = [[None for i in range(nbRefPointBots)] for j in range(nbSteps)]
     objectivesMeasuringBot = [None for j in range(nbSteps+1)]
     for i in range(nbRefPointBots):
-        refPointBots.append(Bot.Bot(100 + (i//2)*distRefPointBots[0], 100 + (i%2)*distRefPointBots[1] , radius, room,color=(0,0,255), objective=None, haveObjective=False))
+        refPointBots.append(rpb.RefPointBot(100 + (i//2)*distRefPointBots[0], 100 + (i%2)*distRefPointBots[1] , radius, room,color=(0,0,255), objective=None, haveObjective=False))
     
     for j in range (nbStepsStraight):
         for i in range(nbRefPointBots):
@@ -68,9 +70,9 @@ def scenario():
 
 
     room.addObjects(refPointBots)
-    measurerBot = Bot.Bot(100 + 3*distRefPointBots[0]/2, 100 + distRefPointBots[1]/2 , 20, room, color =(255, 0, 0), objective=None, haveObjective=False)
-    LidarBots = [lb.LidarBot(300 + 60*i,  350 , radius, room, [300 + 60*i, 700], randomObjective = True, randomInterval =1, color=(0, 255, 0)) for i in range(3)]
-    room.addObjects(LidarBots)
+    measurerBot = mb.MeasuringBot(100 + 3*distRefPointBots[0]/2, 100 + distRefPointBots[1]/2 , 20, room, color =(255, 0, 0), objective=None, haveObjective=False)
+    ExplorerBots = [eb.ExplorerBot(300 + 60*i,  350 , radius, room, [300 + 60*i, 700], randomObjective = True, randomInterval =1, color=(0, 255, 0)) for i in range(3)]
+    room.addObjects(ExplorerBots)
     room.addObjects([measurerBot])
     
 
