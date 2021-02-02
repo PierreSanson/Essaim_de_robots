@@ -1,6 +1,7 @@
-import lidarBot as lb
+import bot as Bot
 import pygame
 import random
+import lidarBot as lb
 
 pygame.init()
 
@@ -38,22 +39,38 @@ def scenario():
     nbRefPointBots = 6
     distRefPointBots = [100, 110]
     refPointBots = []
-    nbSteps = 10
+    nbStepsStraight = 4
+    nbStepsRight = 4
+    nbSteps = nbStepsStraight+nbStepsRight
     objectives = [[None for i in range(nbRefPointBots)] for j in range(nbSteps)]
+    objectivesMeasuringBot = [None for j in range(nbSteps+1)]
     for i in range(nbRefPointBots):
-        refPointBots.append(lb.LidarBot(100 + (i//2)*distRefPointBots[0], 100 + (i%2)*distRefPointBots[1] , radius, room,color=(0,0,255), objective=None, haveObjective=False))
+        refPointBots.append(Bot.Bot(100 + (i//2)*distRefPointBots[0], 100 + (i%2)*distRefPointBots[1] , radius, room,color=(0,0,255), objective=None, haveObjective=False))
     
-    for j in range (nbSteps):
+    for j in range (nbStepsStraight):
         for i in range(nbRefPointBots):
             if j%(nbRefPointBots//2) == i//2:
                 objectives[j][i] = (100 + (nbRefPointBots//2)*distRefPointBots[0] + j*distRefPointBots[0],
                      100 + (i%2)*distRefPointBots[1])
+        objectivesMeasuringBot[j]=(100 + 3*distRefPointBots[0]/2 + distRefPointBots[0]*(j), 100 + distRefPointBots[1]/2)
+    objectivesMeasuringBot[nbStepsStraight]=(100 + 3*distRefPointBots[0]/2 + distRefPointBots[0]*(nbStepsStraight), 100 + distRefPointBots[1]/2)
+
+
+
+    for j in range (nbStepsStraight, nbStepsStraight + nbStepsRight):
+        for i in range(nbRefPointBots):
+            if j%(nbRefPointBots//2) == i//2:
+                objectives[j][i] = ((nbStepsStraight+nbRefPointBots//2)*distRefPointBots[0] - (i%2)*distRefPointBots[0],
+                     100 + distRefPointBots[1]*((nbRefPointBots//2)+j-nbStepsStraight-1))
+        objectivesMeasuringBot[j+1]=(100 +(nbStepsStraight)*distRefPointBots[0] + 3*distRefPointBots[0]/2, 100 + distRefPointBots[1]*((nbRefPointBots//2)+j-nbStepsStraight-2) + distRefPointBots[1]/2)
     
 
+
+
     room.addObjects(refPointBots)
-    measurerBot = lb.LidarBot(100 + 3*distRefPointBots[0]/2, 100 + distRefPointBots[1]/2 , 20, room, color =(255, 0, 0), objective=None, haveObjective=False)
-    lidarBots = [lb.LidarBot(300 + 60*i,  350 , radius, room, [300 + 60*i, 700], randomObjective = True, randomInterval =1, color=(0, 255, 0)) for i in range(4)]
-    room.addObjects(lidarBots)
+    measurerBot = Bot.Bot(100 + 3*distRefPointBots[0]/2, 100 + distRefPointBots[1]/2 , 20, room, color =(255, 0, 0), objective=None, haveObjective=False)
+    LidarBots = [lb.LidarBot(300 + 60*i,  350 , radius, room, [300 + 60*i, 700], randomObjective = True, randomInterval =1, color=(0, 255, 0)) for i in range(3)]
+    room.addObjects(LidarBots)
     room.addObjects([measurerBot])
     
 
@@ -91,10 +108,12 @@ def scenario():
                 robotsWithObj = []
                 if moveMeasuringBot:
                     robotsWithObj.append(room.objects[-1])
-                    room.objects[-1].defineObjective((100 + 3*distRefPointBots[0]/2 + distRefPointBots[0]*(step), 100 + distRefPointBots[1]/2))
+                    # room.objects[-1].defineObjective((100 + 3*distRefPointBots[0]/2 + distRefPointBots[0]*(step), 100 + distRefPointBots[1]/2))
+                    room.objects[-1].defineObjective(objectivesMeasuringBot[step])
                     moveMeasuringBot = False
                 else : 
                     for i in range(nbRefPointBots):
+
                         if objectives[step][i] != None:
                             room.objects[i].defineObjective(objectives[step][i])
                             if not room.objects[i].ontoObjective:
@@ -127,7 +146,7 @@ def scenario():
         
 
         for obj in room.objects:
-            if isinstance(obj, lb.LidarBot) or (isinstance(obj, lb.Obstacle) and obj.movable):
+            if isinstance(obj, Bot.Bot) or (isinstance(obj, Bot.Obstacle) and obj.movable):
                 obj.move(surface1)
         win.blit(surface1, (0,0))
         pygame.display.update() 
@@ -136,51 +155,51 @@ def scenario():
 def demos(nb = 1):
 
     if nb == 1 :
-        lidarBots = [lb.LidarBot(x, y + i*100 , radius, room, [x + 1150, y + i*50], randomObjective = True, randomInterval =10) for i in range(20)]
+        Bots = [Bot.Bot(x, y + i*100 , radius, room, [x + 1150, y + i*50], randomObjective = True, randomInterval =10) for i in range(20)]
 
-        room.addObjects(lidarBots)
+        room.addObjects(Bots)
 
     elif nb == 2 :
-        lidarBots = [lb.LidarBot(x+350, y +300 + i*50 , radius, room, [x + 1100, y + 50 + i*50], randomObjective = False, radiusDetection=400) for i in range(1)]
-        obstacles = [lb.Obstacle(x+ 300 +50*i , y , 20, room) for i in range(6)]
-        obstacles2 = [lb.Obstacle(x+ 300 +50*i , y+450 , 20, room) for i in range(6)]
-        obstacles3 = [lb.Obstacle(x+ 600 , y+i*50, 20, room) for i in range(10)]
+        Bots = [Bot.Bot(x+350, y +300 + i*50 , radius, room, [x + 1100, y + 50 + i*50], randomObjective = False, radiusDetection=400) for i in range(1)]
+        obstacles = [Bot.Obstacle(x+ 300 +50*i , y , 20, room) for i in range(6)]
+        obstacles2 = [Bot.Obstacle(x+ 300 +50*i , y+450 , 20, room) for i in range(6)]
+        obstacles3 = [Bot.Obstacle(x+ 600 , y+i*50, 20, room) for i in range(10)]
 
-        room.addObjects(lidarBots + obstacles + obstacles2 + obstacles3)
+        room.addObjects(Bots + obstacles + obstacles2 + obstacles3)
 
     elif nb == 3 :
-        lidarBot = lb.LidarBot(x, y , radius, room, [x + 1150, y+650], showDetails = True)
-        # lidarBot2 = lb.LidarBot(x+1150, y +650, radius, room, [x, y+100])
-        # lidarBot3 = lb.LidarBot(x+1150, y +100, radius, room, [x, y+650])
-        # lidarBot4 = lb.LidarBot(x, y +650, radius, room, [x + 1150, y+100])
-        lidarBots = [lidarBot]
-        obstacles = [lb.Obstacle(random.randrange(150, 1100) , random.randrange(0, 650), 20, room) for i in range(40)]
-        room.addObjects(lidarBots + obstacles)
+        Bot = Bot.Bot(x, y , radius, room, [x + 1150, y+650], showDetails = True)
+        # Bot2 = Bot.Bot(x+1150, y +650, radius, room, [x, y+100])
+        # Bot3 = Bot.Bot(x+1150, y +100, radius, room, [x, y+650])
+        # Bot4 = Bot.Bot(x, y +650, radius, room, [x + 1150, y+100])
+        Bots = [Bot]
+        obstacles = [Bot.Obstacle(random.randrange(150, 1100) , random.randrange(0, 650), 20, room) for i in range(40)]
+        room.addObjects(Bots + obstacles)
 
     elif nb == 4 :
-        lidarBots = [lb.LidarBot(x, y + i*100 , radius, room, [random.randrange(150, 1100),random.randrange(0, 650)], randomObjective = True, randomInterval = 10) for i in range(5)]
-        obstacles = [lb.Obstacle(x + 300, y + 300, 50, room, movable = True) for i in range(1)]
+        Bots = [Bot.Bot(x, y + i*100 , radius, room, [random.randrange(150, 1100),random.randrange(0, 650)], randomObjective = True, randomInterval = 10) for i in range(5)]
+        obstacles = [Bot.Obstacle(x + 300, y + 300, 50, room, movable = True) for i in range(1)]
 
-        room.addObjects(lidarBots + obstacles)
+        room.addObjects(Bots + obstacles)
     
     elif nb == 5 :
-        lidarBots = [lb.LidarBot(x, y + 50, radius, room, [x+1100,y])]
-        obstacles = [lb.Obstacle(x + 200 + i*50, y, 20, room) for i in range(10)]
-        obstacles2 = [lb.Obstacle(x + 200 + i*50, y+50, 20, room) for i in range(10)]
-        obstacles3 = [lb.Obstacle(x + 200 + i*50, y+100, 20, room) for i in range(10)]
+        Bots = [Bot.Bot(x, y + 50, radius, room, [x+1100,y])]
+        obstacles = [Bot.Obstacle(x + 200 + i*50, y, 20, room) for i in range(10)]
+        obstacles2 = [Bot.Obstacle(x + 200 + i*50, y+50, 20, room) for i in range(10)]
+        obstacles3 = [Bot.Obstacle(x + 200 + i*50, y+100, 20, room) for i in range(10)]
 
-        room.addObjects(lidarBots + obstacles + obstacles2+ obstacles3)
+        room.addObjects(Bots + obstacles + obstacles2+ obstacles3)
     
     elif nb == 6 :
-        lidarBots = [lb.LidarBot(x+500, y +300 + i*50 , radius, room, [x + 1100, y + 50 + i*50], randomObjective = False) for i in range(1)]
+        Bots = [Bot.Bot(x+500, y +300 + i*50 , radius, room, [x + 1100, y + 50 + i*50], randomObjective = False) for i in range(1)]
 
         for j in range(3):
-            obstacles = [lb.Obstacle(x+ 300 +50*i , y+250*j , 20, room) for i in range(6)]
-            obstacles2 = [lb.Obstacle(x+ 300 +50*i , y+250 +250*j , 20, room) for i in range(3)]
-            obstacles3 = [lb.Obstacle(x+ 600 , y+i*50 +250*j, 20, room) for i in range(10)]
+            obstacles = [Bot.Obstacle(x+ 300 +50*i , y+250*j , 20, room) for i in range(6)]
+            obstacles2 = [Bot.Obstacle(x+ 300 +50*i , y+250 +250*j , 20, room) for i in range(3)]
+            obstacles3 = [Bot.Obstacle(x+ 600 , y+i*50 +250*j, 20, room) for i in range(10)]
 
             room.addObjects(obstacles + obstacles2 + obstacles3)
-        room.addObjects(lidarBots)
+        room.addObjects(Bots)
 
     run = True 
     while run:
@@ -191,7 +210,7 @@ def demos(nb = 1):
                 run = False
 
         for obj in room.objects:
-            if isinstance(obj, lb.LidarBot) or (isinstance(obj, lb.Obstacle) and obj.movable):
+            if isinstance(obj, Bot.Bot) or (isinstance(obj, Bot.Obstacle) and obj.movable):
                 obj.move(surface1)
         win.blit(surface1, (0,0))
         pygame.display.update() 
