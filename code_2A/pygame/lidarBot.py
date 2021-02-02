@@ -7,14 +7,14 @@ from copy import deepcopy
 from scipy.spatial import ConvexHull
 
 class LidarBot():
-    def __init__(self, x, y, radius, room, objective, randomObjective = False, randomInterval = 10, color = (0,255,0), haveObjective = True):
+    def __init__(self, x, y, radius, room, objective, randomObjective = False, randomInterval = 10, color = (0,255,0), haveObjective = True, radiusDetection = 200, showDetails = False):
         self.room = room
         self.x = x
         self.y = y
         self.radius = radius
         self.vel2D = np.asarray([0.1,0.1])
         self.objective = objective
-        self.radiusDetection = 200
+        self.radiusDetection = radiusDetection
         self.rotationSpeed = 6
         self.speed = 3
         self.groupObj = []
@@ -36,6 +36,7 @@ class LidarBot():
         self.color = color
         self.ontoObjective = False
         self.haveObjective = haveObjective
+        self.showDetails = showDetails
         if not self.haveObjective:
             self.vel2D = np.asarray([0,0])
 
@@ -43,23 +44,40 @@ class LidarBot():
 
 
     def draw(self, win, surface1):
-
-        # Uncomment for more details about the process !
-        # pygame.draw.circle(surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
-        if self.mode == "circle" :
-            pygame.draw.circle(surface1, (255,0,255, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
-            pygame.draw.circle(surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
-            
-        pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
-        # if self.haveObjective:
-        #     pygame.draw.circle(win, (255,255,255), (self.objective[0], self.objective[1]), self.radius)
-        # if self.mode == "polygon":
-        #     if self.convexHullObstacles is not None:
-        #         pygame.draw.polygon(surface1, (200,50,50, 64), self.groupPolygonPoints)
-        #         pygame.draw.circle(surface1, (200,200,200, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
-        if np.linalg.norm(self.vel2D) !=0:
-            vel2DU = self.vel2D/np.linalg.norm(self.vel2D)
-            pygame.draw.line(surface1, (255,255,255), (self.x, self.y), (self.x + vel2DU[0]*self.radius, self.y + vel2DU[1]*self.radius))
+        if not self.showDetails:
+            # Uncomment for more details about the process !
+            # pygame.draw.circle(surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
+            if self.mode == "circle" :
+                pygame.draw.circle(surface1, (255,0,255, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
+                pygame.draw.circle(surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
+                
+            pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
+            # if self.haveObjective:
+            #     pygame.draw.circle(win, (255,255,255), (self.objective[0], self.objective[1]), self.radius)
+            # if self.mode == "polygon":
+            #     if self.convexHullObstacles is not None:
+            #         pygame.draw.polygon(surface1, (200,50,50, 64), self.groupPolygonPoints)
+            #         pygame.draw.circle(surface1, (200,200,200, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
+            if np.linalg.norm(self.vel2D) !=0:
+                vel2DU = self.vel2D/np.linalg.norm(self.vel2D)
+                pygame.draw.line(surface1, (255,255,255), (self.x, self.y), (self.x + vel2DU[0]*self.radius, self.y + vel2DU[1]*self.radius))
+        else:
+            # Uncomment for more details about the process !
+            pygame.draw.circle(surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
+            if self.mode == "circle" :
+                pygame.draw.circle(surface1, (255,0,255, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
+                pygame.draw.circle(surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
+                
+            pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
+            if self.haveObjective:
+                pygame.draw.circle(win, (255,255,255), (self.objective[0], self.objective[1]), self.radius)
+            if self.mode == "polygon":
+                if self.convexHullObstacles is not None:
+                    pygame.draw.polygon(surface1, (200,50,50, 64), self.groupPolygonPoints)
+                    pygame.draw.circle(surface1, (200,200,200, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
+            if np.linalg.norm(self.vel2D) !=0:
+                vel2DU = self.vel2D/np.linalg.norm(self.vel2D)
+                pygame.draw.line(surface1, (255,255,255), (self.x, self.y), (self.x + vel2DU[0]*self.radius, self.y + vel2DU[1]*self.radius))
         
         
 
@@ -190,7 +208,7 @@ class LidarBot():
         distObjective = distObjList(self, self.objective)
         if distObjective < 40*self.speed/self.rotationSpeed + self.radius*2:
             self.ontoObjectiveCoeff = distObjective/((40*self.speed/self.rotationSpeed)**(1.1))
-            if distObjective < 3:
+            if distObjective < 0.1:
                 self.ontoObjective = True
                 self.haveObjective = False
                 self.vel2D = np.asarray([0,0])
