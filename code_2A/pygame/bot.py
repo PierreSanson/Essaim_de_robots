@@ -45,24 +45,16 @@ class Bot():
 
     def draw(self, win, surface1):
         if not self.showDetails:
-            # Uncomment for more details about the process !
-            # pygame.draw.circle(surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
             if self.mode == "circle" :
                 pygame.draw.circle(surface1, (255,0,255, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
                 pygame.draw.circle(surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
                 
             pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
-            # if self.haveObjective:
-            #     pygame.draw.circle(win, (255,255,255), (self.objective[0], self.objective[1]), self.radius)
-            # if self.mode == "polygon":
-            #     if self.convexHullObstacles is not None:
-            #         pygame.draw.polygon(surface1, (200,50,50, 64), self.groupPolygonPoints)
-            #         pygame.draw.circle(surface1, (200,200,200, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
             if np.linalg.norm(self.vel2D) !=0:
                 vel2DU = self.vel2D/np.linalg.norm(self.vel2D)
                 pygame.draw.line(surface1, (255,255,255), (self.x, self.y), (self.x + vel2DU[0]*self.radius, self.y + vel2DU[1]*self.radius))
         else:
-            # Uncomment for more details about the process !
+            # Uncomment/comment for more/less details about the process !
             pygame.draw.circle(surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
             if self.mode == "circle" :
                 pygame.draw.circle(surface1, (255,0,255, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)

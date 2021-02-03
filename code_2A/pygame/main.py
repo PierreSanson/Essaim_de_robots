@@ -1,14 +1,17 @@
-import bot as Bot
+import bot 
 import pygame
 import random
 import explorerBot as eb
 import refPointBot as rpb
 import measuringBot as mb
+import swarmControl as sc
+
+from room import*
 
 pygame.init()
 
-winWidth = 1280
-winHeight = 720
+winWidth = 1600
+winHeight = 900
 win = pygame.display.set_mode((winWidth,winHeight))
 surface1 = pygame.Surface((winWidth,winHeight),  pygame.SRCALPHA) 
 
@@ -24,18 +27,56 @@ vel = 5*(60/hz)
 
 
 
-class Room():
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-        self.objects = []
-    
-    def addObjects(self, objs):
-        self.objects+=objs
+room = Room(winWidth, winHeight, win)
+
+StartX = 50
+StartY = 50
+
+EndX = 1200
+EndY = 700
+
+room.addWall((StartX,StartY), (EndX,StartY))
+room.addWall((StartX,StartY), (StartY,EndY))
+room.addWall((StartX,EndY), (EndX,EndY))
+room.addWall((EndX,StartY), (EndX,EndY))
 
 
-room = Room(winWidth, winHeight)
+StartX = 100
+StartY = 100
 
+EndX = 500
+EndY = 300
+
+room.addWall((StartX,StartY), (EndX,StartY))
+room.addWall((StartX,StartY), (StartY,EndY))
+room.addWall((StartX,EndY), (EndX,EndY))
+room.addWall((EndX,StartY), (EndX,EndY))
+def scenario2():
+    nbRefPointBots = 6
+    distRefPointBots = [110, 110]
+    refPointBots = []
+
+    for i in range(nbRefPointBots):
+        refPointBots.append(rpb.RefPointBot(random.randrange(0,winWidth), random.randrange(0,winHeight) , radius, room,color=(0,0,255), objective=None, haveObjective=False))
+    measurerBot = mb.MeasuringBot(200, 200 , 20, room, color =(255, 0, 0), objective=None, haveObjective=False)
+
+    room.addObjects(refPointBots + [measurerBot])
+
+    SC = sc.SwarmControl(measurerBot, refPointBots, distRefPointBots)
+
+    run = True 
+    while run:
+        clock.tick(hz)
+        redrawGameWindow(win, surface1)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+
+        for obj in room.objects:
+            if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, bot.Obstacle) and obj.movable):
+                obj.move(surface1)
+        win.blit(surface1, (0,0))
+        pygame.display.update() 
 
 def scenario():
     nbRefPointBots = 6
@@ -146,9 +187,9 @@ def scenario():
                 run = False
 
         
-
+        room.draw()
         for obj in room.objects:
-            if isinstance(obj, Bot.Bot) or (isinstance(obj, Bot.Obstacle) and obj.movable):
+            if isinstance(obj, eb.ExplorerBot) or (isinstance(obj, bot.Obstacle) and obj.movable):
                 obj.move(surface1)
         win.blit(surface1, (0,0))
         pygame.display.update() 
@@ -157,48 +198,48 @@ def scenario():
 def demos(nb = 1):
 
     if nb == 1 :
-        Bots = [Bot.Bot(x, y + i*100 , radius, room, [x + 1150, y + i*50], randomObjective = True, randomInterval =10) for i in range(20)]
+        Bots = [eb.ExplorerBot(x, y + i*100 , radius, room, [x + 1150, y + i*50], randomObjective = True, randomInterval =10) for i in range(20)]
 
         room.addObjects(Bots)
 
     elif nb == 2 :
-        Bots = [Bot.Bot(x+350, y +300 + i*50 , radius, room, [x + 1100, y + 50 + i*50], randomObjective = False, radiusDetection=400) for i in range(1)]
-        obstacles = [Bot.Obstacle(x+ 300 +50*i , y , 20, room) for i in range(6)]
-        obstacles2 = [Bot.Obstacle(x+ 300 +50*i , y+450 , 20, room) for i in range(6)]
-        obstacles3 = [Bot.Obstacle(x+ 600 , y+i*50, 20, room) for i in range(10)]
+        Bots = [eb.ExplorerBot(x+350, y +300 + i*50 , radius, room, [x + 1100, y + 50 + i*50], randomObjective = False, radiusDetection=400) for i in range(1)]
+        obstacles = [bot.Obstacle(x+ 300 +50*i , y , 20, room) for i in range(6)]
+        obstacles2 = [bot.Obstacle(x+ 300 +50*i , y+450 , 20, room) for i in range(6)]
+        obstacles3 = [bot.Obstacle(x+ 600 , y+i*50, 20, room) for i in range(10)]
 
         room.addObjects(Bots + obstacles + obstacles2 + obstacles3)
 
     elif nb == 3 :
-        Bot = Bot.Bot(x, y , radius, room, [x + 1150, y+650], showDetails = True)
-        # Bot2 = Bot.Bot(x+1150, y +650, radius, room, [x, y+100])
-        # Bot3 = Bot.Bot(x+1150, y +100, radius, room, [x, y+650])
-        # Bot4 = Bot.Bot(x, y +650, radius, room, [x + 1150, y+100])
+        Bot = eb.ExplorerBot(x, y , radius, room, [x + 1150, y+650], showDetails = True)
+        # Bot2 = eb.ExplorerBot(x+1150, y +650, radius, room, [x, y+100])
+        # Bot3 = eb.ExplorerBot(x+1150, y +100, radius, room, [x, y+650])
+        # Bot4 = eb.ExplorerBot(x, y +650, radius, room, [x + 1150, y+100])
         Bots = [Bot]
         obstacles = [Bot.Obstacle(random.randrange(150, 1100) , random.randrange(0, 650), 20, room) for i in range(40)]
         room.addObjects(Bots + obstacles)
 
     elif nb == 4 :
-        Bots = [Bot.Bot(x, y + i*100 , radius, room, [random.randrange(150, 1100),random.randrange(0, 650)], randomObjective = True, randomInterval = 10) for i in range(5)]
-        obstacles = [Bot.Obstacle(x + 300, y + 300, 50, room, movable = True) for i in range(1)]
+        Bots = [eb.ExplorerBot(x, y + i*100 , radius, room, [random.randrange(150, 1100),random.randrange(0, 650)], randomObjective = True, randomInterval = 10) for i in range(5)]
+        obstacles = [bot.Obstacle(x + 300, y + 300, 50, room, movable = True) for i in range(1)]
 
         room.addObjects(Bots + obstacles)
     
     elif nb == 5 :
-        Bots = [Bot.Bot(x, y + 50, radius, room, [x+1100,y])]
-        obstacles = [Bot.Obstacle(x + 200 + i*50, y, 20, room) for i in range(10)]
-        obstacles2 = [Bot.Obstacle(x + 200 + i*50, y+50, 20, room) for i in range(10)]
-        obstacles3 = [Bot.Obstacle(x + 200 + i*50, y+100, 20, room) for i in range(10)]
+        Bots = [eb.ExplorerBot(x, y + 50, radius, room, [x+1100,y])]
+        obstacles = [bot.Obstacle(x + 200 + i*50, y, 20, room) for i in range(10)]
+        obstacles2 = [bot.Obstacle(x + 200 + i*50, y+50, 20, room) for i in range(10)]
+        obstacles3 = [bot.Obstacle(x + 200 + i*50, y+100, 20, room) for i in range(10)]
 
         room.addObjects(Bots + obstacles + obstacles2+ obstacles3)
     
     elif nb == 6 :
-        Bots = [Bot.Bot(x+500, y +300 + i*50 , radius, room, [x + 1100, y + 50 + i*50], randomObjective = False) for i in range(1)]
+        Bots = [eb.ExplorerBot(x+500, y +300 + i*50 , radius, room, [x + 1100, y + 50 + i*50], randomObjective = False) for i in range(1)]
 
         for j in range(3):
-            obstacles = [Bot.Obstacle(x+ 300 +50*i , y+250*j , 20, room) for i in range(6)]
-            obstacles2 = [Bot.Obstacle(x+ 300 +50*i , y+250 +250*j , 20, room) for i in range(3)]
-            obstacles3 = [Bot.Obstacle(x+ 600 , y+i*50 +250*j, 20, room) for i in range(10)]
+            obstacles = [bot.Obstacle(x+ 300 +50*i , y+250*j , 20, room) for i in range(6)]
+            obstacles2 = [bot.Obstacle(x+ 300 +50*i , y+250 +250*j , 20, room) for i in range(3)]
+            obstacles3 = [bot.Obstacle(x+ 600 , y+i*50 +250*j, 20, room) for i in range(10)]
 
             room.addObjects(obstacles + obstacles2 + obstacles3)
         room.addObjects(Bots)
@@ -212,13 +253,10 @@ def demos(nb = 1):
                 run = False
 
         for obj in room.objects:
-            if isinstance(obj, Bot.Bot) or (isinstance(obj, Bot.Obstacle) and obj.movable):
+            if isinstance(obj, eb.ExplorerBot) or (isinstance(obj, bot.Obstacle) and obj.movable):
                 obj.move(surface1)
         win.blit(surface1, (0,0))
         pygame.display.update() 
-
-        
-
 
 
 def redrawGameWindow(win, surface1):
@@ -234,7 +272,7 @@ def redrawGameWindow(win, surface1):
 if __name__ == "__main__":
     # demos(3)
     # demos(2)
-    scenario()
+    scenario2()
 
 
     

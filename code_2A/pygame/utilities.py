@@ -1,6 +1,26 @@
 import numpy as np
 import pygame
 
+
+def distSegments(seg1,seg2):
+    minDist = np.sqrt((seg1[0][0]-seg2[0][0])**2 + (seg1[0][1]-seg2[0][1])**2)
+    points = (0,0)
+    dist2 = np.sqrt((seg1[1][0]-seg2[0][0])**2 + (seg1[1][1]-seg2[0][1])**2)
+    dist3 = np.sqrt((seg1[1][0]-seg2[1][0])**2 + (seg1[1][1]-seg2[1][1])**2)
+    dist4 = np.sqrt((seg1[0][0]-seg2[1][0])**2 + (seg1[0][1]-seg2[1][1])**2)
+
+    if dist2 < minDist:
+        minDist = dist2
+        points = (1,0)
+    elif dist3 < minDist:
+        minDist = dist3
+        points = (1,1)
+    elif dist4 < minDist:
+        minDist = dist4
+        points = (0,1)
+
+    return [minDist, points]
+
 def distObj(obj1, obj2):
     return np.sqrt((obj1.x-obj2.x)**2 + (obj1.y-obj2.y)**2) 
 
