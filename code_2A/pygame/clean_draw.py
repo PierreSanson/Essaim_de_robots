@@ -1,42 +1,4 @@
 import numpy as np
-from copy import deepcopy
-
-def old_straighten_walls(table):
-    L = len(table)      # nombre de lignes
-    C = len(table[0])   # nombre de colonnes
-
-    result = np.zeros((L,C))
-    result = result -1
-    
-    # balayage horizontal
-    outside_a_wall = True
-    for l in range(L):
-        for c in range(C):
-            if outside_a_wall and table[l,c] == 0:
-                outside_a_wall = False
-                result[l,c], result[l,c+1] = 0, 0
-            
-            if not outside_a_wall and table[l,c] == -1:
-                outside_a_wall = True
-
-    # balayage vertical
-    outside_a_wall = True
-    for c in range(C):
-        for l in range(L):
-            if outside_a_wall and table[l,c] == 0:
-                outside_a_wall = False
-                result[l,c], result[l+1,c] = 0, 0
-            
-            if not outside_a_wall and table[l,c] == -1:
-                outside_a_wall = True  
-
-    # recopier les autre couleurs que le noir
-    for l in range(L):
-        for c in range(C):
-            if table[l,c] !=0 and table[l,c] != -1:
-                result[l,c] = table[l,c]           
-            
-    return result
 
 # https://stackoverflow.com/questions/34438313/identifying-groups-of-similar-numbers-in-a-list
 def ordered_cluster(data, max_diff):
@@ -101,14 +63,71 @@ def average_index_walls(horizontal_index, vertical_index):
 
     return horizontal_averages, vertical_averages
 
+
 def closest(index,ref):
-    m, m_index = abs(index-ref[0])
+    m, m_index = abs(index-int(ref[0])), 0
     for i in range(len(ref)):
-        if abs(index-ref[i]) < m:
-            m = abs(index-ref)
+        if abs(index-int(ref[i])) < m:
+            m = abs(index-int(ref[i]))
             m_index = i
 
-    return ref[m_index]
+    return int(ref[m_index])
+
+
+def nb_neighbours(liste):
+    number = 0
+
+    for element in liste :
+        if element == 0:
+            number += 1
+
+    return number
+
+
+def not_an_error(x,y,table):
+    if table[x+1,y] == 0 and table[x+1,y+1] == 0 and table[x+1,y] == 0:
+        neighbours_indexes = [(x-1,y+1),(x-1,y),(x,y-1),(x+1,y-1),(x+1,y+2),(x,y+2),(x+2,y),(x+2,y+1)]     
+    elif table[x+1,y] == 0 and table[x+1,y-1] == 0 and table[x,y-1] == 0:
+        neighbours_indexes = [(x-1,y-1),(x-1,y),(x,y+1),(x+1,y+1),(x,y-2),(x+1,y-2),(x+2,y),(x+2,y-1)]
+    elif table[x-1,y] == 0 and table[x-1,y-1] == 0 and table[x,y-1] == 0:
+        neighbours_indexes = [(x-1,y+1),(x,y+1),(x+1,y),(x+1,y-1),(x-2,y),(x-2,y-1),(x,y-2),(x-1,y-2)]
+    elif table[x-1,y+1] == 0 and table[x,y+1] == 0 and table[x-1,y] == 0:
+        neighbours_indexes = [(x-1,y-1),(x,y-1),(x+1,y),(x+1,y+1),(x,y+2),(x-1,y+2),(x-2,y),(x-2,y+1)]
+    else:
+        return False
+
+    neighbours_values = []
+    for index in neighbours_indexes:
+        neighbours_values.append(table[index[0],index[1]])
+
+    if nb_neighbours(neighbours_values) < 4:
+        return False
+
+    return True
+
+
+def find_direction(x,y,table):
+    
+
+def clean_walls(table):
+
+    left_to_visit = []
+
+    L = len(table)      # nombre de lignes
+    C = len(table[0])   # nombre de colonnes
+
+    for l in range(L):
+        for c in range(C):
+            if table[l,c] == 0:
+                left_to_visit.append((l,c))
+
+    while len(left_to_visit) > 0:
+        (x,y) = left_to_visit.pop()
+        if not not_an_error(x,y,table): # oh que c'est vilain
+            table[x,y] = -1      
+
+    return table
+
 
 def straighten_walls(table):
 
@@ -149,9 +168,8 @@ def straighten_walls(table):
     for l in range(L):
         for c in range(C):
             if table[l,c] !=0 and table[l,c] != -1:
-                result[l,c] = table[l,c]           
+                result[l,c] = table[l,c]   
+
+    result = clean_walls(result)        
             
     return result
-
-# L= np.array([[1,2],[3,4]])
-# print(L[0,1])
