@@ -12,11 +12,12 @@ class Bot():
         self.x = x
         self.y = y
         self.radius = radius
-        self.vel2D = np.asarray([0.1,0.1])
+        self.vel2D = np.asarray([0.0001,0.0001])
+        self.lastVel2D = np.asarray([0.0001,0.0001])
         self.objective = objective
         self.radiusDetection = radiusDetection
-        self.rotationSpeed = 10
-        self.speed = 5
+        self.rotationSpeed = 16
+        self.speed = 8
         self.groupObj = []
         self.detectedObj = []
         self.groupObjPoints = []
@@ -200,6 +201,7 @@ class Bot():
             if distObjective < 0.1:
                 self.ontoObjective = True
                 self.haveObjective = False
+                self.lastVel2D = self.vel2D
                 self.vel2D = np.asarray([0,0])
                 self.groupObj = []
                 self.groupObjPoints = []
@@ -366,7 +368,7 @@ class Bot():
         self.objective[0] = coord[0]
         self.objective[1] = coord[1]
         self.ontoObjective = False
-        self.vel2D = np.asarray([0.01,0.01])
+        self.vel2D = self.lastVel2D
 
 
 
