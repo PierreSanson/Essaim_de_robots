@@ -1,6 +1,8 @@
 import bot 
 import pygame
 import random
+
+import bot as b
 import explorerBot as eb
 import refPointBot as rpb
 import measuringBot as mb
@@ -197,7 +199,9 @@ def scenario():
         pygame.display.update() 
         t+=1
 
-def demos(nb = 1):
+def demos(room, nb = 1):
+
+    room.objects = []
 
     if nb == 1 :
         Bots = [eb.ExplorerBot(x, y + i*100 , radius, room, [x + 1150, y + i*50], randomObjective = True, randomInterval =10) for i in range(20)]
@@ -218,7 +222,7 @@ def demos(nb = 1):
         # Bot3 = eb.ExplorerBot(x+1150, y +100, radius, room, [x, y+650])
         # Bot4 = eb.ExplorerBot(x, y +650, radius, room, [x + 1150, y+100])
         Bots = [Bot]
-        obstacles = [Bot.Obstacle(random.randrange(150, 1100) , random.randrange(0, 650), 20, room) for i in range(40)]
+        obstacles = [b.Obstacle(random.randrange(150, 1100) , random.randrange(0, 650), 20, room) for i in range(40)]
         room.addObjects(Bots + obstacles)
 
     elif nb == 4 :
@@ -249,7 +253,7 @@ def demos(nb = 1):
     run = True 
     while run:
         clock.tick(hz)
-        redrawGameWindow(win, surface1)
+        redrawGameWindow(room, win, surface1)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -271,6 +275,7 @@ def redrawGameWindow(win, surface1):
     
 
 
+""" 
 if __name__ == "__main__":
     # demos(3)
     # demos(2)
@@ -280,3 +285,4 @@ if __name__ == "__main__":
     
     
 pygame.quit()
+ """
