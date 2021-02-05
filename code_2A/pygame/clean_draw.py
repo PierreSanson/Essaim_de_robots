@@ -74,60 +74,228 @@ def closest(index,ref):
     return int(ref[m_index])
 
 
-def nb_neighbours(liste):
-    number = 0
-
-    for element in liste :
-        if element == 0:
-            number += 1
-
-    return number
-
-
-def not_an_error(x,y,table):
-    if table[x+1,y] == 0 and table[x+1,y+1] == 0 and table[x+1,y] == 0:
-        neighbours_indexes = [(x-1,y+1),(x-1,y),(x,y-1),(x+1,y-1),(x+1,y+2),(x,y+2),(x+2,y),(x+2,y+1)]     
-    elif table[x+1,y] == 0 and table[x+1,y-1] == 0 and table[x,y-1] == 0:
-        neighbours_indexes = [(x-1,y-1),(x-1,y),(x,y+1),(x+1,y+1),(x,y-2),(x+1,y-2),(x+2,y),(x+2,y-1)]
-    elif table[x-1,y] == 0 and table[x-1,y-1] == 0 and table[x,y-1] == 0:
-        neighbours_indexes = [(x-1,y+1),(x,y+1),(x+1,y),(x+1,y-1),(x-2,y),(x-2,y-1),(x,y-2),(x-1,y-2)]
-    elif table[x-1,y+1] == 0 and table[x,y+1] == 0 and table[x-1,y] == 0:
-        neighbours_indexes = [(x-1,y-1),(x,y-1),(x+1,y),(x+1,y+1),(x,y+2),(x-1,y+2),(x-2,y),(x-2,y+1)]
-    else:
-        return False
-
-    neighbours_values = []
-    for index in neighbours_indexes:
-        neighbours_values.append(table[index[0],index[1]])
-
-    if nb_neighbours(neighbours_values) < 4:
-        return False
-
-    return True
-
-
-def find_direction(x,y,table):
-    
-
-def clean_walls(table):
-
-    left_to_visit = []
-
+def fill_small_hole(table):
     L = len(table)      # nombre de lignes
     C = len(table[0])   # nombre de colonnes
+    max_error = 10
 
     for l in range(L):
-        for c in range(C):
-            if table[l,c] == 0:
-                left_to_visit.append((l,c))
+        row = table[l,:]
+        row = list(row)
+        nb_pop = 0
+        # on isole un vecteur qui commence et se termine par 0
+        while row[0] != 0 and len(row) > 1:
+            row.pop(0)
+            nb_pop +=1
+        while row[-1] != 0 and len(row) > 1:
+            row.pop()
 
-    while len(left_to_visit) > 0:
-        (x,y) = left_to_visit.pop()
-        if not not_an_error(x,y,table): # oh que c'est vilain
-            table[x,y] = -1      
+        if len(row) > 1:
+            # on cherche tous les trous dans la ligne
+            trous = []
+            dans_un_trou = False
+            for c in range(len(row)):
+                if row[c] == -1 and dans_un_trou == False:
+                    dans_un_trou = True
+                    nouveau_trou = [(l, nb_pop + c)]
+                elif row[c] == -1 and dans_un_trou == True:
+                    nouveau_trou.append([l, nb_pop + c])
+                elif row[c] == 0 and dans_un_trou == True:
+                    dans_un_trou = False
+                    trous.append(nouveau_trou)
+                elif row[c] == 1 or row[c] == 2 or row[c] == 3:
+                    nouveau_trou = []
+                    nouveau_trou.append("pas un trou")
+            # si les trous sont petits on les comble
+            for trou in trous:
+                if not "pas un trou" in trou:
+                    if  len(trou) < max_error:
+                        for (l,c) in trou:
+                            table[l,c] = 0
+            
+    # même chose mais pour les colonnes
+    for c in range(C):
+        col = table[:,c]
+        col = list(col)
+        nb_pop = 0
+        while col[0] != 0 and len(col) > 1:
+            col.pop(0)
+            nb_pop += 1
+        while col[-1] != 0 and len(col) > 1:
+            col.pop()
+        
+        if len(col) > 1:
+            # on cherche tous les trous dans la ligne
+            trous = []
+            dans_un_trou = False
+            for l in range(len(col)):
+                if col[l] == -1 and dans_un_trou == False:
+                    dans_un_trou = True
+                    nouveau_trou = [(nb_pop + l, c)]
+                elif col[l] == -1 and dans_un_trou == True:
+                    nouveau_trou.append([nb_pop + l, c])
+                elif col[l] == 0 and dans_un_trou == True:
+                    dans_un_trou = False
+                    trous.append(nouveau_trou)
+                elif col[l] == 1 or col[l] == 2 or col[l] == 3:
+                    nouveau_trou.append("pas un trou")
+            # si les trous sont petits on les comble
+            for trou in trous:
+                if not "pas un trou" in trou:
+                    if  len(trou) < max_error:
+                        for (l,c) in trou:
+                            table[l,c] = 0
 
     return table
 
+
+def fill_bottom_right_corner(table): # rempli les coins de type "en bas à droite" qui, expérimentalement, sont les seuls non comblés
+    row, col1, col2 = 1, 1, 2
+    
+    while row != 127 or col2 != 219:
+        #  on s'éparge le traitement de lignes inutiles
+        while (not (0 in table[row,:])) and row != 127:
+            row += 1
+            
+            col1 = 1
+            col2 = 2 
+            
+        area_index = [(row,col1),(row,col2)]
+        neighbours_index = [(row-1,col1),(row-1,col2),(row,col1-1)]
+
+        empty_area_count = 0
+        neighbours_count = 0
+        # on cherche à savoir si la zone étudiée est vide (zone = carré 2*2 ou rect 1*2)
+        for (l,c) in area_index:
+            if table[l,c] == -1:
+                empty_area_count += 1
+        # on cherche à savoir si les voisins du dessus et de gauche sont des morceaux de mur
+        for (l,c) in neighbours_index:
+            if table[l,c] == 0:
+                neighbours_count += 1
+        # si les 2 conditions sont remplies, on a identifié un coin inférieur droit vide, et on le remplit
+        if empty_area_count == 2 and neighbours_count == 3 and (table[row-1,col1-1] == -1 or table [row-2,col1-2]):
+            for (l,c) in area_index:
+                table[l,c] = 0    
+
+        # on parcourt tout le tableau en groupe de carrés 2x2
+        if col2 != 219:
+                col1 += 1
+                col2 += 1
+        else :
+            row += 1
+            col1 = 1
+            col2 = 2 
+
+    return table
+
+
+def find_square(row,col,table):
+    if table[row+1,col] == 0 and table[row+1,col+1] == 0 and table[row,col+1] == 0:
+        square_indexes = [(row,col),(row+1,col),(row+1,col+1),(row,col+1)]     
+    elif table[row+1,col] == 0 and table[row+1,col-1] == 0 and table[row,col-1] == 0:
+        square_indexes = [(row,col),(row+1,col),(row+1,col-1),(row,col-1)]
+    elif table[row-1,col] == 0 and table[row-1,col-1] == 0 and table[row,col-1] == 0:
+        square_indexes = [(row,col),(row-1,col),(row-1,col-1),(row,col-1)]
+    elif table[row-1,col+1] == 0 and table[row,col+1] == 0 and table[row-1,col] == 0:
+        square_indexes = [(row,col),(row-1,col),(row-1,col+1),(row,col+1)]
+    else:
+        return []
+
+    return square_indexes
+
+
+def neighbours_pixel(row,col):
+    return [(row-1,col),(row+1,col),(row,col-1),(row,col+1)]
+
+
+def neighbours_square(square_indexes):
+    if square_indexes == []:
+        return []
+
+    square_neighbours_indexes = []
+    for index in square_indexes:
+        row = index[0]
+        col = index[1]
+        temp =  neighbours_pixel(row,col)
+        for index in temp:
+            if not(index in square_indexes) and not(index in square_neighbours_indexes):
+                square_neighbours_indexes.append(index)
+    
+    return square_neighbours_indexes
+
+
+def find_intersections(table):
+    intersection_indexes = []
+
+    for row in range(len(table)):
+        for col in range(len(table[0])):
+            if table[row][col] == 0:
+                square_indexes = find_square(row,col,table)
+                square_neighbours_indexes = neighbours_square(square_indexes)
+                if len(square_neighbours_indexes) != 0:
+                    neighbours_count = 0
+                    for index in square_neighbours_indexes:
+                        if table[index[0],index[1]] == 0:
+                            neighbours_count += 1
+                    # si on trouve un carré duquel partent au moins trois branches
+                    if neighbours_count >= 6:
+                        if square_indexes not in intersection_indexes:
+                            intersection_indexes.append(square_indexes)
+    
+    return intersection_indexes
+
+def clean_intersections(table):
+    max_error = 10
+    intersection_indexes = find_intersections(table)
+    for list_of_indexes in intersection_indexes:
+        row1 = min([index[0] for index in list_of_indexes])
+        row2 = max([index[0] for index in list_of_indexes])
+        col1 = min([index[1] for index in list_of_indexes])
+        col2 = max([index[1] for index in list_of_indexes])
+
+        # exploration vers le bas
+        k = 0
+        while table[row2+k][col1] == 0:
+            k+=1
+        if k < max_error:
+            for row in range(row2+1,row2+k):
+                for col in [col1,col2]:
+                    if not (row,col) in list_of_indexes:
+                        table[row,col] = -1
+
+        # exploration vers le haut
+        k = 0
+        while table[row1-k][col1] == 0:
+            k+=1
+        if k < max_error:
+            for row in range(row1-2,row1-k,-1): # on met un -2 par sécurité car l'intersection peut être détectée un cran trop bas
+                for col in [col1,col2]:
+                    if not (row,col) in list_of_indexes:
+                        table[row,col] = -1
+
+        # exploration vers la droite
+        k = 0
+        while table[row1][col2+k] == 0:
+            k+=1
+        if k < max_error:
+            for row in [row1,row2]:
+                for col in range(col2+1,col2+k):
+                    if not (row,col) in list_of_indexes:
+                        table[row,col] = -1
+
+        # exploration vers la gauche
+        k = 0
+        while table[row1][col1-k] == 0:
+            k+=1
+        if k < max_error:
+            for row in [row1,row2]:
+                for col in range(col1-1,col2-k,-1):
+                    if not (row,col) in list_of_indexes:
+                        table[row,col] = -1
+
+    return table
+                  
 
 def straighten_walls(table):
 
@@ -164,12 +332,24 @@ def straighten_walls(table):
             if not outside_a_wall and table[l,c] == -1:
                 outside_a_wall = True  
 
+
     # recopier les autre couleurs que le noir
     for l in range(L):
         for c in range(C):
             if table[l,c] !=0 and table[l,c] != -1:
                 result[l,c] = table[l,c]   
 
-    result = clean_walls(result)        
-            
+    # on comble les trous
+    result = fill_small_hole(result) 
+    # et les coins
+    result = fill_bottom_right_corner(result)
+              
+    return result
+
+
+def clean_walls(table):
+    result = clean_intersections(table)
+    result = fill_bottom_right_corner((result))
+    
+    
     return result

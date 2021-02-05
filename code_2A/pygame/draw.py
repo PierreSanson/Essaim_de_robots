@@ -17,7 +17,7 @@ import sys
 # mes besoins
 import numpy as np
 import pickle
-from clean_draw import straighten_walls
+from clean_draw import straighten_walls, clean_walls
 from scipy import ndimage, misc
 
 
@@ -30,9 +30,9 @@ screen = pg.display.set_mode((sw, sh))
 pg.display.set_caption("Initial configuration")
 
 
-brushImage = pg.transform.scale(pg.image.load('./code_2A/pygame/img/brush.jpg'), (25,25))
-eraserImage = pg.transform.scale(pg.image.load('./code_2A/pygame/img/eraser.jpg'), (25,25))
-trashImage = pg.transform.scale(pg.image.load('./code_2A/pygame/img/trash.jpg'), (25,25))
+brushImage = pg.transform.scale(pg.image.load('./img/brush.jpg'), (25,25))
+eraserImage = pg.transform.scale(pg.image.load('./img/eraser.jpg'), (25,25))
+trashImage = pg.transform.scale(pg.image.load('./img/trash.jpg'), (25,25))
 
 
 def Remap(oldlow, oldhigh, newlow, newhigh, value):
@@ -84,29 +84,24 @@ class Grid(object):
         self.pos = (x, y)
         self.color = color
         self.grid = []
-        self.undoList = [[], []]
-
-        for i in range(self.xCount):
+        
+        for row in range(self.yCount):
             self.grid.append([])
-            self.undoList[0].append([])
-            self.undoList[1].append([])
-            for j in range(self.yCount):
-                self.grid[i].append(Cell(self.cellSize, self.color))
-                self.undoList[0][i].append(self.color)
-                self.undoList[1][i].append(self.color)
-
+            for column in range(self.xCount):
+                self.grid[row].append(Cell(self.cellSize, self.color))
+       
     def Draw(self, win):
-        for i in range(self.xCount):
-            for j in range(self.yCount):
-                self.grid[i][j].Draw(win, self.pos[0]+(self.cellSize*i), self.pos[1]+(self.cellSize*j))
+        for row in range(self.yCount):
+            for column in range(self.xCount):
+                self.grid[row][column].Draw(win, self.pos[0]+(self.cellSize*column), self.pos[1]+(self.cellSize*row))
 
-    def change_color(self, posx, posy, color):
+    def change_color(self, posy, posx, color):
         self.grid[posy][posx].change_color(color)
 
     def clean(self):
-        for i in range(self.xCount):
-            for j in range(self.yCount):
-                self.grid[i][j].change_color(self.color)
+        for row in range(self.yCount):
+            for column in range(self.xCount):
+                self.grid[row][column].change_color(self.color)
 
 
 
@@ -139,7 +134,7 @@ class Button(object):
             self.subsurface.blit(self.mes, (15, self.height/3))
 
         elif self.type == 2:
-            self.slideVal = Remap(-60,60,1,5,(self.pos[0]- self.drawPos[0]))
+            self.slideVal = Remap(-60,60,1,3,(self.pos[0]- self.drawPos[0]))
             pg.draw.rect(screen, (200,200,200), (self.drawPos[0]-100, self.drawPos[1]-30, 168, 60))
             pg.draw.rect(screen, (140,140,140), (self.drawPos[0]-60, self.drawPos[1]+self.height/3, 120, self.height/2))
             pg.draw.rect(screen, (220,220,220), (self.drawPos[0]-90, self.drawPos[1]+1, 20, 20))
@@ -156,12 +151,12 @@ for color in colors:
 
 colorTitleFont = pg.font.SysFont(None, 25)
 colorTitle = colorTitleFont.render("Color Palette", True, (50,50,50))
-g1 = Grid(220, 128, 6, 0, 0, [255, 255, 255])
-save_b = Button(20,790,80,40, (200, 200, 200), "S a v e", 1)
-load_b = Button(110,790,80,40, (200, 200, 200), "L o a d", 1)
-smooth_b = Button(200,790,120,40, (200, 200, 200), "S m o o t h", 1)
-straighten_b  = Button(330,790,160,40, (200, 200, 200), "S t r ai g h t e n", 1)
-SL_Buttons = [save_b, load_b, smooth_b, straighten_b]
+g1 = Grid(220, 128, 6, 0, 0)
+save_b = Button(20,790,85,40, (200, 200, 200), "S a v e", 1)
+load_b = Button(120,790,85,40, (200, 200, 200), "L o a d", 1)
+straighten_b  = Button(220,790,160,40, (200, 200, 200), "S t r a i g h t e n", 1)
+clean_b = Button(400,790,95,40, (200, 200, 200), "C l e a n", 1)
+SL_Buttons = [save_b, load_b, straighten_b, clean_b]
 
 S_brushSize = Button(1450, 305, 10,20, (240,240,240), "Brush Size", 2)
 S_eraserSize = Button(1450, 225, 10,20, (240,240,240), "Eraser Size", 2)
@@ -189,7 +184,6 @@ eraserSize = 3
 round = -1
 clock = pg.time.Clock()
 holdingCTRL = False
-undone = False
 mouseRelPosX = 0
 mouseRelPosY = 0
 
@@ -217,20 +211,13 @@ def paint(var):
         sizeToDraw = eraserSize
 
     if sizeToDraw == 1:
-        mouseRelPosX = max(penSize - 1, min(g1.xCount - 1, int(Remap(0, (g1.cellSize * g1.xCount), 0, g1.xCount, pg.mouse.get_pos()[0]))))
         mouseRelPosY = max(penSize - 1, min(g1.yCount - 1, int(Remap(0, (g1.cellSize * g1.yCount), 0, g1.yCount, pg.mouse.get_pos()[1]))))
+        mouseRelPosX = max(penSize - 1, min(g1.xCount - 1, int(Remap(0, (g1.cellSize * g1.xCount), 0, g1.xCount, pg.mouse.get_pos()[0]))))
         g1.change_color(mouseRelPosY, mouseRelPosX, colorUsing)
+
     if sizeToDraw == 2:
-        mouseRelPosX = max(penSize - 1, min(g1.xCount - 2, int(Remap(0, (g1.cellSize * g1.xCount), 0, g1.xCount, pg.mouse.get_pos()[0]))))
-        mouseRelPosY = max(penSize - 1, min(g1.yCount - 2, int(Remap(0, (g1.cellSize * g1.yCount), 0, g1.yCount, pg.mouse.get_pos()[1]))))
-        g1.change_color(mouseRelPosY, mouseRelPosX, colorUsing)
-        g1.change_color(mouseRelPosY - 1, mouseRelPosX, colorUsing)
-        g1.change_color(mouseRelPosY, mouseRelPosX - 1, colorUsing)
-        g1.change_color(mouseRelPosY, mouseRelPosX + 1, colorUsing)
-        g1.change_color(mouseRelPosY + 1, mouseRelPosX, colorUsing)
-    if sizeToDraw == 3:
-        mouseRelPosX = max(penSize - 2, min(g1.xCount - 2, int(Remap(0, (g1.cellSize * g1.xCount), 0, g1.xCount, pg.mouse.get_pos()[0]))))
         mouseRelPosY = max(penSize - 2, min(g1.yCount - 2, int(Remap(0, (g1.cellSize * g1.yCount), 0, g1.yCount, pg.mouse.get_pos()[1]))))
+        mouseRelPosX = max(penSize - 2, min(g1.xCount - 2, int(Remap(0, (g1.cellSize * g1.xCount), 0, g1.xCount, pg.mouse.get_pos()[0]))))
         g1.change_color(mouseRelPosY, mouseRelPosX, colorUsing)
         g1.change_color(mouseRelPosY - 1, mouseRelPosX, colorUsing)
         g1.change_color(mouseRelPosY, mouseRelPosX - 1, colorUsing)
@@ -240,25 +227,10 @@ def paint(var):
         g1.change_color(mouseRelPosY - 1, mouseRelPosX - 1, colorUsing)
         g1.change_color(mouseRelPosY - 1, mouseRelPosX + 1, colorUsing)
         g1.change_color(mouseRelPosY + 1, mouseRelPosX - 1, colorUsing)
-    if sizeToDraw == 4:
-        mouseRelPosX = max(penSize - 2, min(g1.xCount - 3, int(Remap(0, (g1.cellSize * g1.xCount), 0, g1.xCount, pg.mouse.get_pos()[0]))))
-        mouseRelPosY = max(penSize - 2, min(g1.yCount - 3, int(Remap(0, (g1.cellSize * g1.yCount), 0, g1.yCount, pg.mouse.get_pos()[1]))))
-        g1.change_color(mouseRelPosY, mouseRelPosX, colorUsing)
-        g1.change_color(mouseRelPosY - 1, mouseRelPosX, colorUsing)
-        g1.change_color(mouseRelPosY, mouseRelPosX - 1, colorUsing)
-        g1.change_color(mouseRelPosY, mouseRelPosX + 1, colorUsing)
-        g1.change_color(mouseRelPosY + 1, mouseRelPosX, colorUsing)
-        g1.change_color(mouseRelPosY + 1, mouseRelPosX + 1, colorUsing)
-        g1.change_color(mouseRelPosY - 1, mouseRelPosX - 1, colorUsing)
-        g1.change_color(mouseRelPosY - 1, mouseRelPosX + 1, colorUsing)
-        g1.change_color(mouseRelPosY + 1, mouseRelPosX - 1, colorUsing)
-        g1.change_color(mouseRelPosY, mouseRelPosX - 2, colorUsing)
-        g1.change_color(mouseRelPosY, mouseRelPosX + 2, colorUsing)
-        g1.change_color(mouseRelPosY + 2, mouseRelPosX, colorUsing)
-        g1.change_color(mouseRelPosY - 2, mouseRelPosX, colorUsing)
-    if sizeToDraw == 5:
-        mouseRelPosX = max(penSize - 3, min(g1.xCount - 3, int(Remap(0, (g1.cellSize * g1.xCount), 0, g1.xCount, pg.mouse.get_pos()[0]))))
+    
+    if sizeToDraw == 3:
         mouseRelPosY = max(penSize - 3, min(g1.yCount - 3, int(Remap(0, (g1.cellSize * g1.yCount), 0, g1.yCount, pg.mouse.get_pos()[1]))))
+        mouseRelPosX = max(penSize - 3, min(g1.xCount - 3, int(Remap(0, (g1.cellSize * g1.xCount), 0, g1.xCount, pg.mouse.get_pos()[0]))))
         g1.change_color(mouseRelPosY, mouseRelPosX, colorUsing)
         g1.change_color(mouseRelPosY - 1, mouseRelPosX, colorUsing)
         g1.change_color(mouseRelPosY, mouseRelPosX - 1, colorUsing)
@@ -316,7 +288,7 @@ def SaveFile(gridObject, filePath):
 
     if filePath:
         
-        if len(filePath) >= 7:  # This just makes sure we have .txt at the end of our file selection
+        if len(filePath) >= 7:  # This just makes sure we have .pickle at the end of our file selection
             if filePath[-7:] != '.pickle':
                 filePath = filePath + '.pickle'
         else:
@@ -324,10 +296,10 @@ def SaveFile(gridObject, filePath):
         
         file = open(filePath, "wb")
 
-        fileTable = np.zeros((220,128))
+        fileTable = np.zeros((128,220))
 
-        for row in range(len(gridObject.grid)):
-            for column in range(len(gridObject.grid[row])):
+        for row in range(gridObject.yCount):
+            for column in range(gridObject.xCount):
                 if gridObject.grid[row][column].color[0] == 0 and gridObject.grid[row][column].color[1] == 0 and gridObject.grid[row][column].color[2] == 0:      # 0 pour un mur (noir)
                     fileTable[row][column] = 0
                 elif gridObject.grid[row][column].color[0] == 255 and gridObject.grid[row][column].color[1] == 0:  # 1 pour un mesureur (rouge) ####### on y rentre dans tous les cas pour du blanc 
@@ -355,31 +327,30 @@ def OpenFile(filePath):
         colors = pickle.load(file)
         file.close()
 
-        for i in range(g1.xCount):
-            for j in range(g1.yCount):
-                if colors[i][j] == 0:
-                    g1.change_color(j,i,[0,0,0])
-                elif colors[i][j] == 1:
-                    g1.change_color(j,i,[255,0,0])
-                elif colors[i][j] == 2:
-                    g1.change_color(j,i,[0,255,0])
-                elif colors[i][j] == 3:
-                    g1.change_color(j,i,[0,0,255])
+        for row in range(g1.yCount):
+            for column in range(g1.xCount):
+                if colors[row][column] == 0:
+                    g1.change_color(row,column,[0,0,0])
+                elif colors[row][column] == 1:
+                    g1.change_color(row,column,[255,0,0])
+                elif colors[row][column] == 2:
+                    g1.change_color(row,column,[0,255,0])
+                elif colors[row][column] == 3:
+                    g1.change_color(row,column,[0,0,255])
                 else:
-                    g1.change_color(j,i,[255,255,255])     
+                    g1.change_color(row,column,[255,255,255])     
         
         filePathList = filePath.split("/")
         fileName = filePathList[-1]
         pg.display.set_caption("Initial configuration - " + fileName)
 
 
-def Smooth(gridObject,Size):
-    global g1
+def Clean(gridObject):
+    
+    colors = np.zeros((128,220))
 
-    colors = np.zeros((220,128))
-
-    for row in range(len(gridObject.grid)):
-            for column in range(len(gridObject.grid[row])):
+    for row in range(gridObject.yCount):
+            for column in range(gridObject.xCount):
                 if gridObject.grid[row][column].color[0] == 0 and gridObject.grid[row][column].color[1] == 0 and gridObject.grid[row][column].color[2] == 0:      # 0 pour un mur (noir)
                     colors[row][column] = 0
                 elif gridObject.grid[row][column].color[0] == 255 and gridObject.grid[row][column].color[1] == 0:  # 1 pour un mesureur (rouge) ####### on y rentre dans tous les cas pour du blanc 
@@ -391,26 +362,25 @@ def Smooth(gridObject,Size):
                 else:                                               # -1 pour rien du tout
                     colors[row][column] = -1 
 
-    colors = ndimage.median_filter(colors, size=Size)
+    colors = clean_walls(colors)
 
-    for i in range(g1.xCount):
-            for j in range(g1.yCount):
-                if colors[i][j] == 0:
-                    g1.change_color(j,i,[0,0,0])
-                elif colors[i][j] == 1:
-                    g1.change_color(j,i,[255,0,0])
-                elif colors[i][j] == 2:
-                    g1.change_color(j,i,[0,255,0])
-                elif colors[i][j] == 3:
-                    g1.change_color(j,i,[0,0,255])
+    for row in range(gridObject.yCount):
+            for column in range(gridObject.xCount):
+                if colors[row][column] == 0:
+                    gridObject.change_color(row,column,[0,0,0])
+                elif colors[row][column] == 1:
+                    gridObject.change_color(row,column,[255,0,0])
+                elif colors[row][column] == 2:
+                    gridObject.change_color(row,column,[0,255,0])
+                elif colors[row][column] == 3:
+                    gridObject.change_color(row,column,[0,0,255])
                 else:
-                    g1.change_color(j,i,[255,255,255])
+                    gridObject.change_color(row,column,[255,255,255])     
 
 
 def Straighten(gridObject):
-    global g1
-
-    colors = np.zeros((220,128))
+    
+    colors = np.zeros((128,220))
 
     for row in range(len(gridObject.grid)):
             for column in range(len(gridObject.grid[row])):
@@ -425,24 +395,25 @@ def Straighten(gridObject):
                 else:                                               # -1 pour rien du tout
                     colors[row][column] = -1 
 
-    colors = straighten_walls(colors)
+    while not np.equal(colors,straighten_walls(colors)).all():
+        colors = straighten_walls(colors)
 
-    for i in range(g1.xCount):
-            for j in range(g1.yCount):
-                if colors[i][j] == 0:
-                    g1.change_color(j,i,[0,0,0])
-                elif colors[i][j] == 1:
-                    g1.change_color(j,i,[255,0,0])
-                elif colors[i][j] == 2:
-                    g1.change_color(j,i,[0,255,0])
-                elif colors[i][j] == 3:
-                    g1.change_color(j,i,[0,0,255])
+    for row in range(g1.yCount):
+            for column in range(g1.xCount):
+                if colors[row][column] == 0:
+                    g1.change_color(row,column,[0,0,0])
+                elif colors[row][column] == 1:
+                    g1.change_color(row,column,[255,0,0])
+                elif colors[row][column] == 2:
+                    g1.change_color(row,column,[0,255,0])
+                elif colors[row][column] == 3:
+                    g1.change_color(row,column,[0,0,255])
                 else:
-                    g1.change_color(j,i,[255,255,255])
+                    g1.change_color(row,column,[255,255,255])    
 
 
 def key_event_up(event):
-    global penSize, undone, holdingCTRL, selectedTool
+    global penSize, holdingCTRL, selectedTool
 
     if event.key == pg.K_e:
         selectedTool = 1
@@ -465,13 +436,6 @@ def key_event_up(event):
 
 while True:
     clock.tick(240)
-
-    if undone:
-        for i in range(g1.xCount):
-            for j in range(g1.yCount):
-                    g1.undoList[0][i][j] = g1.grid[i][j].color
-                    g1.undoList[1][i][j] = g1.grid[i][j].color
-        undone = False
 
     for event in pg.event.get():
         if event.type == pg.QUIT:
@@ -505,9 +469,9 @@ while True:
                                 cPath = FileManager(0)
                                 OpenFile(cPath)
                             elif i == 2:
-                                Smooth(g1,4)
-                            elif i == 3:
                                 Straighten(g1)
+                            elif i == 3:
+                                Clean(g1)
                            
                     for but in B_Buttons:
                         if but.rollOver:
@@ -526,12 +490,6 @@ while True:
             if event.button == 3:
                 selectedTool = selectedToolBefore
             elif event.button == 1:
-                for i in range(g1.xCount):
-                    for j in range(g1.yCount):
-                        if round == -1:
-                            g1.undoList[0][i][j] = g1.grid[i][j].color
-                        if round == 1:
-                            g1.undoList[1][i][j] = g1.grid[i][j].color
                 round *= -1
                 clicking = False
 
