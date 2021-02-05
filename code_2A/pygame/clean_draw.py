@@ -332,7 +332,6 @@ def straighten_walls(table):
             if not outside_a_wall and table[l,c] == -1:
                 outside_a_wall = True  
 
-
     # recopier les autre couleurs que le noir
     for l in range(L):
         for c in range(C):

@@ -20,7 +20,11 @@ mytheme = pygame_menu.themes.THEME_DEFAULT.copy()
 mytheme.title_bar_style = pygame_menu.widgets.MENUBAR_STYLE_SIMPLE
 mytheme.selection_color = (0,0,0)
 
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> ac19b1c29009f16d3831d7969759b7144ebcf916
 # -------------------
 # "Create your own scenario" menu
 # -------------------
