@@ -206,7 +206,10 @@ def find_square(row,col,table):
 
 
 def neighbours_pixel(row,col):
-    return [(row-1,col),(row+1,col),(row,col-1),(row,col+1)]
+    if row <= 126 and row >= 1 and col >= 1 and col <= 218:
+        return [(row-1,col),(row+1,col),(row,col-1),(row,col+1)]
+    else :
+        return [] # grosse flemme
 
 
 def neighbours_square(square_indexes):
@@ -346,9 +349,94 @@ def straighten_walls(table):
     return result
 
 
-def clean_walls(table):
-    result = clean_intersections(table)
-    result = fill_bottom_right_corner((result))
+def find_color_groups(color, table):
+    already_visited = []
+    left_to_visit = []
+    for Row in range(0,len(table)-1): # on évite les bords, car voisins pas définis correctement      
+        for Col in range(0,len(table[0])-1):
+            if table[Row,Col] != color:
+                already_visited.append((Row,Col))
+            else :
+                left_to_visit.append((Row,Col))
+
+
+    print("done")
+
+    color_groups = []
+    for (Row,Col) in left_to_visit:
+
+            if not (Row,Col) in already_visited:
+                
+                color_group_indexes = [(Row,Col)]
+                already_visited.append((Row,Col))
+                neighbours_indexes = neighbours_pixel(Row,Col)
+                to_check = []
+                print(to_check)
+
+                for index in neighbours_indexes:
+                    if not index in already_visited:
+                        to_check.append(index)
+
+                while len(to_check) > 0:
+                    print(to_check)
+                    (row,col) = to_check.pop()
+                    already_visited.append((row,col))
+                    
+                    if not (row,col) in color_group_indexes: 
+                        color_group_indexes.append((row,col))
+                        neighbours_indexes = neighbours_pixel(row,col)
+                        for index in neighbours_indexes:
+                            if not index in already_visited:
+                                if not index in to_check:
+                                    to_check.append(index)
+                                        
+                                    
+                color_groups.append(color_group_indexes)
     
+    return color_groups
+    
+
+def clean_robots(table):
+    red_groups = find_color_groups(1,table)
+    green_groups = find_color_groups(2,table)
+    blue_groups = find_color_groups(3,table)
+
+    for red_group_indexes in red_groups:
+        rows = []
+        cols = []
+        for (row,col) in red_group_indexes:
+            table[row,col] = -1
+            rows.append(row)
+            cols.append(col)
+        
+        print(int(np.floor(np.mean(rows))))
+        table[int(np.floor(np.mean(rows))),int(np.floor(np.mean(cols)))] = 1
+
+    for green_group_indexes in green_groups:
+        rows = []
+        cols = []
+        for (row,col) in green_group_indexes:
+            table[row,col] = -1
+            rows.append(row)
+            cols.append(col)
+        
+        table[int(np.floor(np.mean(rows))),int(np.floor(np.mean(cols)))] = 2
+
+    for blue_group_indexes in blue_groups:
+        rows = []
+        cols = []
+        for (row,col) in blue_group_indexes:
+            table[row,col] = -1
+            rows.append(row)
+            cols.append(col)
+        
+        table[int(np.floor(np.mean(rows))),int(np.floor(np.mean(cols)))] = 3
+
+    return table
+
+
+def clean_walls_and_robots(table):
+    result = clean_intersections(table)
+    result = clean_robots(result)  
     
     return result
