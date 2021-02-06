@@ -352,7 +352,7 @@ def Straighten(gridObject):
                     gridObject.change_color(row,column,[255,255,255])    
 
 
-def key_event_up(event, holdingCTRL, gridObject, B_Buttons):
+def key_event_up(event, holdingCTRL, gridObject, B_Buttons, selected_tool):
     
     if event.key == pg.K_e:
         selectedTool = 1
@@ -367,10 +367,13 @@ def key_event_up(event, holdingCTRL, gridObject, B_Buttons):
             if B_Buttons.index(subbutton) != selectedTool:
                 subbutton.clicked = False
 
-    if event.key == pg.K_s:
+    elif event.key == pg.K_s:
         if holdingCTRL:
             shortcutPath = FileManager(1)
             SaveFile(gridObject, shortcutPath)
+
+    else :
+        return selected_tool
 
     return selectedTool
 
@@ -381,11 +384,10 @@ def key_event_up(event, holdingCTRL, gridObject, B_Buttons):
 
 def draw_initial_config():
 
-    pg.init()
     sys.setrecursionlimit(10000)
 
-    sw, sh = 1551, 854
-    screen = pg.display.set_mode((sw, sh))
+    sw, sh = 1600, 900
+    screen = pg.display.set_mode((sw, sh),pg.SCALED)
     pg.display.set_caption("Initial configuration")
 
 
@@ -437,13 +439,16 @@ def draw_initial_config():
 
     positions = [(1357, 406), (1382, 406), (1407, 406), (1432, 406)]
 
-    while True:
+    run = True
+
+    while run:
         clock.tick(240)
 
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                pg.quit()  ################################################################################################################################################################
-                sys.exit()
+                run = False
+                # pg.quit()  ################################################################################################
+                # sys.exit()
 
             if event.type == pg.MOUSEBUTTONDOWN:
                 if event.button == 3:
@@ -530,7 +535,7 @@ def draw_initial_config():
                     holdingCTRL = True
 
             if event.type == pg.KEYUP:
-                selectedTool = key_event_up(event, holdingCTRL, g1, B_Buttons)
+                selectedTool = key_event_up(event, holdingCTRL, g1, B_Buttons, selectedTool)
 
         colorUsing = tool_activate(selectedTool,selectedColor,g1)
 
@@ -568,7 +573,3 @@ def draw_initial_config():
                 pg.draw.circle(screen, (50,50,50), (pg.mouse.get_pos()), int(S_eraserSize.slideVal) * 8, 1)
 
         pg.display.update()
-
-
-
-draw_initial_config()

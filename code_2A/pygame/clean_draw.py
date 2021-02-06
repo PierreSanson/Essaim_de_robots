@@ -359,9 +359,6 @@ def find_color_groups(color, table):
             else :
                 left_to_visit.append((Row,Col))
 
-
-    print("done")
-
     color_groups = []
     for (Row,Col) in left_to_visit:
 
@@ -371,14 +368,12 @@ def find_color_groups(color, table):
                 already_visited.append((Row,Col))
                 neighbours_indexes = neighbours_pixel(Row,Col)
                 to_check = []
-                print(to_check)
 
                 for index in neighbours_indexes:
                     if not index in already_visited:
                         to_check.append(index)
 
                 while len(to_check) > 0:
-                    print(to_check)
                     (row,col) = to_check.pop()
                     already_visited.append((row,col))
                     
@@ -409,7 +404,6 @@ def clean_robots(table):
             rows.append(row)
             cols.append(col)
         
-        print(int(np.floor(np.mean(rows))))
         table[int(np.floor(np.mean(rows))),int(np.floor(np.mean(cols)))] = 1
 
     for green_group_indexes in green_groups:
