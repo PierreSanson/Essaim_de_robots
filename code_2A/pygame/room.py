@@ -11,9 +11,21 @@ class Room():
     def addObjects(self, objs):
         self.objects+=objs
 
-    def addWall(self, startCoords, endCoords):
-        self.walls.append([startCoords, endCoords])
+    def addWall(self, corners):
+        self.walls.append(corners)
 
-    def draw(self):
-        for line in self.walls:
-            pygame.draw.line(self.win, (255,255,255), (line[0][0], line[0][1]), (line[1][0], line[1][1]))
+    def draw_walls(self):
+        for corners in self.walls:
+            orientation = corners.pop()
+
+            x_start = corners[0][1] # on fait bien attention entre x et y au sens d'un graphe Vs row et col pour numpy
+            y_start = corners[0][0]
+
+            if orientation == 'v':
+                width = corners[1][1] - corners[0][1]
+                height = corners[3][0] - corners[0][0]
+            elif orientation == 'h':
+                width = corners[3][1] - corners[0][1]
+                height = corners[1][0] - corners[0][0]
+            
+            pygame.draw.rect(self.win, (255,100,100), x_start, y_start, width, height)

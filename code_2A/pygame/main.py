@@ -1,7 +1,7 @@
-import bot 
 import pygame
 import random
 
+import bot
 import bot as b
 import explorerBot as eb
 import refPointBot as rpb
@@ -27,32 +27,9 @@ y = 60
 radius = 15
 vel = 5*(60/hz)
 
-
-
 room = Room(winWidth, winHeight, win)
 
-StartX = 50
-StartY = 50
 
-EndX = 1200
-EndY = 700
-
-room.addWall((StartX,StartY), (EndX,StartY))
-room.addWall((StartX,StartY), (StartY,EndY))
-room.addWall((StartX,EndY), (EndX,EndY))
-room.addWall((EndX,StartY), (EndX,EndY))
-
-
-StartX = 100
-StartY = 100
-
-EndX = 500
-EndY = 300
-
-room.addWall((StartX,StartY), (EndX,StartY))
-room.addWall((StartX,StartY), (StartY,EndY))
-room.addWall((StartX,EndY), (EndX,EndY))
-room.addWall((EndX,StartY), (EndX,EndY))
 def scenario2():
     nbRefPointBots = 12
     distRefPointBots = [100, 110]
@@ -81,6 +58,7 @@ def scenario2():
                 obj.move(surface1)
         win.blit(surface1, (0,0))
         pygame.display.update() 
+
 
 def scenario():
     nbRefPointBots = 6
@@ -199,6 +177,7 @@ def scenario():
         pygame.display.update() 
         t+=1
 
+
 def demos(room, nb = 1):
 
     room.objects = []
@@ -270,6 +249,7 @@ def redrawGameWindow(room, win, surface1):
     surface1.fill((255,255,255,64))  
     for obj in room.objects:
         obj.draw(win, surface1)
+    room.draw_walls
     # win.blit(surface1, (0,0))
     # pygame.display.update() 
     

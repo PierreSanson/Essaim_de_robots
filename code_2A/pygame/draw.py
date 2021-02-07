@@ -18,7 +18,6 @@ import sys
 import numpy as np
 import pickle
 from clean_draw import straighten_walls, clean_walls_and_robots
-from scipy import ndimage, misc
 
 
 def Remap(oldlow, oldhigh, newlow, newhigh, value):
@@ -387,7 +386,7 @@ def draw_initial_config():
     sys.setrecursionlimit(10000)
 
     sw, sh = 1600, 900
-    screen = pg.display.set_mode((sw, sh),pg.SCALED)
+    screen = pg.display.set_mode((sw, sh))
     pg.display.set_caption("Initial configuration")
 
 

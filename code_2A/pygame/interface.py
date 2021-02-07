@@ -7,6 +7,7 @@ from refPointBot import RefPointBot
 from explorerBot import ExplorerBot
 
 from draw import draw_initial_config
+from drawing_to_simulation import load_and_launch_simulation
 
 pygame.init()
 
@@ -25,12 +26,13 @@ mytheme.selection_color = (0,0,0)
 
 
 # -------------------
-# "Create your own scenario" menu
+# "Custom Simlulation" menu
 # -------------------
 
-scenario_menu = pygame_menu.Menu(400, 600, 'Create your own scenario', mouse_motion_selection=True, theme=mytheme)
+scenario_menu = pygame_menu.Menu(400, 600, 'Custom Simulation', mouse_motion_selection=True, theme=mytheme)
 
 scenario_menu.add_button('Initial configuration sketcher', draw_initial_config)
+scenario_menu.add_button('Load and launch simulation', load_and_launch_simulation)
 scenario_menu.add_vertical_margin(100)
 scenario_menu.add_button('Return to main menu', pygame_menu.events.BACK)
 
