@@ -31,14 +31,14 @@ def scenario2():
 
     room = Room(winWidth, winHeight, win)
 
-    nbRefPointBots = 12
+    nbRefPointBots = 8
 
     distRefPointBots = [100, 110]
     refPointBots = []
 
     for i in range(nbRefPointBots):
         refPointBots.append(rpb.RefPointBot(random.randrange(0,winWidth), random.randrange(0,winHeight) , radius, room,color=(0,0,255), objective=None, haveObjective=False))
-    measurerBot = mb.MeasuringBot(200, 200 , 20, room, color =(255, 0, 0), objective=None, haveObjective=False)
+    measurerBot = mb.MeasuringBot(200, 400 , 20, room, color =(255, 0, 0), objective=None, haveObjective=False)
 
     room.addObjects(refPointBots + [measurerBot])
     ExplorerBots = [eb.ExplorerBot(300 + 60*i,  350 , radius, room, [300 + 60*i, 700], randomObjective = True, randomInterval =1, color=(0, 255, 0)) for i in range(3)]
@@ -51,7 +51,7 @@ def scenario2():
     run = True 
     while run:
         clock.tick(hz)
-        redrawGameWindow(win, surface1)
+        redrawGameWindow(room, win, surface1)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -297,7 +297,6 @@ def redrawGameWindow(room, win, surface1):
     
 
 
-""" 
 if __name__ == "__main__":
     # demos(3)
     # demos(2)
@@ -307,4 +306,3 @@ if __name__ == "__main__":
     
     
 pygame.quit()
- """

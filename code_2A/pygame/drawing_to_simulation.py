@@ -152,7 +152,7 @@ def drawing_to_simulation(table):
 
     room.addObjects(bots)
 
-    SC = sc.SwarmControl(measuringBots[0], refPointBots)
+    SC = sc.SwarmController(screen, measuringBots[0], refPointBots)
     SC.initMove()
 
     return room, SC, measuringBots, explorerBots, refPointBots  
