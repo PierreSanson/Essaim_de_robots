@@ -10,27 +10,27 @@ import swarmControl as sc
 
 from room import*
 
-pygame.init()
-
-winWidth = 1600
-winHeight = 900
-win = pygame.display.set_mode((winWidth,winHeight))
-surface1 = pygame.Surface((winWidth,winHeight),  pygame.SRCALPHA) 
-
-pygame.display.set_caption("First Game")
-
-clock = pygame.time.Clock()
-hz = 60
-
-x = 60
-y = 60
-radius = 15
-vel = 5*(60/hz)
-
-room = Room(winWidth, winHeight, win)
-
 
 def scenario2():
+
+    pygame.init()
+
+    winWidth = 1600
+    winHeight = 900
+    win = pygame.display.set_mode((winWidth,winHeight))
+    surface1 = pygame.Surface((winWidth,winHeight),  pygame.SRCALPHA) 
+
+    clock = pygame.time.Clock()
+    hz = 60
+
+    x = 60
+    y = 60
+    radius = 15
+    vel = 5*(60/hz)
+
+
+    room = Room(winWidth, winHeight, win)
+
     nbRefPointBots = 12
     distRefPointBots = [100, 110]
     refPointBots = []
@@ -61,6 +61,25 @@ def scenario2():
 
 
 def scenario():
+
+    pygame.init()
+
+    winWidth = 1600
+    winHeight = 900
+    win = pygame.display.set_mode((winWidth,winHeight))
+    surface1 = pygame.Surface((winWidth,winHeight),  pygame.SRCALPHA) 
+
+    pygame.display.set_caption("First Game")
+
+    clock = pygame.time.Clock()
+    hz = 60
+
+    x = 60
+    y = 60
+    radius = 15
+    vel = 5*(60/hz)
+
+
     nbRefPointBots = 6
     distRefPointBots = [100, 110]
     refPointBots = []
@@ -163,7 +182,7 @@ def scenario():
 
                 
         clock.tick(hz)
-        redrawGameWindow(win, surface1)
+        redrawGameWindow(room, win, surface1)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -179,6 +198,24 @@ def scenario():
 
 
 def demos(room, nb = 1):
+
+    pygame.init()
+
+    winWidth = 1600
+    winHeight = 900
+    win = pygame.display.set_mode((winWidth,winHeight))
+    surface1 = pygame.Surface((winWidth,winHeight),  pygame.SRCALPHA) 
+
+    pygame.display.set_caption("First Game")
+
+    clock = pygame.time.Clock()
+    hz = 60
+
+    x = 60
+    y = 60
+    radius = 15
+    vel = 5*(60/hz)
+
 
     room.objects = []
 
@@ -249,7 +286,7 @@ def redrawGameWindow(room, win, surface1):
     surface1.fill((255,255,255,64))  
     for obj in room.objects:
         obj.draw(win, surface1)
-    room.draw_walls
+    room.draw_walls()
     # win.blit(surface1, (0,0))
     # pygame.display.update() 
     

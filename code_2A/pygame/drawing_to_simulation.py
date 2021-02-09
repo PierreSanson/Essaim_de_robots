@@ -174,7 +174,7 @@ def load_and_launch_simulation():
     run = True 
     while run:
         clock.tick(hz)
-        redrawGameWindow(room,win, surface1)
+        redrawGameWindow(room, win, surface1)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False

@@ -16,7 +16,7 @@ class Room():
 
     def draw_walls(self):
         for corners in self.walls:
-            orientation = corners.pop()
+            orientation = corners[-1]
 
             x_start = corners[0][1] # on fait bien attention entre x et y au sens d'un graphe Vs row et col pour numpy
             y_start = corners[0][0]
@@ -28,4 +28,5 @@ class Room():
                 width = corners[3][1] - corners[0][1]
                 height = corners[1][0] - corners[0][0]
             
-            pygame.draw.rect(self.win, (255,100,100), x_start, y_start, width, height)
+            pygame.draw.rect(self.win, (200,200,200), (x_start, y_start, width, height))
+        
