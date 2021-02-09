@@ -1,6 +1,8 @@
-import bot 
 import pygame
 import random
+
+import bot
+import bot as b
 import explorerBot as eb
 import refPointBot as rpb
 import measuringBot as mb
@@ -8,51 +10,29 @@ import swarmControl as sc
 
 from room import*
 
-pygame.init()
 
-winWidth = 1600
-winHeight = 900
-win = pygame.display.set_mode((winWidth,winHeight))
-surface1 = pygame.Surface((winWidth,winHeight),  pygame.SRCALPHA) 
-
-pygame.display.set_caption("First Game")
-
-clock = pygame.time.Clock()
-hz = 60
-
-x = 60
-y = 60
-radius = 15
-vel = 5*(60/hz)
-
-
-
-room = Room(winWidth, winHeight, win)
-
-StartX = 50
-StartY = 50
-
-EndX = 1200
-EndY = 700
-
-room.addWall((StartX,StartY), (EndX,StartY))
-room.addWall((StartX,StartY), (StartY,EndY))
-room.addWall((StartX,EndY), (EndX,EndY))
-room.addWall((EndX,StartY), (EndX,EndY))
-
-
-StartX = 100
-StartY = 100
-
-EndX = 500
-EndY = 300
-
-room.addWall((StartX,StartY), (EndX,StartY))
-room.addWall((StartX,StartY), (StartY,EndY))
-room.addWall((StartX,EndY), (EndX,EndY))
-room.addWall((EndX,StartY), (EndX,EndY))
 def scenario2():
-    nbRefPointBots = 8
+
+    pygame.init()
+
+    winWidth = 1600
+    winHeight = 900
+    win = pygame.display.set_mode((winWidth,winHeight))
+    surface1 = pygame.Surface((winWidth,winHeight),  pygame.SRCALPHA) 
+
+    clock = pygame.time.Clock()
+    hz = 60
+
+    x = 60
+    y = 60
+    radius = 15
+    vel = 5*(60/hz)
+
+
+    room = Room(winWidth, winHeight, win)
+
+    nbRefPointBots = 12
+
     distRefPointBots = [100, 110]
     refPointBots = []
 
@@ -84,7 +64,27 @@ def scenario2():
         win.blit(surface1, (0,0))
         pygame.display.update() 
 
+
 def scenario():
+
+    pygame.init()
+
+    winWidth = 1600
+    winHeight = 900
+    win = pygame.display.set_mode((winWidth,winHeight))
+    surface1 = pygame.Surface((winWidth,winHeight),  pygame.SRCALPHA) 
+
+    pygame.display.set_caption("First Game")
+
+    clock = pygame.time.Clock()
+    hz = 60
+
+    x = 60
+    y = 60
+    radius = 15
+    vel = 5*(60/hz)
+
+
     nbRefPointBots = 6
     distRefPointBots = [100, 110]
     refPointBots = []
@@ -187,7 +187,7 @@ def scenario():
 
                 
         clock.tick(hz)
-        redrawGameWindow(win, surface1)
+        redrawGameWindow(room, win, surface1)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -201,7 +201,28 @@ def scenario():
         pygame.display.update() 
         t+=1
 
-def demos(nb = 1):
+
+def demos(room, nb = 1):
+
+    pygame.init()
+
+    winWidth = 1600
+    winHeight = 900
+    win = pygame.display.set_mode((winWidth,winHeight))
+    surface1 = pygame.Surface((winWidth,winHeight),  pygame.SRCALPHA) 
+
+    pygame.display.set_caption("First Game")
+
+    clock = pygame.time.Clock()
+    hz = 60
+
+    x = 60
+    y = 60
+    radius = 15
+    vel = 5*(60/hz)
+
+
+    room.objects = []
 
     if nb == 1 :
         Bots = [eb.ExplorerBot(x, y + i*100 , radius, room, [x + 1150, y + i*50], randomObjective = True, randomInterval =10) for i in range(20)]
@@ -222,7 +243,7 @@ def demos(nb = 1):
         # Bot3 = eb.ExplorerBot(x+1150, y +100, radius, room, [x, y+650])
         # Bot4 = eb.ExplorerBot(x, y +650, radius, room, [x + 1150, y+100])
         Bots = [Bot]
-        obstacles = [Bot.Obstacle(random.randrange(150, 1100) , random.randrange(0, 650), 20, room) for i in range(40)]
+        obstacles = [b.Obstacle(random.randrange(150, 1100) , random.randrange(0, 650), 20, room) for i in range(40)]
         room.addObjects(Bots + obstacles)
 
     elif nb == 4 :
@@ -253,7 +274,7 @@ def demos(nb = 1):
     run = True 
     while run:
         clock.tick(hz)
-        redrawGameWindow(win, surface1)
+        redrawGameWindow(room, win, surface1)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -265,16 +286,18 @@ def demos(nb = 1):
         pygame.display.update() 
 
 
-def redrawGameWindow(win, surface1):
+def redrawGameWindow(room, win, surface1):
     win.fill((0,0,0))
     surface1.fill((255,255,255,64))  
     for obj in room.objects:
         obj.draw(win, surface1)
+    room.draw_walls()
     # win.blit(surface1, (0,0))
     # pygame.display.update() 
     
 
 
+""" 
 if __name__ == "__main__":
     # demos(3)
     # demos(2)
@@ -284,3 +307,4 @@ if __name__ == "__main__":
     
     
 pygame.quit()
+ """
