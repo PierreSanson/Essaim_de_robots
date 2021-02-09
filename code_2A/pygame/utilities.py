@@ -154,8 +154,6 @@ def polygonLineInter(lineEmitter, polygon, barycenterPolygon, vel2D, win=None):
             sols.append([x, y])
     return sols
 
-
-
 def signedAngle2Vects2(vect1, vect2):
     angle = np.arctan2( vect1[0]*vect2[1] -vect1[1]*vect2[0], vect1[0]*vect2[0] + vect1[1]*vect2[1])
     return angle
@@ -182,3 +180,12 @@ def pointInPolygon(lineEmitter, polygon):
         if np.dot(np.array([lineEmitter.x - inter[0][0], lineEmitter.y - inter[0][1]]), np.array([lineEmitter.x - inter[1][0], lineEmitter.y - inter[1][1]])) < 0 :
             return True
     return False
+
+
+def lineSegmentInter(line, segment):
+    pass
+
+
+def distMaxXY2Segments(seg1, seg2):
+    pass
+

@@ -52,7 +52,7 @@ room.addWall((StartX,StartY), (StartY,EndY))
 room.addWall((StartX,EndY), (EndX,EndY))
 room.addWall((EndX,StartY), (EndX,EndY))
 def scenario2():
-    nbRefPointBots = 12
+    nbRefPointBots = 8
     distRefPointBots = [100, 110]
     refPointBots = []
 
@@ -61,8 +61,10 @@ def scenario2():
     measurerBot = mb.MeasuringBot(200, 200 , 20, room, color =(255, 0, 0), objective=None, haveObjective=False)
 
     room.addObjects(refPointBots + [measurerBot])
+    ExplorerBots = [eb.ExplorerBot(300 + 60*i,  350 , radius, room, [300 + 60*i, 700], randomObjective = True, randomInterval =1, color=(0, 255, 0)) for i in range(3)]
+    room.addObjects(ExplorerBots)
 
-    SC = sc.SwarmControl(measurerBot, refPointBots, distRefPointBots)
+    SC = sc.SwarmController(surface1, measurerBot, refPointBots, distRefPointBots)
 
     SC.initMove()
 
@@ -74,6 +76,8 @@ def scenario2():
             if event.type == pygame.QUIT:
                 run = False
         SC.move()
+        # SC.draw()
+        # room.draw()
         for obj in room.objects:
             if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, bot.Obstacle) and obj.movable):
                 obj.move(surface1)
