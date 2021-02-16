@@ -183,9 +183,82 @@ def pointInPolygon(lineEmitter, polygon):
 
 
 def lineSegmentInter(line, segment):
-    pass
+    a = line[0][1]
+    b = -line[0][0]
+    c = -b*line[1][1] -a*line[1][0]
+    
+    sols = []
+
+    x, y = 0, 0
+    xP, yP = 0,0
+    vectLine = np.array([segment[1][0] - segment[0][0], segment[1][1] - segment[0][1]])
+    lenLine = np.linalg.norm(vectLine)
+    aL = vectLine[1]
+    bL = -vectLine[0]
+    cL = - bL*segment[0][1] -aL*segment[0][0]
+
+    aP = bL
+    bP = -aL
+    cP = -bP*line[1][1] -aP*line[1][0]
+
+    if b != 0 and aL*b - a*bL != 0:
+        x = (-cL*b + bL*c)/(aL*b-a*bL)
+        y = (-c-a*x)/b
+
+    elif b == 0 and bL != 0 and a!=0:
+        x = -c/a
+        y = -cL/bL + aL*c/(bL*a)
+    elif bL == 0 and b != 0 and aL!=0 :
+        x = -cL/aL
+        y = -c/b + a*cL/(b*aL)
+    elif aL*b -a*bL == 0:
+        return None
+
+    vectCol = np.array([x - segment[0][0], y - segment[0][1]])
+
+    if bP != 0 and aL*bP - aP*bL != 0:
+        xP = (-cL*bP + bL*cP)/(aL*bP-aP*bL)
+        yP = (-cP-aP*xP)/bP
+
+    elif bP == 0 and bL != 0 and aP!=0:
+        xP = -cP/aP
+        yP = -cL/bL + aL*cP/(bL*aP)
+    elif bL == 0 and bP != 0 and aL!=0 :
+        xP = -cL/aL
+        yP = -cP/bP + aP*cL/(bP*aL)
+    elif aL*bP -aP*bL == 0:
+        return None
+
+    vectP = np.array([xP - line[1][0], yP - line[1][1]])
+    vectP2 = np.array([xP - segment[0][0], yP - segment[0][1]])
+
+    if np.linalg.norm(vectCol) <= lenLine and (np.dot(vectLine, vectCol)) >= 0 :
+        return(x,y)
+    return None
 
 
 def distMaxXY2Segments(seg1, seg2):
-    pass
+    distMaxX = -1
+    distMaxY =  -1
+    extremePoints = [[-1,-1], [-1, -1]]
+    for point1 in seg1:
+        for point2 in seg2:
+            distX = abs( point1[0] - point2[0])
+            distY = abs( point1[1] - point2[1])
+            if distX > distMaxX:
+                distMaxX = distX
+                if point1[0] < point2[0]:
+                    extremePoints[0] = [point1[0], point2[0]]
+                else:
+                    extremePoints[0] = [point2[0], point1[0]]
+            if distY > distMaxY:
+                distMaxY = distY
+                if point1[1] < point2[1]:
+                    extremePoints[1] = [point1[1], point2[1]]
+                else:
+                    extremePoints[1] = [point2[1], point1[1]]    
+    return [distMaxX, distMaxY, extremePoints]
+    
+                
+
 

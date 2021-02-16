@@ -9,7 +9,7 @@ class SwarmController():
         self.nbRefPointBots = len(refPointBots)
         self.orientation = 'h'
         self.status = 0
-        self.nextMoves = [['straight', 1], ['turnLeft', 1],  ['turnLeft', 1], ['turnLeft', 1], ['turnLeft', 1], ['turnLeft', 1], ['straight',5]]
+        self.nextMoves = [['straight', 7], ['turnRight', 1],  ['turnRight', 1], ['straight', 8], ['turnLeft', 1], ['turnLeft', 1], ['straight',8]]
         # self.nextMoves = [['straight', 4], ['turnRight', 2]]
         self.actualSequenceLength = 0
         self.actualSequenceCount = 0
@@ -18,6 +18,7 @@ class SwarmController():
         self.maxOneStepCount = (self.nbRefPointBots//2 - 2)
         self.orientation = 'right'
         self.lastMesurerPos = (self.measurerBot.x, self.measurerBot.y)
+        self.initMeasurerPos = (self.measurerBot.x, self.measurerBot.y)
         self.win = win
 
 
