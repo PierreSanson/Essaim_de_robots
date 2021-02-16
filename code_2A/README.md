@@ -17,21 +17,21 @@ Finalement, le dessin de la pièce et des différents robots est traduit en une 
 <img src="Assets/ReadMeVA.gif" width="100%"></img>
 </p>
   
-## Algorithme de détection et d'évitements d'obstacles
+## Algorithme de détection et d'évitement d'obstacles
 
-Lors du fonctionnement de l'essaim, chaque robot va se fixer différents objectifs les uns à la suite des autres. Pour pouvoir les atteindre, il doit détecter les obstacles qui se trouvent sur son chemin qu'ils soient fixes ou mobiles (comme d'autres robots par exemple), et essayer de les éviter.
-L'algorithme d'évitement d'obstacles et donc un des algorithmes principaux qui régit le comportement des robots.
-Nous vous présentons ci-dessous deux des challenges techniques auxquels nous avons du faire face lors de la création de cet algorithme
+Lors du fonctionnement de l'essaim, chaque robot va se fixer différents objectifs les uns à la suite des autres. Pour pouvoir les atteindre, il doit détecter les obstacles qui se trouvent sur son chemin, qu'ils soient fixes ou mobiles (comme d'autres robots par exemple), et essayer de les éviter.
+L'algorithme d'évitement d'obstacles et donc un des principaux algorithmes régissant le comportement des robots.
+Nous vous présentons ci-dessous deux des challenges techniques auxquels nous avons du faire face lors de la création de cet algorithme.
 
 ### Clustering d'obstacles :
 
-Lorque deux obstacles sont trop proches les uns des autres, il faut effectuer un clustering des obstacles, afin que le robot voie les deux obstacles comme un seul obstacle et essaie de le contourner plutôt que d'essayer de passer entre les deux. Ce principe peut ensuite être étendu à un nombre quelconque d'obstacles.
+Lorque deux obstacles sont trop proches les uns des autres, il faut effectuer un clustering d'obstacles, afin que le robot voie les deux obstacles comme un obstacle unique et tente de le contourner plutôt que d'essayer de passer entre les deux. Ce principe peut ensuite être étendu à un nombre quelconque d'obstacles.
 
 <img src="Assets/ReadMeVAObstacles.gif" width="100%"></img>
 
 ### Sortie d'un obstacle concave :
 
-Un robot peut être bloqué par un obstacle concave (un demi-cercle par exemple) qui l’enveloppe et l’empêche d’atteindre son objectif. Il faut alors qui'il en sorte puis le contourne afin de poursuivre vers son objectif.
+Un robot peut être bloqué par un obstacle concave (un demi-cercle par exemple) qui l’enveloppe et l’empêche d’atteindre son objectif. Il faut alors qu'il en sorte puis le contourne afin de poursuivre vers son objectif.
 
 <img src="Assets/ReadMeVAConcave.gif" width="100%"></img>
 
