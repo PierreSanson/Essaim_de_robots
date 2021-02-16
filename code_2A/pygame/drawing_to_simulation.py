@@ -143,11 +143,12 @@ def drawing_to_simulation(table):
     for bot in robots_centers:
         botType = bot.pop()
         if botType == 1:
-            measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 16, room, objective = None, haveObjective = False))
+            measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 15, room, objective = None, haveObjective = False, showDetails = True))
         elif botType == 2:
             explorerBots.append(eb.ExplorerBot(bot[0][0], bot[0][1], 12, room, objective = [0, 0], randomObjective = True, randomInterval =1))
         elif botType == 3:
-            refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 12, room, objective = None, haveObjective = False))
+            refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 10, room, objective = None, haveObjective = False))
+
             
     bots = measuringBots + explorerBots + refPointBots
 
@@ -155,6 +156,7 @@ def drawing_to_simulation(table):
 
     SC = sc.SwarmController(screen, measuringBots[0], refPointBots, distRefPointBots=[100,100])
     SE = se.RoomExplorator(room,SC)
+
     SC.initMove()
 
     return room, SC,SE, measuringBots, explorerBots, refPointBots  
@@ -190,5 +192,7 @@ def load_and_launch_simulation():
 
 
 # test = np.array([[1,0,0,4],[5,0,0,8],[5,0,0,8],[9,1,5,7]])
+# print(test)
 # print(find_walls_corners(test))
+# print(test.transpose())
 # print(find_walls_corners(test.transpose()))

@@ -21,17 +21,22 @@ def distSegments(seg1,seg2):
 
     return [minDist, points]
 
+
 def distObj(obj1, obj2):
     return np.sqrt((obj1.x-obj2.x)**2 + (obj1.y-obj2.y)**2) 
+
 
 def distObjDict(obj1, dict2):
     return np.sqrt((obj1.x-dict2['x'])**2 + (obj1.y-dict2['y'])**2)
 
+
 def distObjList(obj1, list2):
     return np.sqrt((obj1.x-list2[0])**2 + (obj1.y-list2[1])**2)
 
+
 def distLists(list1, list2):
     return np.sqrt((list1[0]-list2[0])**2 + (list1[1]-list2[1])**2)
+
 
 def circleLineInter(lineEmitter, obj, vel2D, objDict = False, objRadius = 0):
     r = 0
@@ -85,6 +90,7 @@ def circleLineInter(lineEmitter, obj, vel2D, objDict = False, objRadius = 0):
     
 
     return dictSol
+
 
 def polygonLineInter(lineEmitter, polygon, barycenterPolygon, vel2D, win=None):
     a = vel2D[1]
@@ -154,14 +160,17 @@ def polygonLineInter(lineEmitter, polygon, barycenterPolygon, vel2D, win=None):
             sols.append([x, y])
     return sols
 
+
 def signedAngle2Vects2(vect1, vect2):
     angle = np.arctan2( vect1[0]*vect2[1] -vect1[1]*vect2[0], vect1[0]*vect2[0] + vect1[1]*vect2[1])
     return angle
+
 
 def rotate(vect, theta):
     c, s = np.cos(theta), np.sin(theta)
     R = np.array(((c, -s), (s, c)))
     return np.dot(R, vect.T)
+
 
 def createPolygonMask(center, sides, radius):
     points = []
@@ -173,6 +182,7 @@ def createPolygonMask(center, sides, radius):
         vertexVect = rotate(vertexVect, theta)
         points.append([vertexVect[0]+x, vertexVect[1]+y])
     return points
+
 
 def pointInPolygon(lineEmitter, polygon):
     inter = polygonLineInter(lineEmitter, polygon, {'x' : 0, 'y' : 0}, lineEmitter.vel2D)
@@ -258,7 +268,3 @@ def distMaxXY2Segments(seg1, seg2):
                 else:
                     extremePoints[1] = [point2[1], point1[1]]    
     return [distMaxX, distMaxY, extremePoints]
-    
-                
-
-
