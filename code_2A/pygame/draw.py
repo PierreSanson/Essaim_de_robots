@@ -283,6 +283,8 @@ def OpenFile(filePath, gridObject):
         fileName = filePathList[-1]
         pg.display.set_caption("Initial configuration - " + fileName)
 
+        return(fileName)
+
 
 def Clean(gridObject):
     
@@ -474,7 +476,7 @@ def draw_initial_config():
                                     SaveFile(g1, cPath)
                                 elif i == 1:
                                     cPath = FileManager(0)
-                                    OpenFile(cPath,g1)
+                                    fileName = OpenFile(cPath,g1)
                                 elif i == 2:
                                     Straighten(g1)
                                 elif i == 3:
@@ -556,7 +558,7 @@ def draw_initial_config():
 
         screen.blit(nameSurface, (600, 790))
         nameText = fileFont.render(fileName, True, (0, 0, 0))
-        screen.blit(nameText, (610,sh-50))
+        screen.blit(nameText, (610,800))
 
         screen.blit(pg.transform.scale(eraserImage, (25,25)), (B_eraserTool.pos[0]+2, B_eraserTool.pos[1]+2))
         screen.blit(pg.transform.scale(brushImage, (25,25)), (B_penTool.pos[0]+2, B_penTool.pos[1]+2))

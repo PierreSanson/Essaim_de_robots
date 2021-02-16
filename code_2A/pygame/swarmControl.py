@@ -9,7 +9,7 @@ class SwarmController():
         self.nbRefPointBots = len(refPointBots)
         self.orientation = 'h'
         self.status = 0
-        self.nextMoves = [['straight', 5], ['turnRight', 1],  ['turnRight', 1], ['straight', 5], ['turnLeft', 1], ['turnLeft', 1], ['straight',5]]
+        self.nextMoves = [['straight', 1], ['turnRight', 1]]
         # self.nextMoves = [['straight', 4], ['turnRight', 2]]
         self.actualSequenceLength = 0
         self.actualSequenceCount = 0

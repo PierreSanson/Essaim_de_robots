@@ -21,11 +21,15 @@ class Bot():
         self.groupObj = []
         self.detectedObj = []
         self.groupObjPoints = []
+        self.groupWall = []
+        self.detectedWall = []
+        self.groupWallPoints = []
         self.safeCoeff = 1
         self.ontoObjectiveCoeff = 1
         self.randomObjective = randomObjective
         self.turnAroundCoeff = 1
         self.barycenterGroupObj = {'x' : 0, 'y' : 0}
+        self.barycenterGroupWall = {'x' : 0, 'y' : 0}
         self.groupObjRadius = 0
         self.randomInterval = randomInterval
         self.margin=5
@@ -65,7 +69,10 @@ class Bot():
             if self.haveObjective:
                 pygame.draw.circle(win, (255,255,255), (self.objective[0], self.objective[1]), self.radius)
             if self.mode == "polygon":
+                if self.groupPolygonPoints == []:
+                    self.convexHullObstacles = None
                 if self.convexHullObstacles is not None:
+                    print(self.groupPolygonPoints)
                     pygame.draw.polygon(surface1, (200,50,50, 64), self.groupPolygonPoints)
                     pygame.draw.circle(surface1, (200,200,200, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
             if np.linalg.norm(self.vel2D) !=0:
@@ -92,8 +99,10 @@ class Bot():
             self.x += vel2DU[0]*self.speed*self.safeCoeff*self.ontoObjectiveCoeff 
             self.y += vel2DU[1]*self.speed*self.safeCoeff*self.ontoObjectiveCoeff 
 
-    def checkCollision(self):
-        collision = {}
+
+    def checkCollision(self): ############################################################
+        # pour les robots
+        collision_bot = {}
         for obj in self.room.objects:
             if obj != self :
                 distO = distObj(self, obj)
@@ -116,10 +125,27 @@ class Bot():
                                         minDist = dist
                                         minIndex = i
                                 
-                                collision[obj] = sols[minIndex]
+                                collision_bot[obj] = sols[minIndex]
                             else:
-                                collision[obj] = sols[0]
-        return collision
+                                collision_bot[obj] = sols[0]
+
+        # pour les murs
+        collision_wall = {}
+        for wall in self.room.walls:
+            if wall != self :
+                wall.distBotWall(self)
+                if wall.dist_coll <= self.radiusDetection:
+
+                    if wall.dist_coll < self.radius:
+                        print("COLLISION")
+
+                    if (wall not in self.detectedWall):
+                        self.detectedWall.append(wall)
+
+                    collision_wall[wall] = wall
+
+        return collision_bot, collision_wall
+
 
     def checkColObjective(self):
         col = False
@@ -131,6 +157,7 @@ class Bot():
                 col = True
                 return col
         return col
+
 
     def noColgoToObjective(self, surface1):
         self.safeCoeff = 1
@@ -194,6 +221,7 @@ class Bot():
                 elif angleObj < 0:
                     self.vel2D = rotate(self.vel2D, -rotationSpeed)
 
+
     def goToObjective(self, surface1):
         distObjective = distObjList(self, self.objective)
         if distObjective < 40*self.speed/self.rotationSpeed + self.radius*2:
@@ -205,26 +233,30 @@ class Bot():
                 self.vel2D = np.asarray([0,0])
                 self.groupObj = []
                 self.groupObjPoints = []
+                self.groupWall = []
+                self.groupWallPoints = []
                 self.groupPolygonPoints = []
                 self.convexHullObstacles = None
         else :
             self.ontoObjectiveCoeff = 1
 
-        collision = self.checkCollision()
+        collision_bot, collision_wall = self.checkCollision() 
         
         checkedCollision = []
+        checkedCollision_wall = []
 
-        if collision :
+
+        if collision_bot :
             init = True
             minDist = None
             minObj = None
-            for obj in collision:
-                dist = distObjDict(self, collision[obj])
+            for obj in collision_bot:
+                dist = distObjDict(self, collision_bot[obj])
                 angleCol = signedAngle2Vects2(self.vel2D, np.array([obj.x - self.x, obj.y - self.y]))
                 if init : 
                     if abs(angleCol) <= np.pi/2:
                         checkedCollision.append(obj)
-                        minDist = distObjDict(self, collision[obj])
+                        minDist = distObjDict(self, collision_bot[obj])
                         minObj = obj
                         init = False
                 else :
@@ -337,8 +369,149 @@ class Bot():
                     self.noColgoToObjective(surface1)
             else:
                 self.noColgoToObjective(surface1)
+        
+
+        elif collision_wall : # évitement des murs
+
+            init = True
+            minDist = None
+            minWall = None
+            for wall in collision_wall:
+                wall.distBotWall(self)
+                angleCol = signedAngle2Vects2(self.vel2D, np.array([wall.x - self.x, wall.y - self.y]))
+                if init : 
+                    if abs(angleCol) <= np.pi/2:
+                        checkedCollision.append(wall)
+                        minDist = wall.dist_coll
+                        minWall = wall
+                        init = False
+                else :
+                    if abs(angleCol) <= np.pi/2:
+                        checkedCollision_wall.append(wall)
+                        if wall.dist_coll < minDist :
+                            minDist = wall.dist_coll
+                            minWall = wall
+
+            if minWall is not None:
+                if minWall not in self.groupWall :
+                    self.groupWall.append(minWall)
+                    self.groupWallPoints+=minWall.borderPoints[:]
+
+                minWall.distBotWall(self)
+                if  minWall.dist_coll - self.radius < self.speed*150/(np.sqrt(self.rotationSpeed)):
+                    self.safeCoeff = max((minWall.dist_coll - self.radius)/(self.speed*150/(np.sqrt(self.rotationSpeed))), 0.01)
+            else:
+                self.safeCoeff = 1
+
+            
+            for wall in checkedCollision_wall:
+                if wall not in self.detectedWall:
+                    self.detectedWall.append(wall)
+            
+            if minWall is not None:
+                checkedgroupWall = [minWall]
+                checkedgroupWallPoints = minWall.borderPoints[:]
+                i=0
+                while i<len(checkedgroupWall):
+                    for wall in self.groupWall:
+                        if wall not in checkedgroupWall:
+                            if distObj(wall, checkedgroupWall[i]) < 2*self.radius + 2*self.margin:
+                                checkedgroupWall.append(wall)
+                                checkedgroupWallPoints+=wall.borderPoints[:]
+                    i+=1
+                self.groupWall = checkedgroupWall
+                self.groupWallPoints = checkedgroupWallPoints
+
+            elif len(self.groupWall) > 0 :
+                checkedgroupWall = [self.groupWall[0]]
+                checkedgroupWallPoints = self.groupWall[0].borderPoints[:]
+                i=0
+                while i<len(checkedgroupWall):
+                    for wall in self.groupWall:
+                        if wall not in checkedgroupWall:
+                            if distObj(wall, checkedgroupWall[i]) < 2*self.radius + 2*self.margin:
+                                checkedgroupWall.append(wall)
+                                checkedgroupWallPoints+=wall.borderPoints[:]
+                    i+=1
+                self.groupWall = checkedgroupWall
+                self.groupWallPoints = checkedgroupWallPoints
+
+                if len(self.groupObjPoints) > 0 and len(self.groupWallPoints) > 0:
+                    self.convexHullObstacles = ConvexHull(self.groupWallPoints + self.groupObjPoints)
+                    if self.convexHullObstacles is not None:
+                        groupPoints = self.groupWallPoints + self.groupObjPoints
+                        self.groupPolygonPoints = [groupPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
+                elif len(self.groupWallPoints) > 0:
+                    self.convexHullObstacles = ConvexHull(self.groupWallPoints)
+                    if self.convexHullObstacles is not None:
+                            self.groupPolygonPoints = [self.groupWallPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
+                    
+            else :
+                self.groupWall = []
+                self.groupWallPoints = []
+                self.groupPolygonPoints = []
+                self.convexHullObstacles = None
+            
+
+            i=0
+            while i<len(self.groupWall):
+                for wall in self.detectedWall : 
+                    if wall not in self.groupWall :
+                        if distObj(wall, self.groupWall[i]) < 2*self.radius + 2*self.margin:
+                            self.groupWall.append(wall)
+                            self.groupWallPoints+=wall.borderPoints[:]
+                i+=1
+            
+            
+            
+
+            if (len(self.groupWall)) > 0:
+                self.barycenterGroupWall = { 'x' : (1/len(self.groupWall))*np.sum(np.array([wall.x for wall in self.groupWall])), 'y' : (1/len(self.groupWall))*np.sum(np.array([wall.y for wall in self.groupWall]))}
+
+                if len(self.groupObjPoints) > 0 and len(self.groupWallPoints) > 0:
+                    self.convexHullObstacles = ConvexHull(self.groupWallPoints + self.groupObjPoints)
+                    if self.convexHullObstacles is not None:
+                        groupPoints = self.groupWallPoints + self.groupObjPoints
+                        self.groupPolygonPoints = [groupPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
+                elif len(self.groupWallPoints) > 0:
+                        self.convexHullObstacles = ConvexHull(self.groupWallPoints)
+                        if self.convexHullObstacles is not None:
+                            self.groupPolygonPoints = [self.groupWallPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
+                
+                
+                angleCol = (signedAngle2Vects2(self.vel2D, np.array([self.barycenterGroupWall['x'] - self.x, self.barycenterGroupWall['y'] - self.y])))
+                polygonInter = polygonLineInter(self, self.groupPolygonPoints,self.barycenterGroupWall, self.vel2D, surface1)
+                if len (polygonInter) == 1:
+                    if angleCol > 0:
+                        self.vel2D = rotate(self.vel2D, - self.rotationSpeed*np.pi/180)
+                    elif angleCol <= 0:
+                        self.vel2D = rotate(self.vel2D, self.rotationSpeed*np.pi/180)
+                elif not self.checkColObjective():
+                    
+                    angleWall = signedAngle2Vects2(self.vel2D, np.array([self.objective[0]- self.x, self.objective[1] - self.y]))
+                    rotationSpeed = min(self.rotationSpeed*np.pi/180, abs(angleWall))
+                    if angleWall >= 0:
+                        self.vel2D = rotate(self.vel2D, rotationSpeed)
+                    elif angleWall < 0:
+                        self.vel2D = rotate(self.vel2D, - rotationSpeed)
+                elif pointInPolygon(self, self.groupPolygonPoints):
+                    if angleCol > 0:
+                        self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
+                    elif angleCol <= 0:
+                        self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
+                elif abs(angleCol) <= np.pi/2 :
+                    if angleCol > 0:
+                        self.vel2D = rotate(self.vel2D, - self.rotationSpeed*np.pi/180)
+                    elif angleCol <= 0:
+                        self.vel2D = rotate(self.vel2D, self.rotationSpeed*np.pi/180)
+                else:
+                    self.noColgoToObjective(surface1)
+            else:
+                self.noColgoToObjective(surface1)
+
 
         else :
+            # pour les robots
             if len(self.groupObj) > 0 :
                 checkedgroupObj = [self.groupObj[0]]
                 checkedgroupObjPoints = self.groupObj[0].polygonPoints[:]
@@ -359,7 +532,41 @@ class Bot():
                 self.groupObj = []
                 self.groupObjPoints = []
                 self.groupPolygonPoints = []
+
+            # pour les murs
+            if len(self.groupWall) > 0 :
+                checkedgroupWall = [self.groupWall[0]]
+                checkedgroupWallPoints = self.groupWall[0].borderPoints[:]
+                i=0
+                while i<len(checkedgroupWall):
+                    for wall in self.groupWall:
+                        if wall not in checkedgroupWall:
+                            if distObj(wall, checkedgroupWall[i]) < 2*self.radius + 2*self.margin:
+                                checkedgroupWall.append(wall)
+                                checkedgroupWallPoints+=wall.borderPoints[:]
+                    i+=1
+                self.groupWall = checkedgroupWall
+                self.groupWallPoints = checkedgroupWallPoints
+
+                if len(self.groupObjPoints) > 0 and len(self.groupWallPoints) > 0:
+                    self.convexHullObstacles = ConvexHull(self.groupWallPoints + self.groupObjPoints)
+                    if self.convexHullObstacles is not None:
+                        groupPoints = self.groupWallPoints + self.groupObjPoints
+                        self.groupPolygonPoints = [groupPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
+                elif len(self.groupWallPoints) > 0:
+                    self.convexHullObstacles = ConvexHull(self.groupWallPoints)
+                    if self.convexHullObstacles is not None:
+                        self.groupPolygonPoints = [self.groupWallPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
+
+                
+            else :
+                self.groupWall = []
+                self.groupWallPoints = []
+                self.groupPolygonPoints = []
+
+
             self.noColgoToObjective(surface1)
+
 
     def defineObjective(self, coord):
         print(coord)
