@@ -1,5 +1,5 @@
 from utilities import *
-
+from copy import deepcopy
 
 class SwarmController():
     def __init__(self, win, measurerBot, refPointBots, distRefPointBots = [110, 110]) :
@@ -9,7 +9,7 @@ class SwarmController():
         self.nbRefPointBots = len(refPointBots)
         self.orientation = 'h'
         self.status = 0
-        self.nextMoves = [['straight', 1], ['turnRight', 1]]
+        self.nextMoves = [['straight', 7], ['turnRight', 1],  ['turnRight', 1], ['straight', 8], ['turnLeft', 1], ['turnLeft', 1], ['straight',8]]
         # self.nextMoves = [['straight', 4], ['turnRight', 2]]
         self.actualSequenceLength = 0
         self.actualSequenceCount = 0
@@ -18,6 +18,7 @@ class SwarmController():
         self.maxOneStepCount = (self.nbRefPointBots//2 - 2)
         self.orientation = 'right'
         self.lastMesurerPos = (self.measurerBot.x, self.measurerBot.y)
+        self.initMeasurerPos = (self.measurerBot.x, self.measurerBot.y)
         self.win = win
 
 
@@ -47,6 +48,7 @@ class SwarmController():
         self.refPointBots[0].color = (0,255,255)
         self.refPointBots[1].color = (0,255,255)
         for i in range(2):
+            
             if self.orientation == 'right':
                 self.refPointBots[i].defineObjective((self.measurerBot.x + self.distRefPointBots[0]/2 + (self.actualOneStepCount + 1)*self.distRefPointBots[0], 
                     self.measurerBot.y - self.distRefPointBots[1]/2 + (i%2)*self.distRefPointBots[1]))
@@ -57,7 +59,7 @@ class SwarmController():
 
             if self.orientation == 'left':
                 self.refPointBots[i].defineObjective((self.measurerBot.x - self.distRefPointBots[0]/2 - (self.actualOneStepCount + 1)*self.distRefPointBots[0], 
-                    self.measurerBot.y - self.distRefPointBots[1]/2 + ((i)%2)*self.distRefPointBots[1]))
+                    self.measurerBot.y - self.distRefPointBots[1]/2 + ((1-i)%2)*self.distRefPointBots[1]))
 
             if self.orientation == 'up':
                 self.refPointBots[i].defineObjective((self.measurerBot.x + self.distRefPointBots[0]/2 - ((1-i)%2)*self.distRefPointBots[0], 
@@ -165,31 +167,28 @@ class SwarmController():
 
     def turnRight(self):
 
+        for i in range(self.nbRefPointBots):
+            print('avant : ' + str(i) + " : " + str(self.refPointBots[i].x) + "," + str(self.refPointBots[i].y))
+
+        robotTemp = {key: value for key, value in self.refPointBots.items()}            
+        self.refPointBots[self.nbRefPointBots- 2] =  robotTemp[self.nbRefPointBots- 1]
+        self.refPointBots[self.nbRefPointBots- 4] =  robotTemp[self.nbRefPointBots- 2]
+        self.refPointBots[self.nbRefPointBots- 1] =  robotTemp[self.nbRefPointBots- 3]
+        self.refPointBots[self.nbRefPointBots- 3] =  robotTemp[self.nbRefPointBots- 4] 
         if self.orientation == 'right':
             self.orientation = 'down'
-            robotTemp = self.refPointBots[self.nbRefPointBots- 1 - 2]
-            self.refPointBots[self.nbRefPointBots- 1 - 2] = self.refPointBots[self.nbRefPointBots- 1 - 1]
-            self.refPointBots[self.nbRefPointBots- 1 - 1] = robotTemp
         
         elif self.orientation == 'down':
             self.orientation = 'left'
-            robotTemp = self.refPointBots[self.nbRefPointBots- 1 - 2]
-            self.refPointBots[self.nbRefPointBots- 1 - 2] = self.refPointBots[self.nbRefPointBots- 1 - 1]
-            self.refPointBots[self.nbRefPointBots- 1 - 1] = robotTemp
-
 
         elif self.orientation == 'left':
             self.orientation = 'up'
-            robotTemp = self.refPointBots[self.nbRefPointBots- 1 - 0]
-            self.refPointBots[self.nbRefPointBots- 1 - 0] = self.refPointBots[self.nbRefPointBots- 1 - 3]
-            self.refPointBots[self.nbRefPointBots- 1 - 3] = robotTemp
 
         elif self.orientation == 'up':
             self.orientation = 'right'
-            robotTemp = self.refPointBots[self.nbRefPointBots- 1 - 2]
-            self.refPointBots[self.nbRefPointBots- 1 - 2] = self.refPointBots[self.nbRefPointBots- 1 - 1]
-            self.refPointBots[self.nbRefPointBots- 1 - 1] = robotTemp
         
+        for i in range(self.nbRefPointBots):
+            print('après : ' +  str(i) + " : " + str(self.refPointBots[i].x) + "," + str(self.refPointBots[i].y))
 
         self.maxOneStepCount = self.actualSequenceLength
         if self.actualSequenceLength == 0 or self.actualSequenceLength >= self.nbRefPointBots//2 - 2:
@@ -199,32 +198,27 @@ class SwarmController():
         self.actualDeplacement = self.moveOneStraight 
 
     def turnLeft(self):
+
+        robotTemp = {key: value for key, value in self.refPointBots.items()}            
+        self.refPointBots[self.nbRefPointBots- 2] =  robotTemp[self.nbRefPointBots- 4]
+        self.refPointBots[self.nbRefPointBots- 4] =  robotTemp[self.nbRefPointBots- 3] 
+        self.refPointBots[self.nbRefPointBots- 1] =  robotTemp[self.nbRefPointBots- 2] 
+        self.refPointBots[self.nbRefPointBots- 3] =  robotTemp[self.nbRefPointBots- 1] 
         
         if self.orientation == 'right':
             self.orientation = 'up'
-            robotTemp = self.refPointBots[self.nbRefPointBots- 1 - 0]
-            self.refPointBots[self.nbRefPointBots- 1 - 0] = self.refPointBots[self.nbRefPointBots- 1 - 3]
-            self.refPointBots[self.nbRefPointBots- 1 - 3] = robotTemp
+
         
         elif self.orientation == 'down':
             self.orientation = 'right'
-            robotTemp = self.refPointBots[self.nbRefPointBots- 1 - 0]
-            self.refPointBots[self.nbRefPointBots- 1 - 0] = self.refPointBots[self.nbRefPointBots- 1 - 3]
-            self.refPointBots[self.nbRefPointBots- 1 - 3] = robotTemp
 
 
         elif self.orientation == 'left':
             self.orientation = 'down'
-            
-            robotTemp = self.refPointBots[self.nbRefPointBots- 1 - 2]
-            self.refPointBots[self.nbRefPointBots- 1 - 2] = self.refPointBots[self.nbRefPointBots- 1 - 1]
-            self.refPointBots[self.nbRefPointBots- 1 - 1] = robotTemp
+
 
         elif self.orientation == 'up':
             self.orientation = 'left'
-            robotTemp = self.refPointBots[self.nbRefPointBots- 1 - 0]
-            self.refPointBots[self.nbRefPointBots- 1 - 0] = self.refPointBots[self.nbRefPointBots- 1 - 3]
-            self.refPointBots[self.nbRefPointBots- 1 - 3] = robotTemp
         
 
         self.maxOneStepCount = self.actualSequenceLength

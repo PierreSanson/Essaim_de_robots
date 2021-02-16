@@ -16,8 +16,8 @@ class Bot():
         self.lastVel2D = np.asarray([0.0001,0.0001])
         self.objective = objective
         self.radiusDetection = radiusDetection
-        self.rotationSpeed = 16
-        self.speed = 8
+        self.rotationSpeed = 12
+        self.speed = 4
         self.groupObj = []
         self.detectedObj = []
         self.groupObjPoints = []
@@ -224,8 +224,8 @@ class Bot():
 
     def goToObjective(self, surface1):
         distObjective = distObjList(self, self.objective)
-        if distObjective < 40*self.speed/self.rotationSpeed + self.radius*2:
-            self.ontoObjectiveCoeff = distObjective/((40*self.speed/self.rotationSpeed)**(1.1))
+        if distObjective < 60*self.speed/self.rotationSpeed + self.radius*2:
+            self.ontoObjectiveCoeff = distObjective/((60*self.speed/self.rotationSpeed)**(1.08))
             if distObjective < 0.1:
                 self.ontoObjective = True
                 self.haveObjective = False
@@ -272,8 +272,8 @@ class Bot():
                     self.groupObjPoints+=minObj.polygonPoints[:]
 
                 dist = distObj(self, minObj)
-                if  dist - minObj.radius - self.radius < self.speed*150/(np.sqrt(self.rotationSpeed)):
-                    self.safeCoeff = max((dist - minObj.radius - self.radius)/(self.speed*150/(np.sqrt(self.rotationSpeed))), 0.01)
+                if  dist - minObj.radius - self.radius < self.speed*80/(np.sqrt(self.rotationSpeed)):
+                    self.safeCoeff = max((dist - minObj.radius - self.radius)/(self.speed*80/(np.sqrt(self.rotationSpeed))), 0.01)
             else:
                 self.safeCoeff = 1
 

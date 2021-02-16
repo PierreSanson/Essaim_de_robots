@@ -12,6 +12,7 @@ import refPointBot as rpb
 import measuringBot as mb
 from room import*
 import swarmControl as sc
+import swarmExploration as se
 from main import redrawGameWindow
 
 
@@ -144,25 +145,28 @@ def drawing_to_simulation(table):
         if botType == 1:
             measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 15, room, objective = None, haveObjective = False, showDetails = True))
         elif botType == 2:
-            explorerBots.append(eb.ExplorerBot(bot[0][0], bot[0][1], 10, room, objective = None, haveObjective = False))
+            explorerBots.append(eb.ExplorerBot(bot[0][0], bot[0][1], 12, room, objective = [0, 0], randomObjective = True, randomInterval =1))
         elif botType == 3:
             refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 10, room, objective = None, haveObjective = False))
+
             
     bots = measuringBots + explorerBots + refPointBots
 
     room.addObjects(bots)
 
-    SC = sc.SwarmController(screen, measuringBots[0], refPointBots)
+    SC = sc.SwarmController(screen, measuringBots[0], refPointBots, distRefPointBots=[100,100])
+    SE = se.RoomExplorator(room,SC)
+
     SC.initMove()
 
-    return room, SC, measuringBots, explorerBots, refPointBots  
+    return room, SC,SE, measuringBots, explorerBots, refPointBots  
 
 
 def load_and_launch_simulation():
 
     table = LoadFile()
 
-    room, SC, measuringBots, explorerBots, refPointBots = drawing_to_simulation(table)
+    room, SC, SE, measuringBots, explorerBots, refPointBots = drawing_to_simulation(table)
 
     sw, sh = 1600, 900
     win = pg.display.set_mode((sw, sh))
@@ -179,6 +183,7 @@ def load_and_launch_simulation():
             if event.type == pygame.QUIT:
                 run = False
         SC.move()
+        SE.draw(win)
         for obj in room.objects:
             if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, bot.Obstacle) and obj.movable):
                 obj.move(surface1)
