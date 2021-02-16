@@ -142,7 +142,7 @@ def drawing_to_simulation(table):
     for bot in robots_centers:
         botType = bot.pop()
         if botType == 1:
-            measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 15, room, objective = None, haveObjective = False))
+            measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 15, room, objective = None, haveObjective = False, showDetails = True))
         elif botType == 2:
             explorerBots.append(eb.ExplorerBot(bot[0][0], bot[0][1], 10, room, objective = None, haveObjective = False))
         elif botType == 3:
