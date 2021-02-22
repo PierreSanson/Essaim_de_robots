@@ -2,12 +2,15 @@ from utilities import *
 import numpy as np
 import math
 import pygame
+from igraph import *
 
 class RoomExplorator():
     def __init__(self, room, swarmController):
         self.room = room
         self.SC = swarmController
         self.graph = {}
+        self.graphParentsList = {}
+        self.graphChildsList = {}
         self.minimumSpanningTree = {}
         self.walls = []
         self.lineinters = []
@@ -20,23 +23,12 @@ class RoomExplorator():
         distMaxX = -1
         distMaxY =  -1
         
-        for corners in self.room.walls:
-            orientation = corners[-1]
-
-            x_start = corners[0][1] # on fait bien attention entre x et y au sens d'un graphe Vs row et col pour numpy
-            y_start = corners[0][0]
-
-            if orientation == 'v':
-                width = corners[1][1] - corners[0][1]
-                height = corners[3][0] - corners[0][0]
-            elif orientation == 'h':
-                width = corners[3][1] - corners[0][1]
-                height = corners[1][0] - corners[0][0]
+        for wall in self.room.walls:
             
-            self.walls.append([[x_start, y_start],[x_start+width, y_start]])
-            self.walls.append([[x_start, y_start],[x_start, y_start + height]])
-            self.walls.append([[x_start + width, y_start],[x_start + width, y_start + height]])
-            self.walls.append([[x_start, y_start+height],[x_start+width, y_start + height]])
+            self.walls.append([[wall.x_start, wall.y_start],[wall.x_start+wall.width, wall.y_start]])
+            self.walls.append([[wall.x_start, wall.y_start],[wall.x_start, wall.y_start + wall.height]])
+            self.walls.append([[wall.x_start + wall.width, wall.y_start],[wall.x_start + wall.width, wall.y_start + wall.height]])
+            self.walls.append([[wall.x_start, wall.y_start+wall.height],[wall.x_start+wall.width, wall.y_start + wall.height]])
 
         for i in range(len(self.walls)):
             for j in range (i+1, len(self.walls)):
@@ -65,7 +57,7 @@ class RoomExplorator():
         #     if inter != None:
         #         initLineinters.append(inter)
         # self.lineinters.append(initLineinters)
-        # self.graph[0] = [[0, self.SC.initMeasurerPos[1], self.room.width, self.SC.initMeasurerPos[1]]]
+        # self.graph[0] = [[0, self.SC.initMeasurerPos[1], self.room.wall.width, self.SC.initMeasurerPos[1]]]
         for i in range(self.nbLinesAbove):
             stepLineinters = []
             stepLineintersEB = []
@@ -78,10 +70,29 @@ class RoomExplorator():
                     stepLineintersEB.append(interEB)
             self.lineinters.append(stepLineinters)
             self.lineintersEB.append(stepLineintersEB)
-            for j in range(len(stepLineinters)):
-                self.graph[str(i) + str(j)] = [[0, self.SC.initMeasurerPos[1], self.room.width, self.SC.initMeasurerPos[1]]]
+            print(stepLineinters)
+            childCount = 0
+            if i == 0:
+                self.graph['0'] = [stepLineinters[1], stepLineinters[2]]
+            else:
+                for j in range(len(stepLineinters)-1):
+                    if not self.checkIsWall(stepLineinters[j], stepLineinters[j+1]):
+                        parents = self.determineParents(i, [stepLineinters[j], stepLineinters[j+1]])
+                        if len(parents)>0:
+                            self.graph[str(i) + '-' + str(childCount)] = [stepLineinters[j], stepLineinters[j+1]]
+                            for parent in parents:
+                                if parent[0] in self.graphChildsList:
+                                    self.graphChildsList[parent[0]].append(str(i) + '-' +str(childCount))
+                                else : 
+                                    self.graphChildsList[parent[0]] = [str(i) +'-' + str(childCount)]
 
-        for i in range(self.nbLinesBelow):
+                                if str(i) + '-' + str(childCount) in self.graphParentsList:
+                                    self.graphParentsList[str(i) + '-' +str(childCount)].append(parent[0])
+                                else : 
+                                    self.graphParentsList[str(i) + '-' +str(childCount)] = [parent[0]]
+                            childCount += 1
+
+        for i in range(1, self.nbLinesBelow):
             stepLineinters = []
             stepLineintersEB = []
             for wall in self.walls:
@@ -91,10 +102,31 @@ class RoomExplorator():
                     stepLineinters.append(inter)
                 if interEB != None:
                     stepLineintersEB.append(interEB)
-            self.lineinters.append(stepLineinters)
-            self.lineintersEB.append(stepLineintersEB)
-            self.graph[i + self.nbLinesAbove] = [[0, self.SC.initMeasurerPos[1], self.room.width, self.SC.initMeasurerPos[1]]]
+            childCount = 0
+            for j in range(len(stepLineinters)-1):
+                if not self.checkIsWall(stepLineinters[j], stepLineinters[j+1]):
+                    if i == 1:
+                        parents = self.determineParents(i, [stepLineinters[j], stepLineinters[j+1]])
+                    else :
+                        parents = self.determineParents(i + self.nbLinesAbove, [stepLineinters[j], stepLineinters[j+1]])
+                    if len(parents)>0:
+                        self.graph[str(i + self.nbLinesAbove) +'-' + str(childCount)] = [stepLineinters[j], stepLineinters[j+1]]
+                        for parent in parents:
+                            if parent[0] in self.graphChildsList:
+                                self.graphChildsList[parent[0]].append(str(i +self.nbLinesAbove) + '-' +str(childCount))
+                            else : 
+                                self.graphChildsList[parent[0]] = [str(i+self.nbLinesAbove) + '-' +str(childCount)]
 
+                            if str(i+self.nbLinesAbove) + '-' +str(childCount) in self.graphParentsList:
+                                self.graphParentsList[str(i + self.nbLinesAbove) + '-' +str(childCount)].append(parent[0])
+                            else : 
+                                self.graphParentsList[str(i + self.nbLinesAbove) + '-' +str(childCount)] = [parent[0]]
+                        childCount += 1
+        
+        print('GRAPH : ', self.graph)
+        print('CHILDS GRAPH : ', self.graphChildsList)
+        print('PARENTS GRAPH : ', self.graphParentsList)
+        self.drawGraph()
 
     def minimumSpanningTreeComputation(self):
         pass
@@ -102,23 +134,76 @@ class RoomExplorator():
     def dfsComputation(self):
         pass
 
+    def checkColParents(self, newLine, parent, commonPart):
+        yChild = newLine[0][1]
+        yParent = parent[0][1]
+        stepMB = self.SC.distRefPointBots
+        radiusMB = self.SC.measurerBot.radius
+        
+        for x in range(int(commonPart[0] + radiusMB//2), int(commonPart[1] - radiusMB//2), int(stepMB[0])):
+            pathExist = True
+            for wall in self.walls:
+                inter = lineSegmentInter([[0,1], [x, yChild]], wall)
+                if inter is not None:
+                    if (yChild <= inter[1] <= yParent) or (yParent <= inter[1] <= yChild):
+                        pathExist = False
+            if pathExist:
+                return True
+        return False
+    
+    def determineParents(self, i, newLine):
+        potentialParentsKey = []
+        parentsKey = []
+        stepMB = self.SC.distRefPointBots
+        for key in self.graph.keys():
+            
+            if key.startswith(str(i-1)):
+                potentialParentsKey.append(key)
+        for key in potentialParentsKey:
+            parent = self.graph[key]
+            commonPart = [max(self.graph[key][0][0], newLine[0][0]), min(parent[1][0],  newLine[1][0])]
+            if commonPart[1] - commonPart[0] > stepMB[0]:
+                existPath = self.checkColParents(newLine, parent, commonPart)
+                if existPath:
+                    parentsKey.append([key, commonPart])
+        return parentsKey
+
+    def checkIsWall(self, inter1, inter2):
+        if distLists(inter1, inter2) < self.SC.measurerBot.radius:
+            return True
+        return False
+
     def draw(self, win):
         for i in range(self.nbLinesAbove):
-            pygame.draw.line(win, (100,100,100), (0, self.SC.initMeasurerPos[1] - self.SC.distRefPointBots[1]*(1/2+ i)), (self.room.width, self.SC.initMeasurerPos[1]  - self.SC.distRefPointBots[1]*(1/2+ i)))
+            pygame.draw.line(win, (100,100,100), (0, self.SC.initMeasurerPos[1] - self.SC.distRefPointBots[1]*( i)), (self.room.width, self.SC.initMeasurerPos[1]  - self.SC.distRefPointBots[1]*(i)))
 
         for i in range(self.nbLinesBelow):
-            pygame.draw.line(win, (100,100,100), (0, self.SC.initMeasurerPos[1]  + self.SC.distRefPointBots[1]*(1/2+ i)), (self.room.width, self.SC.initMeasurerPos[1] + self.SC.distRefPointBots[1]*(1/2+ i)))
+            pygame.draw.line(win, (100,100,100), (0, self.SC.initMeasurerPos[1]  + self.SC.distRefPointBots[1]*(i)), (self.room.width, self.SC.initMeasurerPos[1] + self.SC.distRefPointBots[1]*(i)))
 
-        for i in range(self.nbColsLeft):
-            pygame.draw.line(win, (100,100,100), (self.SC.initMeasurerPos[0] - self.SC.distRefPointBots[0]*(1/2+ i), 0), (self.SC.initMeasurerPos[0]  - self.SC.distRefPointBots[0]*(1/2+ i), self.room.height))
+        # for i in range(self.nbColsLeft):
+        #     pygame.draw.line(win, (100,100,100), (self.SC.initMeasurerPos[0] - self.SC.distRefPointBots[0]*(1/2+ i), 0), (self.SC.initMeasurerPos[0]  - self.SC.distRefPointBots[0]*(1/2+ i), self.room.height))
 
-        for i in range(self.nbColsRight):
-            pygame.draw.line(win, (100,100,100), (self.SC.initMeasurerPos[0] + self.SC.distRefPointBots[0]*(1/2+ i), 0), (self.SC.initMeasurerPos[0]  + self.SC.distRefPointBots[0]*(1/2+ i), self.room.height))
+        # for i in range(self.nbColsRight):
+        #     pygame.draw.line(win, (100,100,100), (self.SC.initMeasurerPos[0] + self.SC.distRefPointBots[0]*(1/2+ i), 0), (self.SC.initMeasurerPos[0]  + self.SC.distRefPointBots[0]*(1/2+ i), self.room.height))
 
         for inters in self.lineinters:
             for coord in inters:
                 pygame.draw.circle(win, (255,0,0), coord, 2)
 
-        for intersEB in self.lineintersEB:
-            for coord in intersEB:
-                pygame.draw.circle(win, (0,0,255), coord, 2)
+        # for intersEB in self.lineintersEB:
+        #     for coord in intersEB:
+        #         pygame.draw.circle(win, (0,0,255), coord, 2)
+    
+    def drawGraph(self):
+        g = Graph()
+        g.add_vertices(len(self.graph))
+        print(list(self.graph.keys()))
+        g.vs["name"] = list(self.graph.keys())
+        for parent in self.graphChildsList:
+            for child in self.graphChildsList[parent]:
+                parentIndex = g.vs['name'].index(parent)
+                childIndex = g.vs['name'].index(child)
+                g.add_edge(parentIndex, childIndex)
+        g.vs["label"] = g.vs["name"]
+        layout = g.layout("rt", root=0)
+        plot(g, layout = layout)
