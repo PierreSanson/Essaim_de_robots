@@ -70,7 +70,6 @@ class RoomExplorator():
                     stepLineintersEB.append(interEB)
             self.lineinters.append(stepLineinters)
             self.lineintersEB.append(stepLineintersEB)
-            print(stepLineinters)
             childCount = 0
             if i == 0:
                 self.graph['0'] = [stepLineinters[1], stepLineinters[2]]
@@ -102,6 +101,8 @@ class RoomExplorator():
                     stepLineinters.append(inter)
                 if interEB != None:
                     stepLineintersEB.append(interEB)
+            self.lineinters.append(stepLineinters)
+            self.lineintersEB.append(stepLineintersEB)
             childCount = 0
             for j in range(len(stepLineinters)-1):
                 if not self.checkIsWall(stepLineinters[j], stepLineinters[j+1]):
