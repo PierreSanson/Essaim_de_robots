@@ -13,11 +13,16 @@ class RoomExplorator():
         self.graphChildsList = {}
         self.MST = []
         self.MSTedges = []
+        self.MSTNeighboursDict = {}
+        self.seq = []
+        self.objectivesSeq = []
         self.walls = []
         self.lineinters = []
         self.lineintersEB = []
         self.nbLinesAbove, self.nbLinesBelow, self.nbLines, self.nbColsLeft, self.nbColsRight, self.nbCols, self.initNodeLine, self.initNodeCol = self.maxGridComputation()
+        self.globalIndexObjectivesSeq = 0
         self.graphConstruction()
+        self.globalVisited = []
     
     def maxGridComputation(self):
         ExtremePoints= [[-1, -1], [-1, -1]]
@@ -188,7 +193,14 @@ class RoomExplorator():
         print('CHILDS GRAPH : ', self.graphChildsList)
         print('PARENTS GRAPH : ', self.graphParentsList)
         self.minimumSpanningTreeComputation()
-        self.drawGraph()
+        self.MSTNeighboursDictComputation()
+        print("MSTNeighboursDict : ", self.MSTNeighboursDict)
+        self.seq = self.dfsComputation()
+        print("sequence of exploration : ", self.seq)
+        self.defineObjectivesSeq()
+        print("ObjectivesSeq : ", self.objectivesSeq)
+        # self.drawGraph()
+        return self.seq
     
     def cleanGraph(self):
         for key in self.graphChildsList:
@@ -249,16 +261,117 @@ class RoomExplorator():
             self.MST.append(chosenV)
             minHeap.pop(chosenV)
         
-        # print('MST : ', self.MST)
-        # print('EDGES MST : ',self.MSTedges)
+        print('MST : ', self.MST)
+        print('EDGES MST : ',self.MSTedges)
 
-
-
-        
-        
+    def MSTNeighboursDictComputation(self):
+        for vertice in self.MST:
+            for edge in self.MSTedges:
+                if vertice in edge:
+                    if vertice in self.MSTNeighboursDict:
+                        if edge[0] == vertice:
+                            if edge[1] not in self.MSTNeighboursDict[vertice]:
+                                self.MSTNeighboursDict[vertice].append(edge[1])
+                        else : 
+                            if edge[0] not in self.MSTNeighboursDict[vertice]:
+                                self.MSTNeighboursDict[vertice].append(edge[0])
+                    else :
+                        if edge[0] == vertice:
+                            self.MSTNeighboursDict[vertice] = [edge[1]]
+                        else : 
+                            self.MSTNeighboursDict[vertice] = [edge[0]]
 
     def dfsComputation(self):
-        pass
+        seq = ['0-0']
+        heap = ['0-0']
+        visited  = ['0-0']
+        actualV = '0-0'
+
+        def choseNextV():
+            chosenV = None
+            for v in self.MSTNeighboursDict[heap[-1]]:
+                if v not in visited and v not in heap:
+                    chosenV = v
+            return chosenV
+
+        while len(heap)>0:
+            actualV = choseNextV()
+            if actualV is None:
+                heap.pop()
+                if len(heap)>0:
+                    actualV = heap[-1]
+            else:
+                visited.append(actualV)
+                heap.append(actualV)
+            if actualV is not None:
+                seq.append(actualV)
+        return seq
+
+    def defineObjectivesSeq(self):
+        stepMB = self.SC.distRefPointBots
+        radiusMB = self.SC.measurerBot.radius
+        visitedNodes = []
+        def exploreNode(node):
+            intervalX = self.graph[node]
+            yNode = self.graph[node][0][1]
+            if len(self.objectivesSeq) > 0:
+                initX = self.objectivesSeq[-1][0]
+            else :
+                initX = self.SC.initMeasurerPos[0]
+            if initX - intervalX[0][0] < intervalX[1][0] - initX:
+                self.objectivesSeq.append([intervalX[0][0] + stepMB[0]/2, yNode])
+                self.objectivesSeq.append([intervalX[1][0] - stepMB[0]/2, yNode])
+            else :
+                self.objectivesSeq.append([intervalX[1][0] - stepMB[0]/2, yNode])
+                self.objectivesSeq.append([intervalX[0][0] + stepMB[0]/2, yNode])
+        
+        def goToNextNode(i):
+            node = self.seq[i]
+            nextNode = self.seq[i+1]
+            yNextNode =  self.graph[nextNode][0][1]
+            yNode = self.graph[node][0][1]
+            commonPart = [max(self.graph[node][0][0], self.graph[nextNode][0][0]), min(self.graph[node][1][0],  self.graph[nextNode][1][0])]
+            initX = self.objectivesSeq[-1][0]
+            targetX = None
+            potentialPathX = []
+            for x in range(int(commonPart[0] + stepMB[0]//2), int(commonPart[1] - stepMB[0]//2), int(stepMB[0]//2)):
+                for wall in self.walls:
+                    inter = lineSegmentInter([[0,1], [x, yNextNode]], wall)
+                    if inter is not None:
+                        # if not((yNode <= inter[1] <= yNextNode) or (yNextNode <= inter[1] <= yNode) or (yNode <= inter[1] + radiusMB/2 <= yNextNode) or (yNextNode <= inter[1] + radiusMB/2 <= yNode) or (yNode <= inter[1] - radiusMB/2 <= yNextNode) or (yNextNode <= inter[1] - radiusMB/2 <= yNode)):
+                        if not((yNode <= inter[1] <= yNextNode) or (yNextNode <= inter[1] <= yNode)):
+                            if not x in potentialPathX:
+                                potentialPathX.append(x)
+                    else:
+                        if not x in potentialPathX:
+                            potentialPathX.append(x)
+
+            for x in range(int(commonPart[1] - stepMB[0]//2), int(commonPart[0] + stepMB[0]//2), -int(stepMB[0]//2)):
+                for wall in self.walls:
+                    inter = lineSegmentInter([[0,1], [x, yNextNode]], wall)
+                    if inter is not None:
+                        # if not((yNode <= inter[1] <= yNextNode) or (yNextNode <= inter[1] <= yNode) or (yNode <= inter[1] + radiusMB/2 <= yNextNode) or (yNextNode <= inter[1] + radiusMB/2 <= yNode) or (yNode <= inter[1] - radiusMB/2 <= yNextNode) or (yNextNode <= inter[1] - radiusMB/2 <= yNode)):
+                        if not((yNode <= inter[1] <= yNextNode) or (yNextNode <= inter[1] <= yNode)):
+                            if not x in potentialPathX:
+                                potentialPathX.append(x)
+                    else:
+                        if not x in potentialPathX:
+                            potentialPathX.append(x)
+            if len(potentialPathX)>0:
+                distX = [abs(potentialPathX[i] - initX) for i in range(len(potentialPathX))]
+                
+                targetX = potentialPathX[np.argmin(distX)]
+                self.objectivesSeq.append([targetX, yNode])
+                self.objectivesSeq.append([targetX, yNextNode])
+        indexSeq = 0
+        while indexSeq != len(self.seq) - 1:
+            node = self.seq[indexSeq]
+            if node not in visitedNodes: 
+                exploreNode(node)
+                visitedNodes.append(node)
+            goToNextNode(indexSeq)
+            indexSeq+=1
+
 
     def checkColParents(self, newLine, parent, commonPart):
         yChild = newLine[0][1]
@@ -266,12 +379,12 @@ class RoomExplorator():
         stepMB = self.SC.distRefPointBots
         radiusMB = self.SC.measurerBot.radius
         
-        for x in range(int(commonPart[0] + radiusMB//2), int(commonPart[1] - radiusMB//2), int(stepMB[0])):
+        for x in range(int(commonPart[0] + stepMB[0]//2), int(commonPart[1] - stepMB[1]//2), int(stepMB[0])):
             pathExist = True
             for wall in self.walls:
                 inter = lineSegmentInter([[0,1], [x, yChild]], wall)
                 if inter is not None:
-                    if (yChild <= inter[1] <= yParent) or (yParent <= inter[1] <= yChild):
+                    if (yChild <= inter[1] <= yParent) or (yParent <= inter[1] <= yChild) or (yChild <= inter[1] + radiusMB/2 <= yParent) or (yParent <= inter[1] + radiusMB/2 <= yChild) or (yChild <= inter[1] - radiusMB/2 <= yParent) or (yParent <= inter[1] - radiusMB/2 <= yChild):
                         pathExist = False
             if pathExist:
                 return True
@@ -324,6 +437,12 @@ class RoomExplorator():
             pos = ((self.graph[key][0][0] +self.graph[key][1][0])/2 - 10 , (self.graph[key][0][1] +self.graph[key][1][1])/2 - 10)
             textsurface = myfont.render(key, False, (255, 255, 255))
             win.blit(textsurface,pos)
+        
+        for i in range(len(self.objectivesSeq)):
+            if i < self.globalIndexObjectivesSeq:
+                pygame.draw.circle(win, (0,255,0), self.objectivesSeq[i], 4)
+            else :
+                pygame.draw.circle(win, (255,0,255), self.objectivesSeq[i], 4)
             
 
         # for intersEB in self.lineintersEB:
@@ -352,3 +471,19 @@ class RoomExplorator():
         # layout = g.layout("fr")
         plot(g, layout = layout)
         plot(gMST, layout = layoutMST)
+
+
+    def move(self):
+        if not self.checkMovingMeasurerBot():
+            if self.globalIndexObjectivesSeq < len(self.objectivesSeq):
+                self.moveSeq(self.globalIndexObjectivesSeq)
+                self.globalIndexObjectivesSeq += 1
+
+    def moveSeq(self, indexObjectivesSeq):
+        self.SC.measurerBot.defineObjective(self.objectivesSeq[indexObjectivesSeq])
+
+    def checkMovingMeasurerBot(self):
+        if self.SC.measurerBot.haveObjective:
+            return True
+        return False
+

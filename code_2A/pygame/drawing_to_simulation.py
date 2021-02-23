@@ -182,7 +182,8 @@ def load_and_launch_simulation():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-        SC.move()
+        # SC.move()
+        SE.move()
         SE.draw(win)
         for obj in room.objects:
             if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, bot.Obstacle) and obj.movable):

@@ -22,25 +22,25 @@ class SwarmController():
         self.win = win
 
 
-        initObjectives = []
-        for i in range(self.nbRefPointBots):
-            initObjectives.append((self.measurerBot.x + distRefPointBots[0]/2 + ((i-2)//2)*distRefPointBots[0], self.measurerBot.y - distRefPointBots[1]/2 + (i%2)*distRefPointBots[1]))
+        # initObjectives = []
+        # for i in range(self.nbRefPointBots):
+        #     initObjectives.append((self.measurerBot.x + distRefPointBots[0]/2 + ((i-2)//2)*distRefPointBots[0], self.measurerBot.y - distRefPointBots[1]/2 + (i%2)*distRefPointBots[1]))
         
-        robotsPlaced = []
-        for i in range(self.nbRefPointBots):
-            distMin = None
-            minKey = -1
-            for j in range (self.nbRefPointBots):
-                if j not in robotsPlaced:
-                    dist = distObjList(refPointBots[j], initObjectives[i])
-                    if distMin == None or dist < distMin:
-                        distMin = dist
-                        self.refPointBots[i] = refPointBots[j]
-                        minKey = j
-            robotsPlaced.append(minKey)
+        # robotsPlaced = []
+        # for i in range(self.nbRefPointBots):
+        #     distMin = None
+        #     minKey = -1
+        #     for j in range (self.nbRefPointBots):
+        #         if j not in robotsPlaced:
+        #             dist = distObjList(refPointBots[j], initObjectives[i])
+        #             if distMin == None or dist < distMin:
+        #                 distMin = dist
+        #                 self.refPointBots[i] = refPointBots[j]
+        #                 minKey = j
+        #     robotsPlaced.append(minKey)
         
-        for i in range(self.nbRefPointBots):
-            self.refPointBots[i].defineObjective(initObjectives[i])
+        # for i in range(self.nbRefPointBots):
+        #     self.refPointBots[i].defineObjective(initObjectives[i])
     
 
     def moveOneStepRefPointBots(self):

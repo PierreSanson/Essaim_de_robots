@@ -16,8 +16,8 @@ class Bot():
         self.lastVel2D = np.asarray([0.0001,0.0001])
         self.objective = objective
         self.radiusDetection = radiusDetection
-        self.rotationSpeed = 8
-        self.speed = 4
+        self.rotationSpeed = 32
+        self.speed = 8
         self.groupObj = []
         self.detectedObj = []
         self.groupObjPoints = []
@@ -400,7 +400,8 @@ class Bot():
 
                 minWall.distBotWall(self)
                 if  minWall.dist_coll - self.radius < self.speed*150/(np.sqrt(self.rotationSpeed)):
-                    self.safeCoeff = max((minWall.dist_coll - self.radius)/(self.speed*150/(np.sqrt(self.rotationSpeed))), 0.01)
+                    # self.safeCoeff = max((minWall.dist_coll - self.radius)/(self.speed*150/(np.sqrt(self.rotationSpeed))), 0.01)
+                    self.safeCoeff = self.safeCoeff
             else:
                 self.safeCoeff = 1
 
