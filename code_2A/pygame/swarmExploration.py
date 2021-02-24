@@ -319,10 +319,46 @@ class RoomExplorator():
             else :
                 initX = self.SC.initMeasurerPos[0]
             if initX - intervalX[0][0] < intervalX[1][0] - initX:
+                for x in range(int(initX), int(intervalX[0][0] + stepMB[0]), -int(stepMB[0])):
+                    pathExist = True
+                    for wall in self.walls:
+                        inter = lineSegmentInter([[0,1], [x, yNode]], wall)
+                        if inter is not None:
+                            if abs(inter[1] - yNode) <= radiusMB:
+                                pathExist = False
+                    if pathExist:
+                        self.objectivesSeq.append([x, yNode])
                 self.objectivesSeq.append([intervalX[0][0] + stepMB[0]/2, yNode])
+                for x in range(int(initX), int(intervalX[1][0] - stepMB[0]), int(stepMB[0])):
+                    pathExist = True
+                    for wall in self.walls:
+                        inter = lineSegmentInter([[0,1], [x, yNode]], wall)
+                        if inter is not None:
+                            if abs(inter[1] - yNode) <= radiusMB:
+                                pathExist = False
+                    if pathExist:
+                        self.objectivesSeq.append([x, yNode])
                 self.objectivesSeq.append([intervalX[1][0] - stepMB[0]/2, yNode])
             else :
+                for x in range(int(initX), int(intervalX[1][0] - stepMB[0]), int(stepMB[0])):
+                    pathExist = True
+                    for wall in self.walls:
+                        inter = lineSegmentInter([[0,1], [x, yNode]], wall)
+                        if inter is not None:
+                            if abs(inter[1] - yNode) <= radiusMB:
+                                pathExist = False
+                    if pathExist:
+                        self.objectivesSeq.append([x, yNode])
                 self.objectivesSeq.append([intervalX[1][0] - stepMB[0]/2, yNode])
+                for x in range(int(initX), int(intervalX[0][0] + stepMB[0]), -int(stepMB[0])):
+                    pathExist = True
+                    for wall in self.walls:
+                        inter = lineSegmentInter([[0,1], [x, yNode]], wall)
+                        if inter is not None:
+                            if abs(inter[1] - yNode) <= radiusMB:
+                                pathExist = False
+                    if pathExist:
+                        self.objectivesSeq.append([x, yNode])
                 self.objectivesSeq.append([intervalX[0][0] + stepMB[0]/2, yNode])
         
         def goToNextNode(i):
@@ -334,7 +370,7 @@ class RoomExplorator():
             initX = self.objectivesSeq[-1][0]
             targetX = None
             potentialPathX = []
-            for x in range(int(commonPart[0] + stepMB[0]//2), int(commonPart[1] - stepMB[0]//2), int(stepMB[0]//2)):
+            for x in range(int(commonPart[0] + stepMB[0]//2), int(commonPart[1] - stepMB[0]//2), int(stepMB[0])):
                 for wall in self.walls:
                     inter = lineSegmentInter([[0,1], [x, yNextNode]], wall)
                     if inter is not None:
@@ -346,7 +382,7 @@ class RoomExplorator():
                         if not x in potentialPathX:
                             potentialPathX.append(x)
 
-            for x in range(int(commonPart[1] - stepMB[0]//2), int(commonPart[0] + stepMB[0]//2), -int(stepMB[0]//2)):
+            for x in range(int(commonPart[1] - stepMB[0]//2), int(commonPart[0] + stepMB[0]//2), -int(stepMB[0])):
                 for wall in self.walls:
                     inter = lineSegmentInter([[0,1], [x, yNextNode]], wall)
                     if inter is not None:
@@ -371,7 +407,6 @@ class RoomExplorator():
                 visitedNodes.append(node)
             goToNextNode(indexSeq)
             indexSeq+=1
-
 
     def checkColParents(self, newLine, parent, commonPart):
         yChild = newLine[0][1]
