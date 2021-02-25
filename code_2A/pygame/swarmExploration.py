@@ -20,23 +20,12 @@ class RoomExplorator():
         distMaxX = -1
         distMaxY =  -1
         
-        for corners in self.room.walls:
-            orientation = corners[-1]
-
-            x_start = corners[0][1] # on fait bien attention entre x et y au sens d'un graphe Vs row et col pour numpy
-            y_start = corners[0][0]
-
-            if orientation == 'v':
-                width = corners[1][1] - corners[0][1]
-                height = corners[3][0] - corners[0][0]
-            elif orientation == 'h':
-                width = corners[3][1] - corners[0][1]
-                height = corners[1][0] - corners[0][0]
-            
-            self.walls.append([[x_start, y_start],[x_start+width, y_start]])
-            self.walls.append([[x_start, y_start],[x_start, y_start + height]])
-            self.walls.append([[x_start + width, y_start],[x_start + width, y_start + height]])
-            self.walls.append([[x_start, y_start+height],[x_start+width, y_start + height]])
+        for wall in self.room.walls:
+                        
+            self.walls.append([[wall.x_start, wall.y_start],[wall.x_start+wall.width, wall.y_start]])
+            self.walls.append([[wall.x_start, wall.y_start],[wall.x_start, wall.y_start + wall.height]])
+            self.walls.append([[wall.x_start + wall.width, wall.y_start],[wall.x_start + wall.width, wall.y_start + wall.height]])
+            self.walls.append([[wall.x_start, wall.y_start+wall.height],[wall.x_start+wall.width, wall.y_start + wall.height]])
 
         for i in range(len(self.walls)):
             for j in range (i+1, len(self.walls)):
@@ -65,7 +54,7 @@ class RoomExplorator():
         #     if inter != None:
         #         initLineinters.append(inter)
         # self.lineinters.append(initLineinters)
-        # self.graph[0] = [[0, self.SC.initMeasurerPos[1], self.room.width, self.SC.initMeasurerPos[1]]]
+        # self.graph[0] = [[0, self.SC.initMeasurerPos[1], self.room.wall.width, self.SC.initMeasurerPos[1]]]
         for i in range(self.nbLinesAbove):
             stepLineinters = []
             stepLineintersEB = []
