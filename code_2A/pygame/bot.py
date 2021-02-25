@@ -16,8 +16,8 @@ class Bot():
         self.lastVel2D = np.asarray([0.0001,0.0001])
         self.objective = objective
         self.radiusDetection = radiusDetection
-        self.rotationSpeed = 8
-        self.speed = 4
+        self.rotationSpeed = 32
+        self.speed = 8
         self.groupObj = []
         self.detectedObj = []
         self.groupObjPoints = []
@@ -400,7 +400,8 @@ class Bot():
 
                 minWall.distBotWall(self)
                 if  minWall.dist_coll - self.radius < self.speed*150/(np.sqrt(self.rotationSpeed)):
-                    self.safeCoeff = max((minWall.dist_coll - self.radius)/(self.speed*150/(np.sqrt(self.rotationSpeed))), 0.01)
+                    # self.safeCoeff = max((minWall.dist_coll - self.radius)/(self.speed*150/(np.sqrt(self.rotationSpeed))), 0.01)
+                    self.safeCoeff = self.safeCoeff
             else:
                 self.safeCoeff = 1
 
@@ -489,34 +490,28 @@ class Bot():
                 polygonInter = polygonLineInter(self, self.groupPolygonPoints,self.barycenterGroupWall, self.vel2D, surface1)
                 if len (polygonInter) == 1:
                     if angleCol > 0:
-                        print("turning bc wall")
                         self.vel2D = rotate(self.vel2D, - self.rotationSpeed*np.pi/180)
                     elif angleCol <= 0:
-                        print("turning bc wall")
                         self.vel2D = rotate(self.vel2D, self.rotationSpeed*np.pi/180)
                 elif not self.checkColObjective():
                     
                     angleWall = signedAngle2Vects2(self.vel2D, np.array([self.objective[0]- self.x, self.objective[1] - self.y]))
                     rotationSpeed = min(self.rotationSpeed*np.pi/180, abs(angleWall))
                     if angleWall >= 0:
-                        print("turning bc wall")
                         self.vel2D = rotate(self.vel2D, rotationSpeed)
                     elif angleWall < 0:
-                        print("turning bc wall")
                         self.vel2D = rotate(self.vel2D, - rotationSpeed)
                 # elif pointInPolygon(self, self.groupPolygonPoints):
                 #     if angleCol > 0:
-                #         print("turning bc wall")
+                #  
                 #         self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
                 #     elif angleCol <= 0:
-                #         print("turning bc wall")
+                #  
                 #         self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
                 elif abs(angleCol) <= np.pi/2 :
                     if angleCol > 0:
-                        print("turning bc wall")
                         self.vel2D = rotate(self.vel2D, - self.rotationSpeed*np.pi/180)
                     elif angleCol <= 0:
-                        print("turning bc wall")
                         self.vel2D = rotate(self.vel2D, self.rotationSpeed*np.pi/180)
                 else:
                     self.noColgoToObjective(surface1)

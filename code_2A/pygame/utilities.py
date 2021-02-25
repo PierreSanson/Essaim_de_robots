@@ -268,3 +268,10 @@ def distMaxXY2Segments(seg1, seg2):
                 else:
                     extremePoints[1] = [point2[1], point1[1]]    
     return [distMaxX, distMaxY, extremePoints]
+
+
+def GetKey(val, graph):
+    for key, value in graph.items():
+        if val == value:
+            return key
+    return "key doesn't exist"
