@@ -16,8 +16,8 @@ class Bot():
         self.lastVel2D = np.asarray([0.0001,0.0001])
         self.objective = objective
         self.radiusDetection = radiusDetection
-        self.rotationSpeed = 12
-        self.speed = 4
+        self.rotationSpeed = 32
+        self.speed = 8
         self.groupObj = []
         self.detectedObj = []
         self.groupObjPoints = []
@@ -60,7 +60,7 @@ class Bot():
                 pygame.draw.line(surface1, (255,255,255), (self.x, self.y), (self.x + vel2DU[0]*self.radius, self.y + vel2DU[1]*self.radius))
         else:
             # Uncomment/comment for more/less details about the process !
-            pygame.draw.circle(surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
+            # pygame.draw.circle(surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
             if self.mode == "circle" :
                 pygame.draw.circle(surface1, (255,0,255, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
                 pygame.draw.circle(surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
@@ -72,7 +72,6 @@ class Bot():
                 if self.groupPolygonPoints == []:
                     self.convexHullObstacles = None
                 if self.convexHullObstacles is not None:
-                    print(self.groupPolygonPoints)
                     pygame.draw.polygon(surface1, (200,50,50, 64), self.groupPolygonPoints)
                     pygame.draw.circle(surface1, (200,200,200, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
             if np.linalg.norm(self.vel2D) !=0:
@@ -134,7 +133,7 @@ class Bot():
         for wall in self.room.walls:
             if wall != self :
                 wall.distBotWall(self)
-                if wall.dist_coll <= self.radiusDetection:
+                if wall.dist_coll <= 50:
 
                     if wall.dist_coll < self.radius:
                         print("COLLISION")
@@ -394,12 +393,15 @@ class Bot():
 
             if minWall is not None:
                 if minWall not in self.groupWall :
-                    self.groupWall.append(minWall)
-                    self.groupWallPoints+=minWall.borderPoints[:]
+                    # self.groupWall.append(minWall)
+                    self.groupWall = [minWall]
+                    # self.groupWallPoints+=minWall.borderPoints[:]
+                    self.groupWallPoints=minWall.borderPoints[:]
 
                 minWall.distBotWall(self)
                 if  minWall.dist_coll - self.radius < self.speed*150/(np.sqrt(self.rotationSpeed)):
-                    self.safeCoeff = max((minWall.dist_coll - self.radius)/(self.speed*150/(np.sqrt(self.rotationSpeed))), 0.01)
+                    # self.safeCoeff = max((minWall.dist_coll - self.radius)/(self.speed*150/(np.sqrt(self.rotationSpeed))), 0.01)
+                    self.safeCoeff = self.safeCoeff
             else:
                 self.safeCoeff = 1
 
@@ -411,28 +413,28 @@ class Bot():
             if minWall is not None:
                 checkedgroupWall = [minWall]
                 checkedgroupWallPoints = minWall.borderPoints[:]
-                i=0
-                while i<len(checkedgroupWall):
-                    for wall in self.groupWall:
-                        if wall not in checkedgroupWall:
-                            if distObj(wall, checkedgroupWall[i]) < 2*self.radius + 2*self.margin:
-                                checkedgroupWall.append(wall)
-                                checkedgroupWallPoints+=wall.borderPoints[:]
-                    i+=1
+                # i=0
+                # while i<len(checkedgroupWall):
+                #     for wall in self.groupWall:
+                #         if wall not in checkedgroupWall:
+                #             if distObj(wall, checkedgroupWall[i]) < 2*self.radius + 2*self.margin:
+                #                 checkedgroupWall.append(wall)
+                #                 checkedgroupWallPoints+=wall.borderPoints[:]
+                #     i+=1
                 self.groupWall = checkedgroupWall
                 self.groupWallPoints = checkedgroupWallPoints
 
             elif len(self.groupWall) > 0 :
                 checkedgroupWall = [self.groupWall[0]]
                 checkedgroupWallPoints = self.groupWall[0].borderPoints[:]
-                i=0
-                while i<len(checkedgroupWall):
-                    for wall in self.groupWall:
-                        if wall not in checkedgroupWall:
-                            if distObj(wall, checkedgroupWall[i]) < 2*self.radius + 2*self.margin:
-                                checkedgroupWall.append(wall)
-                                checkedgroupWallPoints+=wall.borderPoints[:]
-                    i+=1
+                # i=0
+                # while i<len(checkedgroupWall):
+                #     for wall in self.groupWall:
+                #         if wall not in checkedgroupWall:
+                #             if distObj(wall, checkedgroupWall[i]) < 2*self.radius + 2*self.margin:
+                #                 checkedgroupWall.append(wall)
+                #                 checkedgroupWallPoints+=wall.borderPoints[:]
+                #     i+=1
                 self.groupWall = checkedgroupWall
                 self.groupWallPoints = checkedgroupWallPoints
 
@@ -453,14 +455,14 @@ class Bot():
                 self.convexHullObstacles = None
             
 
-            i=0
-            while i<len(self.groupWall):
-                for wall in self.detectedWall : 
-                    if wall not in self.groupWall :
-                        if distObj(wall, self.groupWall[i]) < 2*self.radius + 2*self.margin:
-                            self.groupWall.append(wall)
-                            self.groupWallPoints+=wall.borderPoints[:]
-                i+=1
+            # i=0
+            # while i<len(self.groupWall):
+            #     for wall in self.detectedWall : 
+            #         if wall not in self.groupWall :
+            #             if distObj(wall, self.groupWall[i]) < 2*self.radius + 2*self.margin:
+            #                 self.groupWall.append(wall)
+            #                 self.groupWallPoints+=wall.borderPoints[:]
+            #     i+=1
             
             
             
@@ -468,12 +470,17 @@ class Bot():
             if (len(self.groupWall)) > 0:
                 self.barycenterGroupWall = { 'x' : (1/len(self.groupWall))*np.sum(np.array([wall.x for wall in self.groupWall])), 'y' : (1/len(self.groupWall))*np.sum(np.array([wall.y for wall in self.groupWall]))}
 
-                if len(self.groupObjPoints) > 0 and len(self.groupWallPoints) > 0:
-                    self.convexHullObstacles = ConvexHull(self.groupWallPoints + self.groupObjPoints)
-                    if self.convexHullObstacles is not None:
-                        groupPoints = self.groupWallPoints + self.groupObjPoints
-                        self.groupPolygonPoints = [groupPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
-                elif len(self.groupWallPoints) > 0:
+                # if len(self.groupObjPoints) > 0 and len(self.groupWallPoints) > 0:
+                #     self.convexHullObstacles = ConvexHull(self.groupWallPoints + self.groupObjPoints)
+                #     if self.convexHullObstacles is not None:
+                #         groupPoints = self.groupWallPoints + self.groupObjPoints
+                #         self.groupPolygonPoints = [groupPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
+                # elif len(self.groupWallPoints) > 0:
+                #         self.convexHullObstacles = ConvexHull(self.groupWallPoints)
+                #         if self.convexHullObstacles is not None:
+                #             self.groupPolygonPoints = [self.groupWallPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
+
+                if len(self.groupWallPoints) > 0:
                         self.convexHullObstacles = ConvexHull(self.groupWallPoints)
                         if self.convexHullObstacles is not None:
                             self.groupPolygonPoints = [self.groupWallPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
@@ -494,11 +501,13 @@ class Bot():
                         self.vel2D = rotate(self.vel2D, rotationSpeed)
                     elif angleWall < 0:
                         self.vel2D = rotate(self.vel2D, - rotationSpeed)
-                elif pointInPolygon(self, self.groupPolygonPoints):
-                    if angleCol > 0:
-                        self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
-                    elif angleCol <= 0:
-                        self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
+                # elif pointInPolygon(self, self.groupPolygonPoints):
+                #     if angleCol > 0:
+                #  
+                #         self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
+                #     elif angleCol <= 0:
+                #  
+                #         self.vel2D = rotate(self.vel2D, self.turnAroundCoeff*self.rotationSpeed*np.pi/180)
                 elif abs(angleCol) <= np.pi/2 :
                     if angleCol > 0:
                         self.vel2D = rotate(self.vel2D, - self.rotationSpeed*np.pi/180)
@@ -569,7 +578,6 @@ class Bot():
 
 
     def defineObjective(self, coord):
-        print(coord)
         self.haveObjective = True
         self.objective = [0,0]
         self.objective[0] = coord[0]

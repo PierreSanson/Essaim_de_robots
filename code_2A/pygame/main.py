@@ -73,13 +73,16 @@ def scenario():
 
     winWidth = 1600
     winHeight = 900
+
     win = pygame.display.set_mode((winWidth,winHeight))
     surface1 = pygame.Surface((winWidth,winHeight),  pygame.SRCALPHA) 
 
     pygame.display.set_caption("First Game")
+    room = Room(winWidth, winHeight, win)
+
 
     clock = pygame.time.Clock()
-    hz = 60
+    hz = 144
 
     x = 60
     y = 60
@@ -195,7 +198,7 @@ def scenario():
                 run = False
 
         
-        room.draw()
+        # room.draw()
         for obj in room.objects:
             if isinstance(obj, eb.ExplorerBot) or (isinstance(obj, bot.Obstacle) and obj.movable):
                 obj.move(surface1)

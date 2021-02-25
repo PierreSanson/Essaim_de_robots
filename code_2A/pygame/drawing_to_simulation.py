@@ -143,18 +143,18 @@ def drawing_to_simulation(table):
     for bot in robots_centers:
         botType = bot.pop()
         if botType == 1:
-            measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 15, room, objective = None, haveObjective = False, showDetails = True))
+            measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 10, room, objective = None, haveObjective = False))
         elif botType == 2:
-            explorerBots.append(eb.ExplorerBot(bot[0][0], bot[0][1], 12, room, objective = [0, 0], randomObjective = True, randomInterval =1))
-        elif botType == 3:
-            refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 10, room, objective = None, haveObjective = False))
+            explorerBots.append(eb.ExplorerBot(bot[0][0], bot[0][1], 8, room, objective = [0, 0], randomObjective = True, randomInterval =1, showDetails = True))
+        # elif botType == 3:
+        #     refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 6, room, objective = None, haveObjective = False, showDetails = True))
 
             
     bots = measuringBots + explorerBots + refPointBots
 
     room.addObjects(bots)
 
-    SC = sc.SwarmController(screen, measuringBots[0], refPointBots, distRefPointBots=[100,100])
+    SC = sc.SwarmController(screen, measuringBots[0], refPointBots, distRefPointBots=[60,60])
     SE = se.RoomExplorator(room,SC)
 
     SC.initMove()
@@ -182,7 +182,8 @@ def load_and_launch_simulation():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-        SC.move()
+        # SC.move()
+        SE.move()
         SE.draw(win)
         for obj in room.objects:
             if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, bot.Obstacle) and obj.movable):

@@ -22,26 +22,25 @@ class SwarmController():
         self.win = win
 
 
-        initObjectives = []
-        for i in range(self.nbRefPointBots):
-            initObjectives.append((self.measurerBot.x + distRefPointBots[0]/2 + ((i-2)//2)*distRefPointBots[0], self.measurerBot.y - distRefPointBots[1]/2 + (i%2)*distRefPointBots[1]))
+        # initObjectives = []
+        # for i in range(self.nbRefPointBots):
+        #     initObjectives.append((self.measurerBot.x + distRefPointBots[0]/2 + ((i-2)//2)*distRefPointBots[0], self.measurerBot.y - distRefPointBots[1]/2 + (i%2)*distRefPointBots[1]))
         
-        robotsPlaced = []
-        for i in range(self.nbRefPointBots):
-            distMin = None
-            minKey = -1
-            for j in range (self.nbRefPointBots):
-                if j not in robotsPlaced:
-                    dist = distObjList(refPointBots[j], initObjectives[i])
-                    if distMin == None or dist < distMin:
-                        distMin = dist
-                        self.refPointBots[i] = refPointBots[j]
-                        minKey = j
-            robotsPlaced.append(minKey)
+        # robotsPlaced = []
+        # for i in range(self.nbRefPointBots):
+        #     distMin = None
+        #     minKey = -1
+        #     for j in range (self.nbRefPointBots):
+        #         if j not in robotsPlaced:
+        #             dist = distObjList(refPointBots[j], initObjectives[i])
+        #             if distMin == None or dist < distMin:
+        #                 distMin = dist
+        #                 self.refPointBots[i] = refPointBots[j]
+        #                 minKey = j
+        #     robotsPlaced.append(minKey)
         
-        for i in range(self.nbRefPointBots):
-            print('objective defined!')
-            self.refPointBots[i].defineObjective(initObjectives[i])
+        # for i in range(self.nbRefPointBots):
+        #     self.refPointBots[i].defineObjective(initObjectives[i])
     
 
     def moveOneStepRefPointBots(self):
@@ -77,7 +76,6 @@ class SwarmController():
             self.measurerBot.y - self.distRefPointBots[1]/2 + (i%2)*self.distRefPointBots[1]))
 
         robotsTemp = [self.refPointBots[i] for i in range(self.nbRefPointBots - 4 - shift)]
-        print(shift)
         for i in range(4 + shift):
             self.refPointBots[i] = self.refPointBots[i+self.nbRefPointBots-shift-4]
         for i in range(self.nbRefPointBots - 4 - shift):
@@ -111,7 +109,6 @@ class SwarmController():
             self.refPointBots[self.nbRefPointBots-1].color = (0,0,255)
             self.refPointBots[self.nbRefPointBots-2].color = (0,0,255)
             if self.actualSequenceCount == self.actualSequenceLength:
-                print(self.actualSequenceLength%(self.nbRefPointBots//2 -2))
                 if self.actualSequenceLength%(self.nbRefPointBots//2 -2) == 0:
                     self.moveOneStepMeasurerBot(self.nbRefPointBots//2)
                 else :
@@ -166,10 +163,6 @@ class SwarmController():
         return True
 
     def turnRight(self):
-
-        for i in range(self.nbRefPointBots):
-            print('avant : ' + str(i) + " : " + str(self.refPointBots[i].x) + "," + str(self.refPointBots[i].y))
-
         robotTemp = {key: value for key, value in self.refPointBots.items()}            
         self.refPointBots[self.nbRefPointBots- 2] =  robotTemp[self.nbRefPointBots- 1]
         self.refPointBots[self.nbRefPointBots- 4] =  robotTemp[self.nbRefPointBots- 2]
@@ -187,9 +180,6 @@ class SwarmController():
         elif self.orientation == 'up':
             self.orientation = 'right'
         
-        for i in range(self.nbRefPointBots):
-            print('après : ' +  str(i) + " : " + str(self.refPointBots[i].x) + "," + str(self.refPointBots[i].y))
-
         self.maxOneStepCount = self.actualSequenceLength
         if self.actualSequenceLength == 0 or self.actualSequenceLength >= self.nbRefPointBots//2 - 2:
             self.actualSequenceLength = self.nbRefPointBots//2 - 2
