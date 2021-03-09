@@ -1,3 +1,4 @@
+from numpy.core.fromnumeric import argmin
 from utilities import *
 
 import pygame
@@ -7,7 +8,7 @@ from copy import deepcopy
 from scipy.spatial import ConvexHull
 
 class Bot():
-    def __init__(self, x, y, radius, room, objective, randomObjective = False, randomInterval = 10, color = (0,255,0), haveObjective = True, radiusDetection = 200, showDetails = False):
+    def __init__(self, x, y, radius, room, objective, randomObjective = False, randomInterval = 10, color = (0,255,0), haveObjective = True, radiusDetection = 100, showDetails = False):
         self.room = room
         self.x = x
         self.y = y
@@ -21,6 +22,7 @@ class Bot():
         self.groupObj = []
         self.detectedObj = []
         self.groupObjPoints = []
+        self.walls = []
         self.groupWall = []
         self.detectedWall = []
         self.groupWallPoints = []
@@ -32,7 +34,7 @@ class Bot():
         self.barycenterGroupWall = {'x' : 0, 'y' : 0}
         self.groupObjRadius = 0
         self.randomInterval = randomInterval
-        self.margin=5
+        self.margin=2
         self.polygonPointsAbsolute = createPolygonMask([0, 0], 10, self.radius + self.margin)
         self.polygonPoints = deepcopy(self.polygonPointsAbsolute)
         self.convexHullObstacles = None
@@ -42,10 +44,34 @@ class Bot():
         self.ontoObjective = False
         self.haveObjective = haveObjective
         self.showDetails = showDetails
+        self.maxDistConsider = 100
         if not self.haveObjective:
             self.vel2D = np.asarray([0,0])
-
+        for wall in self.room.walls:  
+            self.walls.append([[wall.x_start, wall.y_start],[wall.x_start+wall.width, wall.y_start]])
+            self.walls.append([[wall.x_start, wall.y_start],[wall.x_start, wall.y_start + wall.height]])
+            self.walls.append([[wall.x_start + wall.width, wall.y_start],[wall.x_start + wall.width, wall.y_start + wall.height]])
+            self.walls.append([[wall.x_start, wall.y_start+wall.height],[wall.x_start+wall.width, wall.y_start + wall.height]])
+        self.defineObstaclesFromWalls()
          
+
+    def defineObstaclesFromWalls(self):
+        radiusObstacles = 2
+        spaceBetweenObstaclesCenter = 15
+        obstacles = []
+        for wall in self.walls:
+            if wall[0][1] == wall[1][1]:
+                y = wall[0][1]
+                for x in range(wall[0][0] + radiusObstacles, wall[1][0], spaceBetweenObstaclesCenter):
+                    obstacles.append(Obstacle(x, y, radiusObstacles, self.room, isWall='x'))
+
+            elif wall[0][0] == wall[1][0]:
+                x = wall[0][0]
+                for y in range(wall[0][1] + radiusObstacles, wall[1][1], spaceBetweenObstaclesCenter):
+                    obstacles.append(Obstacle(x, y, radiusObstacles, self.room, isWall='y'))
+        
+        self.room.addObjects(obstacles)
+
 
 
     def draw(self, win, surface1):
@@ -127,21 +153,25 @@ class Bot():
                                 collision_bot[obj] = sols[minIndex]
                             else:
                                 collision_bot[obj] = sols[0]
+        
+        for obj in self.detectedObj:
+            if distObj(obj, self) > self.maxDistConsider:
+                self.detectedObj.remove(obj)
 
         # pour les murs
         collision_wall = {}
-        for wall in self.room.walls:
-            if wall != self :
-                wall.distBotWall(self)
-                if wall.dist_coll <= 50:
+        # for wall in self.room.walls:
+        #     if wall != self :
+        #         wall.distBotWall(self)
+        #         if wall.dist_coll <= 50:
 
-                    if wall.dist_coll < self.radius:
-                        print("COLLISION")
+        #             if wall.dist_coll < self.radius:
+        #                 print("COLLISION")
 
-                    if (wall not in self.detectedWall):
-                        self.detectedWall.append(wall)
+        #             if (wall not in self.detectedWall):
+        #                 self.detectedWall.append(wall)
 
-                    collision_wall[wall] = wall
+        #             collision_wall[wall] = wall
 
         return collision_bot, collision_wall
 
@@ -271,8 +301,8 @@ class Bot():
                     self.groupObjPoints+=minObj.polygonPoints[:]
 
                 dist = distObj(self, minObj)
-                if  dist - minObj.radius - self.radius < self.speed*80/(np.sqrt(self.rotationSpeed)):
-                    self.safeCoeff = max((dist - minObj.radius - self.radius)/(self.speed*80/(np.sqrt(self.rotationSpeed))), 0.01)
+                if  dist - minObj.radius - self.radius < self.speed*40/(np.sqrt(self.rotationSpeed)):
+                    self.safeCoeff = max((dist - minObj.radius - self.radius)/(self.speed*40/(np.sqrt(self.rotationSpeed))), 0.01)
             else:
                 self.safeCoeff = 1
 
@@ -290,28 +320,42 @@ class Bot():
                     for obj in self.groupObj:
                         if obj not in checkedgroupObj:
                             if distObj(obj, checkedgroupObj[i]) < obj.radius + checkedgroupObj[i].radius + 2*self.radius + 2*self.margin:
-                                checkedgroupObj.append(obj)
-                                checkedgroupObjPoints+=obj.polygonPoints[:]
+                                if distObj(obj, self) < self.maxDistConsider :
+                                    if minObj is not None and isinstance(minObj, Obstacle) and isinstance(obj, Obstacle) and (minObj.isWall or obj.isWall):
+                                        if obj.isWall == minObj.isWall or distObj(obj, self) < 30:
+                                            checkedgroupObj.append(obj)
+                                            checkedgroupObjPoints+=obj.polygonPoints[:]
+                                    else:
+                                        checkedgroupObj.append(obj)
+                                        checkedgroupObjPoints+=obj.polygonPoints[:]
                     i+=1
                 self.groupObj = checkedgroupObj
                 self.groupObjPoints = checkedgroupObjPoints
 
             elif len(self.groupObj) > 0 :
-                checkedgroupObj = [self.groupObj[0]]
-                checkedgroupObjPoints = self.groupObj[0].polygonPoints[:]
+                distList = [distObj(obj, self) for obj in self.groupObj]
+                minObj = self.groupObj[argmin(distList)]
+                checkedgroupObj = [self.groupObj[argmin(distList)]]
+                checkedgroupObjPoints = checkedgroupObj[0].polygonPoints[:]
                 i=0
                 while i<len(checkedgroupObj):
                     for obj in self.groupObj:
                         if obj not in checkedgroupObj:
                             if distObj(obj, checkedgroupObj[i]) < obj.radius + checkedgroupObj[i].radius + 2*self.radius + 2*self.margin:
-                                checkedgroupObj.append(obj)
-                                checkedgroupObjPoints+=obj.polygonPoints[:]
+                                if distObj(obj, self) < self.maxDistConsider :
+                                    if minObj is not None and isinstance(minObj, Obstacle) and isinstance(obj, Obstacle) and (minObj.isWall or obj.isWall):
+                                        if obj.isWall == minObj.isWall or distObj(obj, self) < 30:
+                                            checkedgroupObj.append(obj)
+                                            checkedgroupObjPoints+=obj.polygonPoints[:]
+                                    else:
+                                        checkedgroupObj.append(obj)
+                                        checkedgroupObjPoints+=obj.polygonPoints[:]
                     i+=1
                 self.groupObj = checkedgroupObj
                 self.groupObjPoints = checkedgroupObjPoints
-                self.convexHullObstacles = ConvexHull(self.groupObjPoints)
-                if self.convexHullObstacles is not None:
-                    self.groupPolygonPoints = [self.groupObjPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
+                # self.convexHullObstacles = ConvexHull(self.groupObjPoints)
+                # if self.convexHullObstacles is not None:
+                #     self.groupPolygonPoints = [self.groupObjPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
             else :
                 self.groupObj = []
                 self.groupObjPoints = []
@@ -320,13 +364,24 @@ class Bot():
             
 
             i=0
-            while i<len(self.groupObj):
-                for obj in self.detectedObj : 
-                    if obj not in self.groupObj :
-                        if distObj(obj, self.groupObj[i]) < obj.radius + self.groupObj[i].radius + 2*self.radius + 2*self.margin:
-                            self.groupObj.append(obj)
-                            self.groupObjPoints+=obj.polygonPoints[:]
-                i+=1
+            if minObj is not None and isinstance(minObj, Obstacle) and minObj.isWall:
+                while i<len(self.groupObj):
+                    for obj in self.detectedObj : 
+                        if obj not in self.groupObj :
+                            if distObj(obj, self.groupObj[i]) < obj.radius + self.groupObj[i].radius + 2*self.radius + 2*self.margin:
+                                if isinstance(obj, Obstacle) and obj.isWall == minObj.isWall or distObj(obj, self) < 10:
+                                    self.groupObj.append(obj)
+                                    self.groupObjPoints+=obj.polygonPoints[:]
+                    i+=1
+            # else:
+            #     while i<len(self.groupObj):
+            #         for obj in self.detectedObj : 
+            #             if obj not in self.groupObj :
+            #                 if distObj(obj, self.groupObj[i]) < obj.radius + self.groupObj[i].radius + 2*self.radius + 2*self.margin:
+            #                     self.groupObj.append(obj)
+            #                     self.groupObjPoints+=obj.polygonPoints[:]
+            #         i+=1
+            
             
             
             
@@ -529,8 +584,9 @@ class Bot():
                     for obj in self.groupObj:
                         if obj not in checkedgroupObj:
                             if distObj(obj, checkedgroupObj[i]) < obj.radius + checkedgroupObj[i].radius + 2*self.radius + 2*self.margin:
-                                checkedgroupObj.append(obj)
-                                checkedgroupObjPoints+=obj.polygonPoints[:]
+                                if distObj(obj, self) < self.maxDistConsider :
+                                    checkedgroupObj.append(obj)
+                                    checkedgroupObjPoints+=obj.polygonPoints[:]
                     i+=1
                 self.groupObj = checkedgroupObj
                 self.groupObjPoints = checkedgroupObjPoints
@@ -588,7 +644,8 @@ class Bot():
 
 
 class Obstacle():
-    def __init__(self, x, y, radius, room, movable = False, vel = 2, margin = 5):
+    def __init__(self, x, y, radius, room, movable = False, vel = 2, margin = 2, isWall = False):
+        self.isWall = isWall
         self.room = room
         self.x = x
         self.y = y
