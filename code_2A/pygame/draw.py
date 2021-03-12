@@ -15,6 +15,7 @@ from tkinter.filedialog import askopenfilename, asksaveasfilename
 import sys
 
 # mes besoins
+import os
 import numpy as np
 import pickle
 from clean_draw import straighten_walls, clean_walls_and_robots
@@ -391,10 +392,10 @@ def draw_initial_config():
     screen = pg.display.set_mode((sw, sh))
     pg.display.set_caption("Initial configuration")
 
-
-    brushImage = pg.transform.scale(pg.image.load('./img/brush.jpg'), (25,25))
-    eraserImage = pg.transform.scale(pg.image.load('./img/eraser.jpg'), (25,25))
-    trashImage = pg.transform.scale(pg.image.load('./img/trash.jpg'), (25,25))
+    dirname = os.path.dirname(__file__)
+    brushImage = pg.transform.scale(pg.image.load(os.path.join(dirname, './img/brush.jpg')), (25,25))
+    eraserImage = pg.transform.scale(pg.image.load(os.path.join(dirname, './img/eraser.jpg')), (25,25))
+    trashImage = pg.transform.scale(pg.image.load(os.path.join(dirname, './img/trash.jpg')), (25,25))
 
     colors = [ [0, 0, 0], [255,0,0], [0,255,0], [0,0,255] ]
     colorCells = []
