@@ -7,6 +7,7 @@ import numpy as np
 import pickle
 
 import bot
+import obstacle as obs
 import explorerBot as eb
 import refPointBot as rpb
 import measuringBot as mb
@@ -136,6 +137,8 @@ def drawing_to_simulation(table):
     for corners in walls_corners:
         room.addWall(corners)
 
+    room.defineObstaclesFromWalls()
+
     measuringBots = []
     explorerBots = []
     refPointBots = []
@@ -186,7 +189,7 @@ def load_and_launch_simulation():
         SE.move()
         SE.draw(win)
         for obj in room.objects:
-            if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, bot.Obstacle) and obj.movable):
+            if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, obs.Obstacle) and obj.movable):
                 obj.move(surface1)
         win.blit(surface1, (0,0))
         pygame.display.update()

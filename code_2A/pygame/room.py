@@ -1,6 +1,8 @@
 import pygame
 import numpy as np
 
+import obstacle as obs
+
 
 class Wall():
     def __init__(self, corners):
@@ -14,56 +16,30 @@ class Wall():
                 self.width = corners[1][1] - corners[0][1]
                 self.height = corners[3][0] - corners[0][0]
 
-                self.borderPoints = []
                 # lignes:
                 X = list(range(corners[0][1], corners[1][1],10))
                 if not corners[1][1] in X:
                     X.append(corners[1][1])
-
-                for x in X:
-                    self.borderPoints.append((x,corners[0][0]))
-                    self.borderPoints.append((x,corners[2][0]))
                    
                 # colonnes:
                 Y = list(range(corners[0][0], corners[2][0],10))
                 if not corners[2][0] in Y:
                     Y.append(corners[2][0])
 
-                for y in Y:
-                    self.borderPoints.append((corners[0][1],y))
-                    self.borderPoints.append((corners[1][1],y))
-                    
+
         elif orientation == 'h':
                 self.width = corners[3][1] - corners[0][1]
                 self.height = corners[1][0] - corners[0][0]
 
-                self.borderPoints = []
                 # lignes:
                 X = list(range(corners[0][1], corners[2][1],10))
                 if not corners[2][1] in X:
                     X.append(corners[2][1])
-
-                for x in X:
-                    self.borderPoints.append((x,corners[0][0]))
-                    self.borderPoints.append((x,corners[1][0]))
                    
                 # colonnes:
                 Y = list(range(corners[0][0], corners[1][0],10))
                 if not corners[1][0] in Y:
                     Y.append(corners[1][0])
-
-                for y in Y:
-                    self.borderPoints.append((corners[0][1],y))
-                    self.borderPoints.append((corners[2][1],y))
-
-
-    def distBotWall(self,bot):
-        distances = []
-        for point in self.borderPoints:
-            distances.append([np.sqrt((bot.x-point[0])**2 + (bot.y-point[1])**2),point[0],point[1]])
-        
-        min_dist = min(distances, key=lambda x: x[0])
-        self.dist_coll, self.x, self.y = min_dist[0], min_dist[1], min_dist[2]
         
 
 
@@ -73,6 +49,7 @@ class Room():
         self.height = height
         self.objects = []
         self.walls = []
+        self.obstaclesConstruction = []
         self.win = win
     
     def addObjects(self, objs):
@@ -84,3 +61,29 @@ class Room():
     def draw_walls(self):
         for wall in self.walls:
             pygame.draw.rect(self.win, (200,200,200), (wall.x_start, wall.y_start, wall.width, wall.height))
+
+    def defineObstaclesFromWalls(self):
+        radiusObstacles = 2
+        spaceBetweenObstaclesCenter = 15
+        obstacles = []
+
+        for wall in self.walls:  
+            self.obstaclesConstruction.append([[wall.x_start, wall.y_start],[wall.x_start+wall.width, wall.y_start]])
+            self.obstaclesConstruction.append([[wall.x_start, wall.y_start],[wall.x_start, wall.y_start + wall.height]])
+            self.obstaclesConstruction.append([[wall.x_start + wall.width, wall.y_start],[wall.x_start + wall.width, wall.y_start + wall.height]])
+            self.obstaclesConstruction.append([[wall.x_start, wall.y_start+wall.height],[wall.x_start+wall.width, wall.y_start + wall.height]])
+
+        for value in self.obstaclesConstruction: # liste avec seulement une utilité temporaire pour pouvoir construire tous les obstacles dans les murs
+            
+
+            if value[0][1] == value[1][1]:
+                y = value[0][1]
+                for x in range(value[0][0] + radiusObstacles, value[1][0], spaceBetweenObstaclesCenter):
+                    obstacles.append(obs.Obstacle(x, y, radiusObstacles, self, isWall='x'))
+
+            elif value[0][0] == value[1][0]:
+                x = value[0][0]
+                for y in range(value[0][1] + radiusObstacles, value[1][1], spaceBetweenObstaclesCenter):
+                    obstacles.append(obs.Obstacle(x, y, radiusObstacles, self, isWall='y'))
+        
+        self.addObjects(obstacles)
