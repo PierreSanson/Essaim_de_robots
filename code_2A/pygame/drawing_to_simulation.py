@@ -7,12 +7,14 @@ import numpy as np
 import pickle
 
 import bot
+import obstacle as obs
 import explorerBot as eb
 import refPointBot as rpb
 import measuringBot as mb
 from room import*
 import swarmControl as sc
 import swarmExploration as se
+import swarmExplorationUWBSLAM as seUWBSLAM
 from main import redrawGameWindow
 
 
@@ -136,6 +138,8 @@ def drawing_to_simulation(table):
     for corners in walls_corners:
         room.addWall(corners)
 
+    room.defineObstaclesFromWalls()
+
     measuringBots = []
     explorerBots = []
     refPointBots = []
@@ -146,8 +150,8 @@ def drawing_to_simulation(table):
             measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 10, room, objective = None, haveObjective = False, showDetails=True))
         elif botType == 2:
             explorerBots.append(eb.ExplorerBot(bot[0][0], bot[0][1], 8, room, objective = [0, 0], randomObjective = True, randomInterval =1, showDetails = True))
-        # elif botType == 3:
-        #     refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 6, room, objective = None, haveObjective = False, showDetails = True))
+        elif botType == 3:
+            refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 6, room, objective = None, haveObjective = False, showDetails = True))
 
             
     bots = measuringBots + explorerBots + refPointBots
@@ -156,17 +160,18 @@ def drawing_to_simulation(table):
 
     SC = sc.SwarmController(screen, measuringBots[0], refPointBots, distRefPointBots=[60,60])
     SE = se.RoomExplorator(room,SC)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(screen, room, measuringBots[0], refPointBots)
 
     SC.initMove()
 
-    return room, SC,SE, measuringBots, explorerBots, refPointBots  
+    return room, SC,SE,SEUWBSLAM, measuringBots, explorerBots, refPointBots,
 
 
 def load_and_launch_simulation():
 
     table = LoadFile()
 
-    room, SC, SE, measuringBots, explorerBots, refPointBots = drawing_to_simulation(table)
+    room, SC, SE,SEUWBSLAM, measuringBots, explorerBots, refPointBots = drawing_to_simulation(table)
 
     sw, sh = 1600, 900
     win = pg.display.set_mode((sw, sh))
@@ -182,11 +187,13 @@ def load_and_launch_simulation():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-        # SC.move()
-        SE.move()
-        SE.draw(win)
+        # SC.move()     # premiere version avec l'essaim qui fait la chenille
+        # SE.move()     # exploration d'une salle connue
+        # SE.draw(win)
+        SEUWBSLAM.move()  # methode de Raul avec dispersion initiale des points de repère
+        SEUWBSLAM.draw(surface1)
         for obj in room.objects:
-            if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, bot.Obstacle) and obj.movable):
+            if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, obs.Obstacle) and obj.movable):
                 obj.move(surface1)
         win.blit(surface1, (0,0))
         pygame.display.update()
