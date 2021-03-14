@@ -19,8 +19,8 @@ class Bot():
         self.lastVel2D = np.asarray([0.0001,0.0001])
         self.objective = objective
         self.radiusDetection = radiusDetection
-        self.rotationSpeed = 32
-        self.speed = 8
+        self.rotationSpeed = 12
+        self.speed = 4
         self.groupObj = []
         self.detectedObj = []
         self.groupObjPoints = []
@@ -49,7 +49,6 @@ class Bot():
         self.maxDistConsider = 100
         if not self.haveObjective:
             self.vel2D = np.asarray([0,0])
-
 
 
     def draw(self, win, surface1):
