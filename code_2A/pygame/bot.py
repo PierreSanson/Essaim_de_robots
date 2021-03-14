@@ -17,8 +17,8 @@ class Bot():
         self.lastVel2D = np.asarray([0.0001,0.0001])
         self.objective = objective
         self.radiusDetection = radiusDetection
-        self.rotationSpeed = 32
-        self.speed = 8
+        self.rotationSpeed = 12
+        self.speed = 4
         self.groupObj = []
         self.detectedObj = []
         self.groupObjPoints = []
@@ -47,30 +47,30 @@ class Bot():
         self.maxDistConsider = 100
         if not self.haveObjective:
             self.vel2D = np.asarray([0,0])
-        for wall in self.room.walls:  
-            self.walls.append([[wall.x_start, wall.y_start],[wall.x_start+wall.width, wall.y_start]])
-            self.walls.append([[wall.x_start, wall.y_start],[wall.x_start, wall.y_start + wall.height]])
-            self.walls.append([[wall.x_start + wall.width, wall.y_start],[wall.x_start + wall.width, wall.y_start + wall.height]])
-            self.walls.append([[wall.x_start, wall.y_start+wall.height],[wall.x_start+wall.width, wall.y_start + wall.height]])
-        self.defineObstaclesFromWalls()
+        # for wall in self.room.walls:  
+        #     self.walls.append([[wall.x_start, wall.y_start],[wall.x_start+wall.width, wall.y_start]])
+        #     self.walls.append([[wall.x_start, wall.y_start],[wall.x_start, wall.y_start + wall.height]])
+        #     self.walls.append([[wall.x_start + wall.width, wall.y_start],[wall.x_start + wall.width, wall.y_start + wall.height]])
+        #     self.walls.append([[wall.x_start, wall.y_start+wall.height],[wall.x_start+wall.width, wall.y_start + wall.height]])
+        # self.defineObstaclesFromWalls()
          
 
-    def defineObstaclesFromWalls(self):
-        radiusObstacles = 2
-        spaceBetweenObstaclesCenter = 15
-        obstacles = []
-        for wall in self.walls:
-            if wall[0][1] == wall[1][1]:
-                y = wall[0][1]
-                for x in range(wall[0][0] + radiusObstacles, wall[1][0], spaceBetweenObstaclesCenter):
-                    obstacles.append(Obstacle(x, y, radiusObstacles, self.room, isWall='x'))
+    # def defineObstaclesFromWalls(self):
+    #     radiusObstacles = 2
+    #     spaceBetweenObstaclesCenter = 15
+    #     obstacles = []
+    #     for wall in self.walls:
+    #         if wall[0][1] == wall[1][1]:
+    #             y = wall[0][1]
+    #             for x in range(wall[0][0] + radiusObstacles, wall[1][0], spaceBetweenObstaclesCenter):
+    #                 obstacles.append(Obstacle(x, y, radiusObstacles, self.room, isWall='x'))
 
-            elif wall[0][0] == wall[1][0]:
-                x = wall[0][0]
-                for y in range(wall[0][1] + radiusObstacles, wall[1][1], spaceBetweenObstaclesCenter):
-                    obstacles.append(Obstacle(x, y, radiusObstacles, self.room, isWall='y'))
+    #         elif wall[0][0] == wall[1][0]:
+    #             x = wall[0][0]
+    #             for y in range(wall[0][1] + radiusObstacles, wall[1][1], spaceBetweenObstaclesCenter):
+    #                 obstacles.append(Obstacle(x, y, radiusObstacles, self.room, isWall='y'))
         
-        self.room.addObjects(obstacles)
+    #     self.room.addObjects(obstacles)
 
 
 
@@ -425,7 +425,7 @@ class Bot():
                 self.noColgoToObjective(surface1)
         
 
-        elif collision_wall : # évitement des murs
+        elif False : # évitement des murs
 
             init = True
             minDist = None

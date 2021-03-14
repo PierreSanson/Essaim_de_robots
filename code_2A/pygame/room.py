@@ -1,5 +1,6 @@
 import pygame
 import numpy as np
+from bot import Obstacle
 
 
 class Wall():
@@ -84,3 +85,26 @@ class Room():
     def draw_walls(self):
         for wall in self.walls:
             pygame.draw.rect(self.win, (200,200,200), (wall.x_start, wall.y_start, wall.width, wall.height))
+
+    def defineObstaclesFromWalls(self):
+        wallsForObstacles = []
+        for wall in self.walls:  
+            wallsForObstacles.append([[wall.x_start, wall.y_start],[wall.x_start+wall.width, wall.y_start]])
+            wallsForObstacles.append([[wall.x_start, wall.y_start],[wall.x_start, wall.y_start + wall.height]])
+            wallsForObstacles.append([[wall.x_start + wall.width, wall.y_start],[wall.x_start + wall.width, wall.y_start + wall.height]])
+            wallsForObstacles.append([[wall.x_start, wall.y_start+wall.height],[wall.x_start+wall.width, wall.y_start + wall.height]])
+        radiusObstacles = 2
+        spaceBetweenObstaclesCenter = 15
+        obstacles = []
+        for wall in wallsForObstacles:
+            if wall[0][1] == wall[1][1]:
+                y = wall[0][1]
+                for x in range(wall[0][0] + radiusObstacles, wall[1][0], spaceBetweenObstaclesCenter):
+                    obstacles.append(Obstacle(x, y, radiusObstacles, self, isWall='x'))
+
+            elif wall[0][0] == wall[1][0]:
+                x = wall[0][0]
+                for y in range(wall[0][1] + radiusObstacles, wall[1][1], spaceBetweenObstaclesCenter):
+                    obstacles.append(Obstacle(x, y, radiusObstacles, self, isWall='y'))
+        
+        self.addObjects(obstacles)
