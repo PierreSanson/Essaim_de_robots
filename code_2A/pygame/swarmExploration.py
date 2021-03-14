@@ -202,7 +202,9 @@ class RoomExplorator():
         print("sequence of exploration : ", self.seq)
         self.defineObjectivesSeq()
         print("ObjectivesSeq : ", self.objectivesSeq)
-        # self.drawGraph()
+
+        #self.drawGraph() # à commenter pour ne pas afficher les graphes
+
         return self.seq
     
     def cleanGraph(self):

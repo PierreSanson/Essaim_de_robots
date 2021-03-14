@@ -19,10 +19,9 @@ class RefPointBot(Bot):
         self.vel2D = np.asarray([0,0])
         self.haveObjective = False
 
-    def checkCollision(self): ############################################################
-        # pour les robots
-        collision_bot = {}
-        collision_wall = False
+    def checkCollision(self):
+        collision = {}
+        
         for obj in self.room.objects:
             if obj != self :
                 distO = distObj(self, obj)
@@ -32,14 +31,11 @@ class RefPointBot(Bot):
                         print("COLLISION")
                     if isinstance(obj, Obstacle) and obj.isWall:
                         if distO <= self.wallDetectionRadius:
-                            # if  np.linalg.norm(self.vel2D) !=0:
-                            #     sols = circleLineInter(self, obj, self.vel2D)
-                            # else:
                             sols = circleLineInter(self, obj, [self.objective[0]-self.x, self.objective[1]-self.y])
                             if len(sols)>0:
                                 collision_wall = True
                                 self.wallDetectionAction()
-                                return collision_bot
+                                return collision
                     else:
                         if (obj not in self.detectedObj):
                             self.detectedObj.append(obj)
@@ -55,12 +51,12 @@ class RefPointBot(Bot):
                                             minDist = dist
                                             minIndex = i
                                     
-                                    collision_bot[obj] = sols[minIndex]
+                                    collision[obj] = sols[minIndex]
                                 else:
-                                    collision_bot[obj] = sols[0]
+                                    collision[obj] = sols[0]
         
         for obj in self.detectedObj:
             if distObj(obj, self) > self.maxDistConsider:
                 self.detectedObj.remove(obj)
 
-        return collision_bot
+        return collision
