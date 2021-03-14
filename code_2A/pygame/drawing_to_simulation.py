@@ -7,6 +7,7 @@ import numpy as np
 import pickle
 
 import bot
+import obstacle as obs
 import explorerBot as eb
 import refPointBot as rpb
 import measuringBot as mb
@@ -136,7 +137,9 @@ def drawing_to_simulation(table):
 
     for corners in walls_corners:
         room.addWall(corners)
+
     room.defineObstaclesFromWalls()
+
     measuringBots = []
     explorerBots = []
     refPointBots = []
@@ -184,13 +187,13 @@ def load_and_launch_simulation():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-        # SC.move()
-        # SE.move()
+        # SC.move()     # premiere version avec l'essaim qui fait la chenille
+        # SE.move()     # exploration d'une salle connue
         # SE.draw(win)
-        SEUWBSLAM.move()
+        SEUWBSLAM.move()  # methode de Raul avec dispersion initiale des points de repère
         SEUWBSLAM.draw(surface1)
         for obj in room.objects:
-            if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, bot.Obstacle) and obj.movable):
+            if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, obs.Obstacle) and obj.movable):
                 obj.move(surface1)
         win.blit(surface1, (0,0))
         pygame.display.update()
