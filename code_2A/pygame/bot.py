@@ -313,9 +313,7 @@ class Bot():
                     i+=1
                 self.groupObj = checkedgroupObj
                 self.groupObjPoints = checkedgroupObjPoints
-                # self.convexHullObstacles = ConvexHull(self.groupObjPoints)
-                # if self.convexHullObstacles is not None:
-                #     self.groupPolygonPoints = [self.groupObjPoints[i] for i in list(self.convexHullObstacles.vertices)[:]]
+ 
             else :
                 self.groupObj = []
                 self.groupObjPoints = []
@@ -333,18 +331,7 @@ class Bot():
                                     self.groupObj.append(obj)
                                     self.groupObjPoints+=obj.polygonPoints[:]
                     i+=1
-            # else:
-            #     while i<len(self.groupObj):
-            #         for obj in self.detectedObj : 
-            #             if obj not in self.groupObj :
-            #                 if distObj(obj, self.groupObj[i]) < obj.radius + self.groupObj[i].radius + 2*self.radius + 2*self.margin:
-            #                     self.groupObj.append(obj)
-            #                     self.groupObjPoints+=obj.polygonPoints[:]
-            #         i+=1
-            
-            
-            
-            
+               
 
             if (len(self.groupObj)) > 0:
                 self.barycenterGroupObj = { 'x' : (1/len(self.groupObj))*np.sum(np.array([obj.x for obj in self.groupObj])), 'y' : (1/len(self.groupObj))*np.sum(np.array([obj.y for obj in self.groupObj]))}
