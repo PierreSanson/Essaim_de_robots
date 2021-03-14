@@ -1,5 +1,5 @@
 from bot import Bot
-from bot import Obstacle
+from obstacle import Obstacle
 from utilities import *
 
 class RefPointBot(Bot):
