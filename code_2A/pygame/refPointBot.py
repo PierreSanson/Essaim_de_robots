@@ -1,5 +1,5 @@
 from bot import Bot
-from bot import Obstacle
+from obstacle import Obstacle
 from utilities import *
 
 class RefPointBot(Bot):
@@ -39,7 +39,7 @@ class RefPointBot(Bot):
                             if len(sols)>0:
                                 collision_wall = True
                                 self.wallDetectionAction()
-                                return collision_bot, collision_wall
+                                return collision_bot
                     else:
                         if (obj not in self.detectedObj):
                             self.detectedObj.append(obj)
@@ -63,19 +63,4 @@ class RefPointBot(Bot):
             if distObj(obj, self) > self.maxDistConsider:
                 self.detectedObj.remove(obj)
 
-        # pour les murs
-        collision_wall = {}
-        # for wall in self.room.walls:
-        #     if wall != self :
-        #         wall.distBotWall(self)
-        #         if wall.dist_coll <= 50:
-
-        #             if wall.dist_coll < self.radius:
-        #                 print("COLLISION")
-
-        #             if (wall not in self.detectedWall):
-        #                 self.detectedWall.append(wall)
-
-        #             collision_wall[wall] = wall
-
-        return collision_bot, collision_wall
+        return collision_bot
