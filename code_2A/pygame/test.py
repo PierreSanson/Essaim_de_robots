@@ -8,9 +8,8 @@ FPS           = 60
 # background colours
 GREEN = (0, 255, 0)
 
-class HoleSprite( pygame.sprite.Sprite ):
+class HoleSprite():
     def __init__( self ):
-        pygame.sprite.Sprite.__init__( self )
         # Make a full-image (no hole)
         self.base_image = pygame.Surface( ( 400, 400 ), pygame.SRCALPHA )
         self.base_image.fill( ( 0,0,0,100 ) ) # darken the background
@@ -58,7 +57,7 @@ while not done:
     # Repaint the screen
     holey.update()
     WINDOW.fill( GREEN )
-    WINDOW.blit(holey.image,holey.rect, None)
+    WINDOW.blit(holey.image,holey.rect)
 
     pygame.display.flip()
     # Update the window, but not more than 60fps

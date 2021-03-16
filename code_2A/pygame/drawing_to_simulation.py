@@ -164,31 +164,36 @@ def drawing_to_simulation(table,surface):
     return room, SC,SE,SEUWBSLAM, measuringBots, explorerBots, refPointBots,
 
 
-def redrawGameWindow(room, background):
+def redrawGameWindow(room, background, control):
     
-    room.surface1.fill((64,64,64))
-    ### surface1 : surface pour tous les objets : robots et murs
+    
+    
+
+    
+    ### Composition de la scène
+    # on choisit et on applique la couleur de l'arrière plan de la simulation
+    background.fill((64,64,64))
+
+    # ajout des murs et robots au dessus de l'arrière plan
+    room.surface1.fill((255,255,255,0)) # (blanc) transparent
     # mise à jour des robots
     for obj in room.objects:
         if not isinstance(obj, obs.Obstacle):
             obj.draw()
-    # mise à jour des murs, surface1 est un des attributs dae room
+    # mise à jour des murs
     room.draw_walls()
-
-    ### surface2 : surface pour la visualisation de l'exploration
-    # room.updateExploration(surface2)
-
-    ### Composition de la scène
-    # on choisit et on applique la couleur de l'arrière plan de la simulation
-    background.fill((64,64,64))
-    # ajout des murs et robots au dessus de l'arrière plan
     background.blit(room.surface1, (0,0))
-    # ajout d'une surcouche transparente zones déjà explorées et opacifiantes dans les zones non explorées
-    # background.blit(surface2, (0,0))
 
-    ### mise à jour de l'affichage
-    ### En l'état du simulateur on ne peut pas appeler la mise à jour ici, car il y a des affichages supllémentaires réglés à la main dans la boucle
-    #pygame.display.update() 
+    # on ajoute à l'arrière plan tous les affichages spécifiques à la méthode de contrôle de l'essaim choisie
+    control.draw()
+    background.blit(control.surface, (0,0))
+
+    # ajout d'une surcouche transparente zones déjà explorées et opacifiantes dans les zones non explorées
+    #room.updateExploration(surface2)
+    #background.blit(surface2, (0,0))
+
+    ### mise à jour de l'affichage complet
+    pygame.display.flip()
 
 
 def load_and_launch_simulation():
@@ -212,21 +217,17 @@ def load_and_launch_simulation():
             if event.type == pygame.QUIT:
                 run = False  
 
-        ## Choix du type de déplacement (move) et des affichages supplémentaires associés (draw + blit)
-        # SC.move()     # premiere version avec l'essaim qui fait la chenille
-        # SE.move()     # exploration d'une salle connue
-        # SE.draw()
-        # background.blit(SE.surface,(0,0))
-        SEUWBSLAM.move()  # methode de Raul avec dispersion initiale des points de repère
-        SEUWBSLAM.draw()
-        background.blit(SEUWBSLAM.surface,(0,0))
-
-        # mise à jour affichage
-        pygame.display.update()
+        ## Choix du type de déplacement
+        # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
+        #                   SE (exploration d'une salle connue), 
+        #                   SCUWBSLAM, 
+        #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère)
+        control = SEUWBSLAM
+        control.move()
 
         ## Itération sur l'ensemble des robots pour les faire se déplacer
         for obj in room.objects:
             if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, obs.Obstacle) and obj.movable):
                 obj.move()
 
-        redrawGameWindow(room, background)      
+        redrawGameWindow(room, background, control)      

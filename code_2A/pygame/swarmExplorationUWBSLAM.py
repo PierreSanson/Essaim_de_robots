@@ -51,8 +51,8 @@ class SwarmExploratorUWBSLAM():
         for i in range(self.nbRefPointBots):
             self.refPointBots[i].defineObjective(initObjectives[i])
 
-        HSV_tuples = [(x*1.0/self.nbRefPointBots, 0.5, 0.5) for x in range(self.nbRefPointBots)]
-        self.RGB_tuples = list(map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples))
+        #HSV_tuples = [(x*1.0/self.nbRefPointBots, 0.5, 0.5) for x in range(self.nbRefPointBots)] # arc-en-ciel ?
+        #self.RGB_tuples = list(map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples))
 
         self.walls = []
         for wall in self.room.walls:
@@ -117,6 +117,6 @@ class SwarmExploratorUWBSLAM():
         refPointBotsPoints = list(chain.from_iterable([self.refPointBots[keyBot].polygonPoints for keyBot in self.refPointBotsVisibleBots[key]]))
         convexHullObstacles = ConvexHull(refPointBotsPoints)
         self.convexHull = [refPointBotsPoints[i] for i in list(convexHullObstacles.vertices)[:]]
-        color = self.RGB_tuples[key]
-        pygame.draw.polygon(self.surface, (*color, 64), self.convexHull)
+        #color = self.RGB_tuples[key]
+        pygame.draw.polygon(self.surface, (0,0,50,50), self.convexHull) # on assombrit la zone
 

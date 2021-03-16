@@ -58,10 +58,12 @@ class Bot():
                 pygame.draw.circle(self.room.surface1, (255,0,255, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
                 pygame.draw.circle(self.room.surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
                 
-            pygame.draw.circle(self.room.surface1, self.color, (self.x, self.y), self.radius)
             if np.linalg.norm(self.vel2D) !=0:
                 vel2DU = self.vel2D/np.linalg.norm(self.vel2D)
                 pygame.draw.line(self.room.surface1, (255,255,255), (self.x, self.y), (self.x + vel2DU[0]*self.radius, self.y + vel2DU[1]*self.radius))
+
+            pygame.draw.circle(self.room.surface1, self.color, (self.x, self.y), self.radius) # à la fin pour qu'il apparaisse au dessus du reste
+
         else:
             # Uncomment/comment for more/less details about the process !
             # pygame.draw.circle(self.room.surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
@@ -69,7 +71,6 @@ class Bot():
                 pygame.draw.circle(self.room.surface1, (255,0,255, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
                 pygame.draw.circle(self.room.surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
                 
-            pygame.draw.circle(self.room.surface1, self.color, (self.x, self.y), self.radius)
             if self.haveObjective:
                 pygame.draw.circle(self.room.surface1, (255,255,255), (self.objective[0], self.objective[1]), self.radius)
             if self.mode == "polygon":
@@ -82,7 +83,7 @@ class Bot():
                 vel2DU = self.vel2D/np.linalg.norm(self.vel2D)
                 pygame.draw.line(self.room.surface1, (255,255,255), (self.x, self.y), (self.x + vel2DU[0]*self.radius, self.y + vel2DU[1]*self.radius))
         
-        
+            pygame.draw.circle(self.room.surface1, self.color, (self.x, self.y), self.radius) # à la fin pour qu'il apparaisse au dessus du reste
 
     def move(self):
         for i in range(len(self.polygonPoints)):
