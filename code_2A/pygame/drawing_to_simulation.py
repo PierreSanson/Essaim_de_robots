@@ -11,11 +11,10 @@ import obstacle as obs
 import explorerBot as eb
 import refPointBot as rpb
 import measuringBot as mb
-from room import*
+from room import *
 import swarmControl as sc
 import swarmExploration as se
 import swarmExplorationUWBSLAM as seUWBSLAM
-from main import redrawGameWindow
 
 
 def LoadFile():
@@ -103,7 +102,7 @@ def find_walls_corners(table):
     return walls_corners
 
 
-def drawing_to_simulation(table):
+def drawing_to_simulation(table,surface):
     walls_corners = find_walls_corners(table)
 
     robots_centers = []
@@ -130,10 +129,8 @@ def drawing_to_simulation(table):
         robots_centers[i][0][0] = robots_centers[i][0][0]*scale  + offset
         robots_centers[i][0][1] = robots_centers[i][0][1]*scale  + offset
 
-    # création de la salle, attention les dimensions sont fixées, peut-être à changer
-    sw, sh = 1600, 900
-    screen = pg.display.set_mode((sw, sh))
-    room = Room(sw,sh,screen)
+    # création de la salle
+    room = Room(surface)
 
     for corners in walls_corners:
         room.addWall(corners)
@@ -158,24 +155,51 @@ def drawing_to_simulation(table):
 
     room.addObjects(bots)
 
-    SC = sc.SwarmController(screen, measuringBots[0], refPointBots, distRefPointBots=[60,60])
-    SE = se.RoomExplorator(room,SC)
-    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(screen, room, measuringBots[0], refPointBots)
+    SC = sc.SwarmController(surface, measuringBots[0], refPointBots, distRefPointBots=[60,60])
+    SE = se.RoomExplorator(surface,room,SC)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface, room, measuringBots[0], refPointBots)
 
     SC.initMove()
 
     return room, SC,SE,SEUWBSLAM, measuringBots, explorerBots, refPointBots,
 
 
+def redrawGameWindow(room, background):
+    
+    room.surface1.fill((64,64,64))
+    ### surface1 : surface pour tous les objets : robots et murs
+    # mise à jour des robots
+    for obj in room.objects:
+        if not isinstance(obj, obs.Obstacle):
+            obj.draw()
+    # mise à jour des murs, surface1 est un des attributs dae room
+    room.draw_walls()
+
+    ### surface2 : surface pour la visualisation de l'exploration
+    # room.updateExploration(surface2)
+
+    ### Composition de la scène
+    # on choisit et on applique la couleur de l'arrière plan de la simulation
+    background.fill((64,64,64))
+    # ajout des murs et robots au dessus de l'arrière plan
+    background.blit(room.surface1, (0,0))
+    # ajout d'une surcouche transparente zones déjà explorées et opacifiantes dans les zones non explorées
+    # background.blit(surface2, (0,0))
+
+    ### mise à jour de l'affichage
+    ### En l'état du simulateur on ne peut pas appeler la mise à jour ici, car il y a des affichages supllémentaires réglés à la main dans la boucle
+    #pygame.display.update() 
+
+
 def load_and_launch_simulation():
 
     table = LoadFile()
 
-    room, SC, SE,SEUWBSLAM, measuringBots, explorerBots, refPointBots = drawing_to_simulation(table)
-
     sw, sh = 1600, 900
-    win = pg.display.set_mode((sw, sh))
+    background = pg.display.set_mode((sw, sh))
     surface1 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+
+    room, SC, SE, SEUWBSLAM, measuringBots, explorerBots, refPointBots = drawing_to_simulation(table,surface1)
 
     clock = pygame.time.Clock()
     hz = 60
@@ -183,24 +207,26 @@ def load_and_launch_simulation():
     run = True 
     while run:
         clock.tick(hz)
-        redrawGameWindow(room, win, surface1)
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
+                run = False  
+
+        ## Choix du type de déplacement (move) et des affichages supplémentaires associés (draw + blit)
         # SC.move()     # premiere version avec l'essaim qui fait la chenille
         # SE.move()     # exploration d'une salle connue
-        # SE.draw(win)
+        # SE.draw()
+        # background.blit(SE.surface,(0,0))
         SEUWBSLAM.move()  # methode de Raul avec dispersion initiale des points de repère
-        SEUWBSLAM.draw(surface1)
-        for obj in room.objects:
-            if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, obs.Obstacle) and obj.movable):
-                obj.move(surface1)
-        win.blit(surface1, (0,0))
+        SEUWBSLAM.draw()
+        background.blit(SEUWBSLAM.surface,(0,0))
+
+        # mise à jour affichage
         pygame.display.update()
 
+        ## Itération sur l'ensemble des robots pour les faire se déplacer
+        for obj in room.objects:
+            if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, obs.Obstacle) and obj.movable):
+                obj.move()
 
-# test = np.array([[1,0,0,4],[5,0,0,8],[5,0,0,8],[9,1,5,7]])
-# print(test)
-# print(find_walls_corners(test))
-# print(test.transpose())
-# print(find_walls_corners(test.transpose()))
+        redrawGameWindow(room, background)      

@@ -51,51 +51,52 @@ class Bot():
             self.vel2D = np.asarray([0,0])
 
 
-    def draw(self, win, surface1):
+    def draw(self):
+
         if not self.showDetails:
             if self.mode == "circle" :
-                pygame.draw.circle(surface1, (255,0,255, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
-                pygame.draw.circle(surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
+                pygame.draw.circle(self.room.surface1, (255,0,255, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
+                pygame.draw.circle(self.room.surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
                 
-            pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
+            pygame.draw.circle(self.room.surface1, self.color, (self.x, self.y), self.radius)
             if np.linalg.norm(self.vel2D) !=0:
                 vel2DU = self.vel2D/np.linalg.norm(self.vel2D)
-                pygame.draw.line(surface1, (255,255,255), (self.x, self.y), (self.x + vel2DU[0]*self.radius, self.y + vel2DU[1]*self.radius))
+                pygame.draw.line(self.room.surface1, (255,255,255), (self.x, self.y), (self.x + vel2DU[0]*self.radius, self.y + vel2DU[1]*self.radius))
         else:
             # Uncomment/comment for more/less details about the process !
-            # pygame.draw.circle(surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
+            # pygame.draw.circle(self.room.surface1, (0,150,255, 128), (self.x, self.y), self.radiusDetection)
             if self.mode == "circle" :
-                pygame.draw.circle(surface1, (255,0,255, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
-                pygame.draw.circle(surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
+                pygame.draw.circle(self.room.surface1, (255,0,255, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), self.groupObjRadius)
+                pygame.draw.circle(self.room.surface1, (20,20,20, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
                 
-            pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
+            pygame.draw.circle(self.room.surface1, self.color, (self.x, self.y), self.radius)
             if self.haveObjective:
-                pygame.draw.circle(win, (255,255,255), (self.objective[0], self.objective[1]), self.radius)
+                pygame.draw.circle(self.room.surface1, (255,255,255), (self.objective[0], self.objective[1]), self.radius)
             if self.mode == "polygon":
                 if self.groupPolygonPoints == []:
                     self.convexHullObstacles = None
                 if self.convexHullObstacles is not None:
-                    pygame.draw.polygon(surface1, (200,50,50, 64), self.groupPolygonPoints)
-                    pygame.draw.circle(surface1, (200,200,200, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
+                    pygame.draw.polygon(self.room.surface1, (200,50,50, 64), self.groupPolygonPoints)
+                    pygame.draw.circle(self.room.surface1, (200,200,200, 64), (self.barycenterGroupObj['x'], self.barycenterGroupObj['y']), 4)
             if np.linalg.norm(self.vel2D) !=0:
                 vel2DU = self.vel2D/np.linalg.norm(self.vel2D)
-                pygame.draw.line(surface1, (255,255,255), (self.x, self.y), (self.x + vel2DU[0]*self.radius, self.y + vel2DU[1]*self.radius))
+                pygame.draw.line(self.room.surface1, (255,255,255), (self.x, self.y), (self.x + vel2DU[0]*self.radius, self.y + vel2DU[1]*self.radius))
         
         
 
-    def move(self, win):
+    def move(self):
         for i in range(len(self.polygonPoints)):
             self.polygonPoints[i][0] = self.polygonPointsAbsolute[i][0] + self.x
             self.polygonPoints[i][1] = self.polygonPointsAbsolute[i][1] + self.y
         if self.randomObjective:
             if random.random() > (1 - 1/(100*self.randomInterval)) :
-                self.objective[0] = random.randrange(50, win.get_width() - 50)
-                self.objective[1] = random.randrange(50, win.get_height() - 50)
+                self.objective[0] = random.randrange(50, self.room.self.room.surface1.get_widht() - 50)  
+                self.objective[1] = random.randrange(50, self.room.self.room.surface1.get_height - 50) 
                 self.haveObjective = True
                 self.ontoObjective = False
                 self.vel2D = np.asarray([0.01,0.01])
         if self.haveObjective:
-            self.goToObjective(win)
+            self.goToObjective()
         if np.linalg.norm(self.vel2D) !=0:
             vel2DU = self.vel2D/np.linalg.norm(self.vel2D)
             self.x += vel2DU[0]*self.speed*self.safeCoeff*self.ontoObjectiveCoeff 
@@ -150,7 +151,7 @@ class Bot():
         return col
 
 
-    def noColgoToObjective(self, surface1):
+    def noColgoToObjective(self):
         self.safeCoeff = 1
         angleCol = (signedAngle2Vects2(self.vel2D, np.array([self.barycenterGroupObj['x'] - self.x, self.barycenterGroupObj['y'] - self.y])))
 
@@ -184,7 +185,7 @@ class Bot():
 
         elif self.mode == "polygon":
             
-            polygonInter = polygonLineInter(self, self.groupPolygonPoints,self.barycenterGroupObj, self.vel2D, surface1)
+            polygonInter = polygonLineInter(self, self.groupPolygonPoints,self.barycenterGroupObj, self.vel2D)
             if len (polygonInter) == 1:
                 if angleCol > 0:
                     self.vel2D = rotate(self.vel2D, - self.rotationSpeed*np.pi/180)
@@ -213,7 +214,7 @@ class Bot():
                     self.vel2D = rotate(self.vel2D, -rotationSpeed)
 
 
-    def goToObjective(self, surface1):
+    def goToObjective(self):
         distObjective = distObjList(self, self.objective)
         if distObjective < 60*self.speed/self.rotationSpeed + self.radius*2:
             self.ontoObjectiveCoeff = distObjective/((60*self.speed/self.rotationSpeed)**(1.08))
@@ -342,7 +343,7 @@ class Bot():
                 
                 
                 angleCol = (signedAngle2Vects2(self.vel2D, np.array([self.barycenterGroupObj['x'] - self.x, self.barycenterGroupObj['y'] - self.y])))
-                polygonInter = polygonLineInter(self, self.groupPolygonPoints,self.barycenterGroupObj, self.vel2D, surface1)
+                polygonInter = polygonLineInter(self, self.groupPolygonPoints,self.barycenterGroupObj, self.vel2D)
                 if len (polygonInter) == 1:
                     if angleCol > 0:
                         self.vel2D = rotate(self.vel2D, - self.rotationSpeed*np.pi/180)
@@ -367,9 +368,9 @@ class Bot():
                     elif angleCol <= 0:
                         self.vel2D = rotate(self.vel2D, self.rotationSpeed*np.pi/180)
                 else:
-                    self.noColgoToObjective(surface1)
+                    self.noColgoToObjective()
             else:
-                self.noColgoToObjective(surface1)
+                self.noColgoToObjective()
 
 
         else :
@@ -396,7 +397,7 @@ class Bot():
                 self.groupPolygonPoints = []
 
 
-            self.noColgoToObjective(surface1)
+            self.noColgoToObjective()
 
 
     def defineObjective(self, coord):

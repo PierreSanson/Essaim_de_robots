@@ -6,7 +6,8 @@ import pygame
 from igraph import *
 
 class RoomExplorator():
-    def __init__(self, room, swarmController):
+    def __init__(self, surface, room, swarmController):
+        self.surface = surface
         self.room = room
         self.SC = swarmController
         self.graph = {}
@@ -498,39 +499,41 @@ class RoomExplorator():
             return True
         return False
 
-    def draw(self, win):
+    def draw(self):
+        width = self.room.surface1.get_width()
         for i in range(self.nbLinesAbove):
-            pygame.draw.line(win, (100,100,100), (0, self.SC.initMeasurerPos[1] - self.SC.distRefPointBots[1]*( i)), (self.room.width, self.SC.initMeasurerPos[1]  - self.SC.distRefPointBots[1]*(i)))
+            pygame.draw.line(self.surface, (100,100,100), (0, self.SC.initMeasurerPos[1] - self.SC.distRefPointBots[1]*( i)), (width, self.SC.initMeasurerPos[1]  - self.SC.distRefPointBots[1]*(i)))
 
         for i in range(self.nbLinesBelow):
-            pygame.draw.line(win, (100,100,100), (0, self.SC.initMeasurerPos[1]  + self.SC.distRefPointBots[1]*(i)), (self.room.width, self.SC.initMeasurerPos[1] + self.SC.distRefPointBots[1]*(i)))
+            pygame.draw.line(self.surface, (100,100,100), (0, self.SC.initMeasurerPos[1]  + self.SC.distRefPointBots[1]*(i)), (width, self.SC.initMeasurerPos[1] + self.SC.distRefPointBots[1]*(i)))
 
+        # height = self.room.surface1.get_height()
         # for i in range(self.nbColsLeft):
-        #     pygame.draw.line(win, (100,100,100), (self.SC.initMeasurerPos[0] - self.SC.distRefPointBots[0]*(1/2+ i), 0), (self.SC.initMeasurerPos[0]  - self.SC.distRefPointBots[0]*(1/2+ i), self.room.height))
+        #     pygame.draw.line(self.surface, (100,100,100), (self.SC.initMeasurerPos[0] - self.SC.distRefPointBots[0]*(1/2+ i), 0), (self.SC.initMeasurerPos[0]  - self.SC.distRefPointBots[0]*(1/2+ i), height))
 
         # for i in range(self.nbColsRight):
-        #     pygame.draw.line(win, (100,100,100), (self.SC.initMeasurerPos[0] + self.SC.distRefPointBots[0]*(1/2+ i), 0), (self.SC.initMeasurerPos[0]  + self.SC.distRefPointBots[0]*(1/2+ i), self.room.height))
+        #     pygame.draw.line(self.surface, (100,100,100), (self.SC.initMeasurerPos[0] + self.SC.distRefPointBots[0]*(1/2+ i), 0), (self.SC.initMeasurerPos[0]  + self.SC.distRefPointBots[0]*(1/2+ i), height))
 
         for inters in self.lineinters:
             for coord in inters:
-                pygame.draw.circle(win, (255,0,0), coord, 2)
+                pygame.draw.circle(self.surface, (255,0,0), coord, 2)
         pygame.font.init()
         myfont = pygame.font.SysFont('Arial', 20)
         for key in self.graph:
             pos = ((self.graph[key][0][0] +self.graph[key][1][0])/2 - 10 , (self.graph[key][0][1] +self.graph[key][1][1])/2 - 10)
             textsurface = myfont.render(key, False, (255, 255, 255))
-            win.blit(textsurface,pos)
+            self.surface.blit(textsurface,pos)
         
         for i in range(len(self.objectivesSeq)):
             if i < self.globalIndexObjectivesSeq:
-                pygame.draw.circle(win, (0,255,0), self.objectivesSeq[i], 4)
+                pygame.draw.circle(self.surface, (0,255,0), self.objectivesSeq[i], 4)
             else :
-                pygame.draw.circle(win, (255,0,255), self.objectivesSeq[i], 4)
+                pygame.draw.circle(self.surface, (255,0,255), self.objectivesSeq[i], 4)
             
 
         # for intersEB in self.lineintersEB:
         #     for coord in intersEB:
-        #         pygame.draw.circle(win, (0,0,255), coord, 2)
+        #         pygame.draw.circle(self.surface, (0,0,255), coord, 2)
     
     def drawGraph(self):
         g = Graph()

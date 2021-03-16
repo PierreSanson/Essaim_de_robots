@@ -44,13 +44,11 @@ class Wall():
 
 
 class Room():
-    def __init__(self, width, height, win):
-        self.width = width
-        self.height = height
+    def __init__(self, surface1):
+        self.surface1 = surface1
         self.objects = []
         self.walls = []
         self.obstaclesConstruction = []
-        self.win = win
     
     def addObjects(self, objs):
         self.objects+=objs
@@ -60,7 +58,7 @@ class Room():
 
     def draw_walls(self):
         for wall in self.walls:
-            pygame.draw.rect(self.win, (200,200,200), (wall.x_start, wall.y_start, wall.width, wall.height))
+            pygame.draw.rect(self.surface1, (200,200,200), (wall.x_start, wall.y_start, wall.width, wall.height))
 
     def defineObstaclesFromWalls(self):
 

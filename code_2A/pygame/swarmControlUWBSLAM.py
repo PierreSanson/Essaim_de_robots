@@ -3,7 +3,7 @@ from copy import deepcopy
 import numpy as np
 
 class SwarmControllerUWBSLAM():
-    def __init__(self, win, measurerBot, refPointBots, distRefPointBots = [110, 110], initRadius=50) :
+    def __init__(self, surface, measurerBot, refPointBots, distRefPointBots = [110, 110], initRadius=50) :
         self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
         self.refPointBots = {}
@@ -20,7 +20,7 @@ class SwarmControllerUWBSLAM():
         self.orientation = 'right'
         self.lastMesurerPos = (self.measurerBot.x, self.measurerBot.y)
         self.initMeasurerPos = (self.measurerBot.x, self.measurerBot.y)
-        self.win = win
+        self.surface = surface
 
         theta = 2*np.pi/(len(self.nbRefPointBots))
 

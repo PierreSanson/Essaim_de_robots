@@ -44,7 +44,7 @@ scenario_menu.add_button('Return to main menu', pygame_menu.events.BACK)
 main_menu = pygame_menu.Menu(400, 600, 'Welcome', mouse_motion_selection=True, theme=mytheme)
 
 def run_demo(name,nb_demo):
-    room = Room(1280, 720,screen)
+    room = Room(screen)
     demos(room,nb_demo)
 
 main_menu.add_selector('Demo :', [('1', 1), ('2', 2),('3',3),('4', 4),('5', 5),('6', 6)], onreturn=run_demo)

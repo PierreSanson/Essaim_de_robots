@@ -8,7 +8,7 @@ import colorsys
 
 
 class SwarmExploratorUWBSLAM():
-    def __init__(self, win, room, measurerBot, refPointBots, distRefPointBots = [110, 110], initRadius=50) :
+    def __init__(self, surface, room, measurerBot, refPointBots, distRefPointBots = [110, 110], initRadius=50) :
         self.room = room
         self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
@@ -26,7 +26,7 @@ class SwarmExploratorUWBSLAM():
         self.orientation = 'right'
         self.lastMesurerPos = (self.measurerBot.x, self.measurerBot.y)
         self.initMeasurerPos = (self.measurerBot.x, self.measurerBot.y)
-        self.win = win
+        self.surface = surface
         self.initCount = 0
         self.theta = 2*np.pi/self.nbRefPointBots
         self.refPointBotsVisibleBots = {}
@@ -112,11 +112,11 @@ class SwarmExploratorUWBSLAM():
         self.check3RefPointBotsAvailable(key)
 
 
-    def draw(self, surface1):
+    def draw(self):
         key = 4
         refPointBotsPoints = list(chain.from_iterable([self.refPointBots[keyBot].polygonPoints for keyBot in self.refPointBotsVisibleBots[key]]))
         convexHullObstacles = ConvexHull(refPointBotsPoints)
         self.convexHull = [refPointBotsPoints[i] for i in list(convexHullObstacles.vertices)[:]]
         color = self.RGB_tuples[key]
-        pygame.draw.polygon(surface1, (*color, 64), self.convexHull)
+        pygame.draw.polygon(self.surface, (*color, 64), self.convexHull)
 

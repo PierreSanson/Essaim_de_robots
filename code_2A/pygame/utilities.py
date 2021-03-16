@@ -92,7 +92,7 @@ def circleLineInter(lineEmitter, obj, vel2D, objDict = False, objRadius = 0):
     return dictSol
 
 
-def polygonLineInter(lineEmitter, polygon, barycenterPolygon, vel2D, win=None):
+def polygonLineInter(lineEmitter, polygon, barycenterPolygon, vel2D):
     a = vel2D[1]
     b = -vel2D[0]
     c = -b*lineEmitter.y -a*lineEmitter.x
@@ -148,9 +148,6 @@ def polygonLineInter(lineEmitter, polygon, barycenterPolygon, vel2D, win=None):
 
         if np.linalg.norm(vectP)<= lineEmitter.radius + 5.5 and np.linalg.norm(vectP2) <= lenLine and (np.dot(vectLine, vectP2) >= 0) :
             if abs(angleCheck)<=np.pi/2:
-                # if win != None :
-                    # pygame.draw.line(win, (255,0,255), (lineEmitter.x, lineEmitter.y), (lineEmitter.x + vectP[0], lineEmitter.y + vectP[1]), 3)
-                    # pygame.draw.line(win, (255,0,255), (lineEmitter.x, lineEmitter.y), (barycenterPolygon['x'], barycenterPolygon['y']+ vectP[1]), 3)
                 angleP = signedAngle2Vects2(vectP, vectLine)
                 if angleP >= 0:
                     return ['indirect']

@@ -42,6 +42,6 @@ class Obstacle():
 
 
 
-    def draw(self, win, surface1):
-        pygame.draw.circle(win, (100,100,100), (self.x, self.y), self.radius)
-        # pygame.draw.polygon(surface1, (255, 255, 0, 128), self.polygonPoints)
+    def draw(self):
+        surface = room.surface1
+        pygame.draw.circle(surface, (100,100,100), (self.x, self.y), self.radius)

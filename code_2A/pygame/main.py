@@ -291,14 +291,28 @@ def demos(room, nb = 1):
         pygame.display.update() 
 
 
-def redrawGameWindow(room, win, surface1):
-    win.fill((0,0,0))
-    surface1.fill((255,255,255,64))  
+def redrawGameWindow(room, background, surface1):
+    
+    ### surface1 : surface pour tous les objets : robots et murs
+    # mise à jour des robots
     for obj in room.objects:
-        obj.draw(win, surface1)
-    room.draw_walls()
-    # win.blit(surface1, (0,0))
-    # pygame.display.update() 
+        obj.draw(surface1)
+    # mise à jour des murs
+    room.draw_walls(surface1)
+
+    ### surface2 : surface pour la visualisation de l'exploration
+    # room.updateExploration(surface2)
+
+    ### Composition de la scène
+    # on choisit et on applique la couleur de l'arrière plan de la simulation
+    background.fill((64,64,64))
+    # ajout des murs et robots au dessus de l'arrière plan
+    background.blit(surface1, (0,0))
+    # ajout d'une surcouche transparente zones déjà explorées et opacifiantes dans les zones non explorées
+    # background.blit(surface2, (0,0))
+
+    ### mise à jour de l'affichage
+    pygame.display.update() 
     
 
 
