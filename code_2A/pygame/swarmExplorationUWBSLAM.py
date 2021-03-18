@@ -277,17 +277,17 @@ class SwarmExploratorUWBSLAM():
                                     self.adjacencyList[neigh].append((coord,np.sqrt(2)))
                             
 
-    def draw(self, surface):
+    def draw(self):
         key = 4
         refPointBotsPoints = list(chain.from_iterable([self.refPointBots[keyBot].polygonPoints for keyBot in self.refPointBots]))
         convexHullObstacles = ConvexHull(refPointBotsPoints)
         self.convexHull = [refPointBotsPoints[i] for i in list(convexHullObstacles.vertices)[:]]
-        pygame.draw.polygon(surface, (0, 0, 100, 64), self.convexHull)
+        pygame.draw.polygon(self.surface, (0, 0, 100, 64), self.convexHull)
         for coord in self.graph:
             if self.graph[coord] == 1:
-                pygame.draw.rect(surface, (200, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth))
+                pygame.draw.rect(self.surface, (200, 0, 0, 40), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth))
             else:
-                pygame.draw.rect(surface, (200, 200, 200, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+                pygame.draw.rect(self.surface, (200, 200, 200, 40), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
 
 
     def drawGraph(self):
