@@ -158,11 +158,13 @@ def drawing_to_simulation(table):
 
     room.addObjects(bots)
 
-    SC = sc.SwarmController(screen, measuringBots[0], refPointBots, distRefPointBots=[60,60])
-    SE = se.RoomExplorator(room,SC)
+    # SC = sc.SwarmController(screen, measuringBots[0], refPointBots, distRefPointBots=[60,60])
+    # SE = se.RoomExplorator(room,SC)
     SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(screen, room, measuringBots[0], refPointBots)
 
-    SC.initMove()
+    # SC.initMove()
+    SC = None
+    SE = None
 
     return room, SC,SE,SEUWBSLAM, measuringBots, explorerBots, refPointBots,
 
