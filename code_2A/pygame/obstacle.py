@@ -20,6 +20,8 @@ class Obstacle():
             self.polygonPoints[i][0] = self.polygonPointsAbsolute[i][0] + self.x
             self.polygonPoints[i][1] = self.polygonPointsAbsolute[i][1] + self.y
 
+        self.seen = False
+
 
     def move(self, surface1):
         keys = pygame.key.get_pressed()

@@ -102,7 +102,7 @@ def find_walls_corners(table):
     return walls_corners
 
 
-def drawing_to_simulation(table,surface):
+def drawing_to_simulation(table,surface1,surface2):
     walls_corners = find_walls_corners(table)
 
     robots_centers = []
@@ -130,7 +130,7 @@ def drawing_to_simulation(table,surface):
         robots_centers[i][0][1] = robots_centers[i][0][1]*scale  + offset
 
     # création de la salle
-    room = Room(surface)
+    room = Room(surface1,surface2)
 
     for corners in walls_corners:
         room.addWall(corners)
@@ -155,27 +155,26 @@ def drawing_to_simulation(table,surface):
 
     room.addObjects(bots)
 
-    SC = sc.SwarmController(surface, measuringBots[0], refPointBots, distRefPointBots=[60,60])
-    SE = se.RoomExplorator(surface,room,SC)
-    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface, room, measuringBots[0], refPointBots)
+    SC = sc.SwarmController(surface1, measuringBots[0], refPointBots, distRefPointBots=[60,60])
+    SE = se.RoomExplorator(surface1,room,SC)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface1, room, measuringBots[0], refPointBots)
 
     SC.initMove()
 
-    return room, SC,SE,SEUWBSLAM, measuringBots, explorerBots, refPointBots,
+    return room, SC,SE,SEUWBSLAM, measuringBots, explorerBots, refPointBots
 
 
 def redrawGameWindow(room, background, control):
-    
-    
-    
-
     
     ### Composition de la scène
     # on choisit et on applique la couleur de l'arrière plan de la simulation
     background.fill((64,64,64))
 
+    # ajout d'une surcouche transparente pour les zones déjà explorées et sombre dans les zones non explorées
+    background.blit(room.surface2, (0,0))
+
     # ajout des murs et robots au dessus de l'arrière plan
-    room.surface1.fill((255,255,255,0)) # (blanc) transparent
+    room.surface1.fill((0,0,0,0)) # (noir) transparent
     # mise à jour des robots
     for obj in room.objects:
         if not isinstance(obj, obs.Obstacle):
@@ -188,10 +187,6 @@ def redrawGameWindow(room, background, control):
     control.draw()
     background.blit(control.surface, (0,0))
 
-    # ajout d'une surcouche transparente zones déjà explorées et opacifiantes dans les zones non explorées
-    #room.updateExploration(surface2)
-    #background.blit(surface2, (0,0))
-
     ### mise à jour de l'affichage complet
     pygame.display.flip()
 
@@ -203,8 +198,9 @@ def load_and_launch_simulation():
     sw, sh = 1600, 900
     background = pg.display.set_mode((sw, sh))
     surface1 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+    surface2 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
 
-    room, SC, SE, SEUWBSLAM, measuringBots, explorerBots, refPointBots = drawing_to_simulation(table,surface1)
+    room, SC, SE, SEUWBSLAM, measuringBots, explorerBots, refPointBots = drawing_to_simulation(table,surface1,surface2)
 
     clock = pygame.time.Clock()
     hz = 60
@@ -229,5 +225,8 @@ def load_and_launch_simulation():
         for obj in room.objects:
             if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, obs.Obstacle) and obj.movable):
                 obj.move()
+
+        ## Prise en compte des nouvelles zones vues par les robots
+        room.updateExploration()
 
         redrawGameWindow(room, background, control)      
