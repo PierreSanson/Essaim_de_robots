@@ -11,7 +11,7 @@ from igraph import *
 from heapq import *
 import random
 
-
+# à laisser en bas de la liste des import
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
@@ -285,7 +285,7 @@ class SwarmExploratorUWBSLAM():
         pygame.draw.polygon(self.surface, (0, 0, 100, 64), self.convexHull)
         for coord in self.graph:
             if self.graph[coord] == 1:
-                pygame.draw.rect(self.surface, (200, 0, 0, 40), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth))
+                pygame.draw.rect(self.surface, (0, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
             else:
                 pygame.draw.rect(self.surface, (200, 200, 200, 40), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
 
