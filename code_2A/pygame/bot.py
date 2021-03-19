@@ -4,7 +4,7 @@ from utilities import *
 import pygame
 import numpy as np
 import random
-from copy import deepcopy
+from copy import deepcopy, copy
 from scipy.spatial import ConvexHull
 
 import obstacle as obs
@@ -85,6 +85,93 @@ class Bot():
         
             pygame.draw.circle(self.room.surface1, self.color, (self.x, self.y), self.radius) # à la fin pour qu'il apparaisse au dessus du reste
 
+
+    def cleanVisibleObs(self,obstaclesInView):
+
+       
+        forbiddenAreas = []
+
+        # on ajoute les obstacles 1 à 1 à la liste, seulement s'ils sont bien visibles
+        # on détermine, en regardant tous les obstacles, un ensemble de zones rectangulaires dans lesquelles ne peuvent pas se trouver des obstacles visibles
+        for wall in obstaclesInView.keys():
+           
+            ### 1: si on est face à un mur, on ne peut pas voir ce qu'il y à derrière
+            ### 2: si on voit un coin de mur, ça cache une partie de la pièce en plus
+            # à droite d'un mur vertical
+            if self.x > max(wall.Xs) and min(wall.Ys) <= self.y <= max(wall.Ys):
+                # 1: rectangle
+                forbiddenAreas.append([0, max(wall.Xs)-1, min(wall.Ys)-1, max(wall.Ys)-1])
+                # 2: triangles
+                pente = (self.y-min(wall.Ys))/(self.x-max(wall.Xs))
+                hauteur = self.y - self.x*pente
+                if hauteur < 0:
+                    point_trapeze = (self.x - self.y/pente,0)
+                    
+                
+            # à gauche d'un mur vertical
+            elif self.x < min(wall.Xs) and min(wall.Ys) <= self.y <= max(wall.Ys):
+                forbiddenAreas.append([min(wall.Xs)+1, self.room.width, min(wall.Ys), max(wall.Ys)-1])
+            # en dessous d'un mur horizontal
+            elif self.y > max(wall.Ys) and min(wall.Xs) <= self.x <= max(wall.Xs):
+                forbiddenAreas.append([min(wall.Xs)-1, max(wall.Xs)-1, 0, max(wall.Ys)-1])
+            # au dessus d'un mur horizontal
+            elif self.y < min(wall.Ys) and min(wall.Xs) <= self.x <= max(wall.Xs):
+                forbiddenAreas.append([min(wall.Xs)-1, max(wall.Xs)-1, min(wall.Ys)+1, self.room.height])
+
+            
+            # à droite d'un mur vertical
+            if self.x > max(wall.Xs) and min(wall.Ys) <= self.y <= max(wall.Ys):
+                forbiddenAreas.append([0, max(wall.Xs)-1, min(wall.Ys)-1, max(wall.Ys)-1])
+
+            
+        result = {}
+
+        for wall in obstaclesInView.keys():
+            result[wall] = []
+            for obstacle in obstaclesInView[wall]:
+                isVisible = True
+                compteur = 0
+                while isVisible and compteur < len(forbiddenAreas):
+                    area = forbiddenAreas[compteur]
+                    if obstacle.isIn(area):
+                        isVisible = False
+                    compteur += 1
+
+                if isVisible:
+                    result[wall].append(obstacle)
+
+        print(len(forbiddenAreas))
+        return result, forbiddenAreas
+
+
+    def visibleObstacles(self,wall):
+        visibleObs = []
+        visibleSides = []
+
+        if self.x > max(wall.Xs):
+            if not 'right' in visibleSides:
+                visibleSides.append('right')
+
+        if self.x < min(wall.Xs):
+            if not 'left' in visibleSides:
+                visibleSides.append('left')
+
+        # pour Y ce qui est écrit ici ne semble pas logique, mais en fait il faut se souvenir qu'on indexe depuis le coin en haut à gauche
+        if self.y > max(wall.Ys):
+            if not 'bot' in visibleSides:
+                visibleSides.append('bot')
+
+        if self.y < min(wall.Ys):
+            if not 'top' in visibleSides:
+                visibleSides.append('top')
+
+        for obstacle in wall.obstacles:
+            if obstacle.positionInWall in visibleSides and distObj(obstacle,self) <= self.radiusDetection:
+                visibleObs.append(obstacle)
+        
+        return visibleObs
+    
+    
     def vision(self):
         # on identifie les murs qui sont à portée du robot
         wallsInView = []
@@ -95,11 +182,11 @@ class Bot():
         # on identifie les obstacles (portions de mur) qui sont visibles pour le robot
         obstaclesInView = {}
         for wall in wallsInView:
-            obstaclesInView[wall] = wall.visibleObstacles(self)
+            obstaclesInView[wall] = self.visibleObstacles(wall)
+        # on élimine les incompatibilités, et on récupère au passage les zones non visibles
+        obstaclesInView, forbiddenAreas = self.cleanVisibleObs(obstaclesInView)
 
-        # à faire : délimiter zone visible
-
-        return wallsInView, obstaclesInView
+        return wallsInView, obstaclesInView, forbiddenAreas
 
 
 

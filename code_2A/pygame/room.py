@@ -76,32 +76,7 @@ class Wall():
         self.Ys = [min(tempYs),max(tempYs)]
         
 
-    def visibleObstacles(self,bot):
-        visibleObs = []
-        visibleSides = []
-
-        if bot.x > max(self.Xs):
-            if not 'right' in visibleSides:
-                visibleSides.append('right')
-
-        if bot.x < min(self.Xs):
-            if not 'left' in visibleSides:
-                visibleSides.append('left')
-
-        # pour Y ce qui est écrit ici ne semble pas logique, mais en fait il faut se souvenir qu'on indexe depuis le coin en haut à gauche
-        if bot.y > max(self.Ys):
-            if not 'bot' in visibleSides:
-                visibleSides.append('bot')
-
-        if bot.y < min(self.Ys):
-            if not 'top' in visibleSides:
-                visibleSides.append('top')
-
-        for obstacle in self.obstacles:
-            if obstacle.positionInWall in visibleSides and distObj(obstacle,bot) <= bot.radiusDetection:
-                visibleObs.append(obstacle)
-        
-        return visibleObs
+    
         
 
 
@@ -116,6 +91,9 @@ class Room():
         self.surface2 = surface2
         # surface2 va représenter les parties explorées ou non de la carte
         self.surface2.fill((0,0,0,200))
+
+        self.width = surface1.get_width()
+        self.height = surface1.get_height()
 
         obstacles = self.defineObstaclesFromWalls()
         self.obstacles = obstacles
@@ -166,19 +144,19 @@ class Room():
             
             y = top_line[0][1]
             for x in range(top_line[0][0] + radiusObstacles, top_line[1][0], spaceBetweenObstaclesCenter):
-                wall_obstacles.append(obs.Obstacle(x, y, radiusObstacles, self, color=(255,0,0),isWall='x', positionInWall='top'))
+                wall_obstacles.append(obs.Obstacle(x, y, radiusObstacles, self,isWall='x', spacing = spaceBetweenObstaclesCenter, positionInWall='top'))
 
             y = bot_line[0][1]
             for x in range(bot_line[0][0] + radiusObstacles, bot_line[1][0], spaceBetweenObstaclesCenter):
-                wall_obstacles.append(obs.Obstacle(x, y, radiusObstacles, self, color=(0,255,0),isWall='x', positionInWall='bot'))
+                wall_obstacles.append(obs.Obstacle(x, y, radiusObstacles, self,isWall='x', spacing = spaceBetweenObstaclesCenter, positionInWall='bot'))
                 
             x = left_line[0][0]
             for y in range(left_line[0][1] + radiusObstacles, left_line[1][1], spaceBetweenObstaclesCenter):
-                wall_obstacles.append(obs.Obstacle(x, y, radiusObstacles, self, color=(0,0,255),isWall='y', positionInWall='left'))
+                wall_obstacles.append(obs.Obstacle(x, y, radiusObstacles, self,isWall='y', spacing = spaceBetweenObstaclesCenter, positionInWall='left'))
 
             x = right_line[0][0]
             for y in range(right_line[0][1] + radiusObstacles, right_line[1][1], spaceBetweenObstaclesCenter):
-                wall_obstacles.append(obs.Obstacle(x, y, radiusObstacles, self, isWall='y', positionInWall='right'))
+                wall_obstacles.append(obs.Obstacle(x, y, radiusObstacles, self, isWall='y', spacing = spaceBetweenObstaclesCenter, positionInWall='right'))
 
             obstacles += wall_obstacles
             wall.obstacles = wall_obstacles
@@ -188,11 +166,20 @@ class Room():
 
     def updateExploration(self):
         for bot in self.bots:
+            # détection des murs et des zones visibles
+            wallsInView, obstaclesInView, forbiddenAreas = bot.vision()
+
             # affichage de la vision
             pygame.draw.circle(self.surface2,(0,0,0,0),(bot.x,bot.y),bot.radiusDetection)
+            # for area in forbiddenAreas:
+            #     width = area[1] - area[0]
+            #     height = area[3] - area[2]
+            #     dim = (width,height)
+            #     pos = (area[0],area[2])
+            #     rect = [pos,dim]
+            #     pygame.draw.rect(self.surface2, (255,0,0,20),rect)
 
-            # détection des murs
-            wallsInView, obstaclesInView = bot.vision()
+            
             for wall in wallsInView:
                 for obstacle in obstaclesInView[wall]:
                     if obstacle not in wall.obstacles_seen :

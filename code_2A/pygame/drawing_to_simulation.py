@@ -175,9 +175,11 @@ def redrawGameWindow(room, background, control):
     # mise à jour des robots
     for bot in room.bots:
         bot.draw()
+
     # affichage optionel des obtsacles :
-    for obstacle in room.obstacles:
-        obstacle.draw()
+    # for obstacle in room.obstacles:
+    #     obstacle.draw()
+
     # mise à jour des murs
     room.draw_walls()
     background.blit(room.surface1, (0,0))

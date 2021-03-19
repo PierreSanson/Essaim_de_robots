@@ -272,3 +272,52 @@ def GetKey(val, graph):
         if val == value:
             return key
     return "key doesn't exist"
+
+
+def linesIntersect(line1,line2): # ligne définie par coordonnées de deux de ses points : [(x1,y1),(x2,y2)]
+    
+    # on commence par les trois cas de droites verticales
+    if (line1[1][0] - line1[0][0]) == 0 and (line2[1][0] - line2[0][0]) == 0:
+        return None
+    elif (line1[1][0] - line1[0][0]) == 0:
+        x = line1[0][0]
+        c = (line2[1][1] - line2[0][1])/(line2[1][0] - line2[0][0])
+        d = line2[0][1] - c*line2[0][0] 
+        y = c*x + d
+    elif (line2[1][0] - line2[0][0]) == 0:
+        x = line2[0][0]
+        a = (line1[1][1] - line1[0][1])/(line1[1][0] - line1[0][0])
+        b = line1[0][1] - a*line1[0][0] 
+        y = a*x + b
+    
+    # puis on fait le cas 'normal'
+    else :
+        # pentes
+        a = (line1[1][1] - line1[0][1])/(line1[1][0] - line1[0][0])
+        c = (line2[1][1] - line2[0][1])/(line2[1][0] - line2[0][0])
+        if a == c:
+            return None # droites parallèles, pas d'intersection ou bien même droite
+
+        # ordonnées à l'origine
+        b = line1[0][1] - a*line1[0][0] 
+        d = line2[0][1] - c*line2[0][0] 
+
+        x = (d-b)/(a-c)
+        y = a*x + b
+
+    return (x,y)
+
+
+def segmentsIntersect(seg1,seg2):
+    intersection = linesIntersect(seg1,seg2)
+
+    if intersection == None: # on commence par vérifier que les droites support de segments ont un point d'intersection
+        return None
+    else:
+        x = intersection[0]
+        y = intersection[1]
+
+        if seg1[0][0] <= x <= seg1[1][0] and seg2[0][0] <= x <= seg2[1][0]: # si c'est le cas, on vérifie qu'il appartient aux segments
+            return (x,y)
+        else:
+            return None
