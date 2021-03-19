@@ -98,7 +98,7 @@ class Wall():
             if isinstance(bot,mb.MeasuringBot):
                 #print('1:',obstacle.positionInWall in visibleSides,'2:',distObj(obstacle,bot) < bot.radiusDetection)
                 #print(distObj(obstacle,bot))
-                if obstacle.positionInWall in visibleSides and distObj(obstacle,bot) < bot.radiusDetection:
+                if obstacle.positionInWall in visibleSides and distObj(obstacle,bot) <= bot.radiusDetection:
                     visibleObs.append(obstacle)
         
         #print(visibleObs)
