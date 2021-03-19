@@ -89,7 +89,7 @@ class Bot():
         # on identifie les murs qui sont à portée du robot
         wallsInView = []
         for wall in self.room.walls:
-            if cornerInView(wall,self):
+            if wall.visibleForBot(self):
                 wallsInView.append(wall)
 
         # on identifie les obstacles (portions de mur) qui sont visibles pour le robot

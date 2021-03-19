@@ -50,6 +50,13 @@ class Wall():
                     Y.append(corners[1][0])
 
 
+    def visibleForBot(self,bot):
+        for obstacle in self.obstacles :
+            if distObj(obstacle,bot) <= bot.radiusDetection:
+                return True
+        return False
+
+
     def saveObstaclesMainCoord(self):
         # on cherche toutes les coordonnées uniques
         tempXs = []
@@ -76,32 +83,24 @@ class Wall():
         if bot.x > max(self.Xs):
             if not 'right' in visibleSides:
                 visibleSides.append('right')
-                #print('yo')
 
         if bot.x < min(self.Xs):
             if not 'left' in visibleSides:
                 visibleSides.append('left')
-                #print('wesh')
 
         # pour Y ce qui est écrit ici ne semble pas logique, mais en fait il faut se souvenir qu'on indexe depuis le coin en haut à gauche
         if bot.y > max(self.Ys):
             if not 'bot' in visibleSides:
                 visibleSides.append('bot')
-                #print('yep')
 
         if bot.y < min(self.Ys):
             if not 'top' in visibleSides:
                 visibleSides.append('top')
-                #print('alors')
 
         for obstacle in self.obstacles:
-            if isinstance(bot,mb.MeasuringBot):
-                #print('1:',obstacle.positionInWall in visibleSides,'2:',distObj(obstacle,bot) < bot.radiusDetection)
-                #print(distObj(obstacle,bot))
-                if obstacle.positionInWall in visibleSides and distObj(obstacle,bot) <= bot.radiusDetection:
-                    visibleObs.append(obstacle)
+            if obstacle.positionInWall in visibleSides and distObj(obstacle,bot) <= bot.radiusDetection:
+                visibleObs.append(obstacle)
         
-        #print(visibleObs)
         return visibleObs
         
 
@@ -119,9 +118,7 @@ class Room():
         self.surface2.fill((0,0,0,200))
 
         obstacles = self.defineObstaclesFromWalls()
-        self.obstacles = obstacles  # only the obstacles
-        # self.obstacles_to_be_seen = obstacles
-        # self.obstacles_seen = []
+        self.obstacles = obstacles
 
         self.objects = self.bots + self.obstacles
 
@@ -194,9 +191,9 @@ class Room():
             # affichage de la vision
             pygame.draw.circle(self.surface2,(0,0,0,0),(bot.x,bot.y),bot.radiusDetection)
 
-
             # détection des murs
             wallsInView, obstaclesInView = bot.vision()
             for wall in wallsInView:
                 for obstacle in obstaclesInView[wall]:
-                    wall.obstacles_seen.append(obstacle)       
+                    if obstacle not in wall.obstacles_seen :
+                        wall.obstacles_seen.append(obstacle)       
