@@ -85,6 +85,24 @@ class Bot():
         
             pygame.draw.circle(self.room.surface1, self.color, (self.x, self.y), self.radius) # à la fin pour qu'il apparaisse au dessus du reste
 
+    def vision(self):
+        # on identifie les murs qui sont à portée du robot
+        wallsInView = []
+        for wall in self.room.walls:
+            if cornerInView(wall,self):
+                wallsInView.append(wall)
+
+        # on identifie les obstacles (portions de mur) qui sont visibles pour le robot
+        obstaclesInView = {}
+        for wall in wallsInView:
+            obstaclesInView[wall] = wall.visibleObstacles(self)
+
+        # à faire : délimiter zone visible
+
+        return wallsInView, obstaclesInView
+
+
+
     def move(self):
         for i in range(len(self.polygonPoints)):
             self.polygonPoints[i][0] = self.polygonPointsAbsolute[i][0] + self.x

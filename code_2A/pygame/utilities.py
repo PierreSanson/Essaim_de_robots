@@ -272,3 +272,10 @@ def GetKey(val, graph):
         if val == value:
             return key
     return "key doesn't exist"
+
+
+def cornerInView(wall,bot):
+    for corner in wall.corners:
+        if np.sqrt((corner[0]-bot.x)**2 + (corner[1]-bot.y)**2) < bot.radiusDetection:
+            return True
+    return False
