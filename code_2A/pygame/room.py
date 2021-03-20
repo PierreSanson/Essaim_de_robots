@@ -20,6 +20,8 @@ class Wall():
         self.x_start = corners[0][1] # on fait bien attention entre x et y au sens d'un graphe Vs row et col pour numpy
         self.y_start = corners[0][0]
 
+
+        ### ATTENTION : A CE MOMENT, LES COINS SONT ENCORE AU FORMAT  (ROW,COL)
         if orientation == 'v':
                 self.width = corners[1][1] - corners[0][1]
                 self.height = corners[3][0] - corners[0][0]
@@ -48,6 +50,10 @@ class Wall():
                 Y = list(range(corners[0][0], corners[1][0],10))
                 if not corners[1][0] in Y:
                     Y.append(corners[1][0])
+
+        ### UNE FOIS LE TRAITEMENT EFFECTUE, ON REVIENT AU FORMAT (X,Y)
+        for corner in self.corners:
+            corner.reverse()
 
 
     def visibleForBot(self,bot):
@@ -167,13 +173,10 @@ class Room():
     def updateExploration(self):
         for bot in self.bots:
             # détection des murs et des zones visibles
-            wallsInView, obstaclesInView, forbiddenAreas = bot.vision()
+            wallsInView, obstaclesInView, visibleSurface = bot.vision()
 
             # affichage de la vision
-            pygame.draw.circle(self.surface2,(0,0,0,0),(bot.x,bot.y),bot.radiusDetection)
-            for area in forbiddenAreas:
-                pygame.draw.polygon(self.surface2,(255,0,0,20),area)
-
+            self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MIN)
 
             for wall in wallsInView:
                 for obstacle in obstaclesInView[wall]:

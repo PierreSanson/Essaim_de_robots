@@ -50,8 +50,3 @@ class Obstacle():
     def draw(self):
         surface = self.room.surface1
         pygame.draw.circle(surface, self.color, (self.x, self.y), self.radius)
-
-    def isIn(self,area): # area est un ensemble de sommets d'un polygone
-        if area[0] <= self.x <= area[1] and area[2] <= self.y <= area[3]:
-            return True
-        return False

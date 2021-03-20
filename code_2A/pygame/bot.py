@@ -89,9 +89,8 @@ class Bot():
             pygame.draw.circle(self.room.surface1, self.color, (self.x, self.y), self.radius) # à la fin pour qu'il apparaisse au dessus du reste
 
 
-    def cleanVisibleObs(self,obstaclesInView):
+    def cleanVision(self,obstaclesInView):
 
-       
         forbiddenAreas = []
 
         # on ajoute les obstacles 1 à 1 à la liste, seulement s'ils sont bien visibles
@@ -104,7 +103,7 @@ class Bot():
             # à droite d'un mur vertical
             if self.x > max(wall.Xs) and min(wall.Ys) <= self.y <= max(wall.Ys):
                 # 1: rectangle
-                forbiddenAreas.append([(0,min(wall.Ys)-1), (max(wall.Xs)-1,min(wall.Ys)-1),  (max(wall.Xs)-1,max(wall.Ys)-1), (0,min(wall.Ys)-1)])
+                forbiddenAreas.append([(0,min(wall.Ys)-1), (max(wall.Xs)-1,min(wall.Ys)-1),  (max(wall.Xs)-1,max(wall.Ys)-1), (0,max(wall.Ys)-1)])
                 # 2: triangles ou trapèzes, on trace la droite qui relie le robot avec le coin et on voit où elle intersecte le bord de la fenêtre
                 for corner in wall.corners:
                     cx, cy = corner[0],corner[1]
@@ -119,7 +118,7 @@ class Bot():
                                     res_left = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(0,self.room.height)])
                                     if res_left != None:
                                         resX, resY = res_left[0], res_left[1]
-                                        forbiddenAreas.append([(0,resY),(cx,cy),(0,cy))])
+                                        forbiddenAreas.append([(0,resY),(cx,cy),(0,cy)])
 
                         elif cy > self.y: # coin en dessous du robot
                             res_bot = linesIntersect([(self.x,self.y),(cx,cy)],[(0,self.room.height),(self.room.width,self.room.height)])
@@ -131,13 +130,13 @@ class Bot():
                                     res_left = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(0,self.room.height)])
                                     if res_left != None:
                                         resX, resY = res_left[0], res_left[1]
-                                        forbiddenAreas.append([(0,resY),(cx,cy),(0,cy))])
+                                        forbiddenAreas.append([(0,resY),(cx,cy),(0,cy)])
 
 
             # à gauche d'un mur vertical
             elif self.x < min(wall.Xs) and min(wall.Ys) <= self.y <= max(wall.Ys):
                 # 1: rectangle
-                forbiddenAreas.append([(min(wall.Xs)+1,min(wall.Ys)), (self.room.width,min(wall.Ys)), (self.room.width,max(wall.Ys)-1), (min(wall.Xs)+1,min(wall.Ys))])
+                forbiddenAreas.append([(min(wall.Xs)+1,min(wall.Ys)), (self.room.width,min(wall.Ys)), (self.room.width,max(wall.Ys)-1), (min(wall.Xs)+1,max(wall.Ys)-1)])
                 # 2: triangle ou trapèze
                 for corner in wall.corners:
                     cx, cy = corner[0],corner[1]
@@ -152,7 +151,7 @@ class Bot():
                                     res_right = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(0,self.room.height)])
                                     if res_right != None:
                                         resX, resY = res_right[0], res_right[1]
-                                        forbiddenAreas.append([(self.room.width,resY),(cx,cy),(self.room.width,cy))])
+                                        forbiddenAreas.append([(self.room.width,resY),(cx,cy),(self.room.width,cy)])
 
                         elif cy > self.y: # coin en dessous du robot
                             res_bot = linesIntersect([(self.x,self.y),(cx,cy)],[(0,self.room.height),(self.room.width,self.room.height)])
@@ -164,13 +163,13 @@ class Bot():
                                     res_right = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(0,self.room.height)])
                                     if res_right != None:
                                         resX, resY = res_right[0], res_right[1]
-                                        forbiddenAreas.append([(self.room.width,resY),(cx,cy),(self.room.width,cy))])
+                                        forbiddenAreas.append([(self.room.width,resY),(cx,cy),(self.room.width,cy)])
 
 
             # en dessous d'un mur horizontal
             elif self.y > max(wall.Ys) and min(wall.Xs) <= self.x <= max(wall.Xs):
                 # 1: rectangle
-                forbiddenAreas.append([(min(wall.Xs)-1,0), (max(wall.Xs)-1,0),  (max(wall.Xs)-1,max(wall.Ys)-1), (min(wall.Xs)-1,0)])
+                forbiddenAreas.append([(min(wall.Xs)-1,0), (max(wall.Xs)-1,0),  (max(wall.Xs)-1,max(wall.Ys)-1), (min(wall.Xs)-1,max(wall.Ys)-1)])
                 # 2: triangle ou trapèze
                 for corner in wall.corners:
                     cx, cy = corner[0],corner[1]
@@ -185,7 +184,7 @@ class Bot():
                                     res_top = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(self.room.width,0)])
                                     if res_top != None:
                                         resX, resY = res_top[0], res_top[1]
-                                        forbiddenAreas.append([(resX,0),(cx,cy),(cx,0))])
+                                        forbiddenAreas.append([(resX,0),(cx,cy),(cx,0)])
 
                         elif cx > self.x: # coin à droite du robot
                             res_right = linesIntersect([(self.x,self.y),(cx,cy)],[(self.room.width,0),(self.room.width,self.room.height)])
@@ -197,18 +196,18 @@ class Bot():
                                     res_top = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(self.room.width,0)])
                                     if res_top != None:
                                         resX, resY = res_top[0], res_top[1]
-                                        forbiddenAreas.append([(resX,0),(cx,cy),(cx,0))])
+                                        forbiddenAreas.append([(resX,0),(cx,cy),(cx,0)])
 
 
             # au dessus d'un mur horizontal
             elif self.y < min(wall.Ys) and min(wall.Xs) <= self.x <= max(wall.Xs):
                 # 1: rectangle
-                forbiddenAreas.append([(min(wall.Xs)-1,min(wall.Ys)+1), (max(wall.Xs)-1,min(wall.Ys)+1), (max(wall.Xs)-1,self.room.height), (min(wall.Xs)-1,min(wall.Ys)+1)])
+                forbiddenAreas.append([(min(wall.Xs)-1,min(wall.Ys)+1), (max(wall.Xs)-1,min(wall.Ys)+1), (max(wall.Xs)-1,self.room.height), (min(wall.Xs)-1,self.room.height)])
                 # 2: triangle ou trapèze
                 for corner in wall.corners:
                     cx, cy = corner[0],corner[1]
                     if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection: # si le coin est vu par le robot
-                        if cx < self.x: # coin à gauche du robot
+                        if cx < self.x: # coin à gauche du robot                          
                             res_left = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(0,self.room.height)])
                             if res_left != None:
                                 resX, resY = res_left[0], res_left[1]
@@ -218,19 +217,19 @@ class Bot():
                                     res_bot = linesIntersect([(self.x,self.y),(cx,cy)],[(0,self.room.height),(self.room.width,self.room.height)])
                                     if res_bot != None:
                                         resX, resY = res_bot[0], res_bot[1]
-                                        forbiddenAreas.append([(resX,self.room.height),(cx,cy),(cx,self.room.height))])
+                                        forbiddenAreas.append([(resX,self.room.height),(cx,cy),(cx,self.room.height)])
 
                         elif cx > self.x: # coin à droite du robot
                             res_right = linesIntersect([(self.x,self.y),(cx,cy)],[(self.room.width,0),(self.room.width,self.room.height)])
                             if res_right != None:
-                                resX, resY = res_left[0], res_left[1]
+                                resX, resY = res_right[0], res_right[1]
                                 if resY < self.room.height:
                                     forbiddenAreas.append([(self.room.width,resY),(self.room.width,self.room.height),(cx,self.room.height),(cx,cy)])
                                 else:
                                     res_bot = linesIntersect([(self.x,self.y),(cx,cy)],[(0,self.room.height),(self.room.width,self.room.height)])
                                     if res_bot != None:
                                         resX, resY = res_bot[0], res_bot[1]
-                                        forbiddenAreas.append([(resX,self.room.height),(cx,cy),(cx,self.room.height))])
+                                        forbiddenAreas.append([(resX,self.room.height),(cx,cy),(cx,self.room.height)])
             
         result = {}
 
@@ -250,7 +249,6 @@ class Bot():
                 if isVisible:
                     result[wall].append(obstacle)
 
-        print(len(forbiddenAreas))
         return result, forbiddenAreas
 
 
@@ -293,10 +291,18 @@ class Bot():
         obstaclesInView = {}
         for wall in wallsInView:
             obstaclesInView[wall] = self.visibleObstacles(wall)
-        # on élimine les incompatibilités, et on récupère au passage les zones non visibles
-        obstaclesInView, forbiddenAreas = self.cleanVisibleObs(obstaclesInView)
 
-        return wallsInView, obstaclesInView, forbiddenAreas
+        # on élimine les incompatibilités, et on récupère au passage les zones non visibles
+        obstaclesInView, forbiddenAreas = self.cleanVision(obstaclesInView)
+        
+        # on compose toutes ces zones non visibles avec le cercle de vision du robot pour obtenir la vraie zone visible
+        visibleSurface = pygame.Surface((self.room.width,self.room.height),  pygame.SRCALPHA)
+        visibleSurface.fill((0,0,0,200))
+        for area in forbiddenAreas:
+            pygame.draw.circle(visibleSurface,(0,0,0,0),(self.x,self.y),self.radiusDetection) # zone transparente de départ
+            pygame.draw.polygon(visibleSurface,(0,0,0,200),area)
+
+        return wallsInView, obstaclesInView, visibleSurface
 
 
 
