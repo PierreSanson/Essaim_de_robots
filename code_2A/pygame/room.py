@@ -79,8 +79,7 @@ class Room():
             if obstacle.isWall == 'x':
                 pygame.draw.rect(self.surface1, (200,200,200), (x-length//2, y, length, 1)) # mur vu : gris clair (200,200,200)
             elif obstacle.isWall == 'y':
-                pygame.draw.rect(self.surface1, (200,200,200), (x, y-length//2, 1, length)) # mur vu : griselement clair (200,200,200)
-                
+                pygame.draw.rect(self.surface1, (200,200,200), (x, y-length//2, 1, length)) # mur vu : griselement clair (200,200,200)  
 
     def defineObstaclesFromWalls(self):
 
