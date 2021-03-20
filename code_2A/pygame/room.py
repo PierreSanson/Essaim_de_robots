@@ -171,15 +171,10 @@ class Room():
 
             # affichage de la vision
             pygame.draw.circle(self.surface2,(0,0,0,0),(bot.x,bot.y),bot.radiusDetection)
-            # for area in forbiddenAreas:
-            #     width = area[1] - area[0]
-            #     height = area[3] - area[2]
-            #     dim = (width,height)
-            #     pos = (area[0],area[2])
-            #     rect = [pos,dim]
-            #     pygame.draw.rect(self.surface2, (255,0,0,20),rect)
+            for area in forbiddenAreas:
+                pygame.draw.polygon(self.surface2,(255,0,0,20),area)
 
-            
+
             for wall in wallsInView:
                 for obstacle in obstaclesInView[wall]:
                     if obstacle not in wall.obstacles_seen :
