@@ -33,9 +33,13 @@ class RefPointBot(Bot):
                         if distO <= self.wallDetectionRadius:
                             sols = circleLineInter(self, obj, [self.objective[0]-self.x, self.objective[1]-self.y])
                             if len(sols)>0:
-                                collision_wall = True
-                                self.wallDetectionAction()
-                                return collision
+                                for sol in sols:
+                                    if np.linalg.norm(self.vel2D)!=0:
+                                        angleCheck = signedAngle2Vects2(self.vel2D, (sol['x']-self.x, sol['y']-self.y))
+                                        if abs(angleCheck)*360/np.pi < 7.5:
+                                            collision_wall = True
+                                            self.wallDetectionAction()
+                                            return collision
                     else:
                         if (obj not in self.detectedObj):
                             self.detectedObj.append(obj)
