@@ -578,8 +578,9 @@ class Bot():
     def goToObjective(self):
         distObjective = distObjList(self, self.objective)
         if distObjective < 60*self.speed/self.rotationSpeed + self.radius*2:
-            self.ontoObjectiveCoeff = distObjective/((60*self.speed/self.rotationSpeed)**(1.08))
-            if distObjective < 0.1:
+            self.ontoObjectiveCoeff = distObjective/((60*self.speed/self.rotationSpeed)**(1))
+            # self.ontoObjectiveCoeff = 1
+            if distObjective < 3:
                 self.ontoObjective = True
                 self.haveObjective = False
                 self.lastVel2D = self.vel2D
