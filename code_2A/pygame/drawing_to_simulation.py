@@ -103,7 +103,6 @@ def find_walls_corners(table):
 
 
 def drawing_to_simulation(table,surface1,surface2):
-    walls_corners = find_walls_corners(table)
 
     robots_centers = []
     for row in range(len(table)):
@@ -120,6 +119,7 @@ def drawing_to_simulation(table,surface1,surface2):
     # facteur multiplicatif pour avoir des distances de l'ordre de la taille de l'écran (on part de 220x128 et on va vers 1600*900)
     scale = 7
 
+    walls_corners = find_walls_corners(table)
     for i in range(len(walls_corners)):
         for j in range(4):
             walls_corners[i][j][0] = walls_corners[i][j][0]*scale + offset
@@ -130,12 +130,7 @@ def drawing_to_simulation(table,surface1,surface2):
         robots_centers[i][0][1] = robots_centers[i][0][1]*scale  + offset
 
     # création de la salle
-    room = Room(surface1,surface2)
-
-    for corners in walls_corners:
-        room.addWall(corners)
-
-    room.defineObstaclesFromWalls()
+    room = Room(walls_corners,surface1,surface2)
 
     measuringBots = []
     explorerBots = []
@@ -153,7 +148,7 @@ def drawing_to_simulation(table,surface1,surface2):
             
     bots = measuringBots + explorerBots + refPointBots
 
-    room.addObjects(bots)
+    room.addBots(bots)
 
     # SC = sc.SwarmController(screen, measuringBots[0], refPointBots, distRefPointBots=[60,60])
     # SE = se.RoomExplorator(room,SC)
@@ -178,9 +173,13 @@ def redrawGameWindow(room, background, control):
     # ajout des murs et robots au dessus de l'arrière plan
     room.surface1.fill((0,0,0,0)) # (noir) transparent
     # mise à jour des robots
-    for obj in room.objects:
-        if not isinstance(obj, obs.Obstacle):
-            obj.draw()
+    for bot in room.bots:
+        bot.draw()
+
+    # affichage optionel des obtsacles :
+    # for obstacle in room.obstacles:
+    #     obstacle.draw()
+
     # mise à jour des murs
     room.draw_walls()
     background.blit(room.surface1, (0,0))
@@ -224,11 +223,10 @@ def load_and_launch_simulation():
         control.move()
 
         ## Itération sur l'ensemble des robots pour les faire se déplacer
-        for obj in room.objects:
-            if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, obs.Obstacle) and obj.movable):
-                obj.move()
+        for bot in room.bots:
+                bot.move()
 
         ## Prise en compte des nouvelles zones vues par les robots
-        room.updateExploration()
+        room.updateExploration(debug = True)
 
         redrawGameWindow(room, background, control)      

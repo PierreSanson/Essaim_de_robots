@@ -4,9 +4,12 @@ from utilities import createPolygonMask
 from copy import deepcopy
 
 class Obstacle():
-    def __init__(self, x, y, radius, room, movable = False, vel = 2, margin = 2, isWall = False):
+    def __init__(self, x, y, radius, room, color = (100,100,100), movable = False, vel = 2, margin = 2, isWall = False, spacing = 15, positionInWall = None):
         self.isWall = isWall
+        self.spacing = spacing
+        self.positionInWall = positionInWall
         self.room = room
+        self.color = color
         self.x = x
         self.y = y
         self.radius = radius
@@ -45,5 +48,5 @@ class Obstacle():
 
 
     def draw(self):
-        surface = room.surface1
-        pygame.draw.circle(surface, (100,100,100), (self.x, self.y), self.radius)
+        surface = self.room.surface1
+        pygame.draw.circle(surface, self.color, (self.x, self.y), self.radius)
