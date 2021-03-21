@@ -227,6 +227,6 @@ def load_and_launch_simulation():
                 bot.move()
 
         ## Prise en compte des nouvelles zones vues par les robots
-        room.updateExploration()
+        room.updateExploration(debug = True)
 
         redrawGameWindow(room, background, control)      

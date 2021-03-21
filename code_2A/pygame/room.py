@@ -15,6 +15,7 @@ class Wall():
         self.Ys = []
         
         orientation = corners.pop()
+        self.orientation = orientation
         self.corners = corners
         
         self.x_start = corners[0][1] # on fait bien attention entre x et y au sens d'un graphe Vs row et col pour numpy
@@ -170,17 +171,20 @@ class Room():
         return obstacles
 
 
-    def updateExploration(self):
-        ### debugging
-        self.surface2.fill((0,0,0,200))
-        ###
+    def updateExploration(self,debug):
+        if debug:
+            # debugging, pour afficher la vision des robots seulement à l'instant t
+            self.surface2.fill((0,0,0,200))
+            
         for bot in self.bots:
             # détection des murs et des zones visibles
-            wallsInView, obstaclesInView, visibleSurface = bot.vision()
+            wallsInView, obstaclesInView, visibleSurface = bot.vision(debug)
 
             # affichage de la vision
-            if isinstance(bot,mb.MeasuringBot):
+            if debug:
                 self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MAX)
+            else:
+                self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MIN)
 
             for wall in wallsInView:
                 for obstacle in obstaclesInView[wall]:
