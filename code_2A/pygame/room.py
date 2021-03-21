@@ -127,7 +127,7 @@ class Room():
             for obstacle in wall.obstacles_seen:
                 x = obstacle.x
                 y = obstacle.y
-                length = 15
+                length = obstacle.spacing
                 if obstacle.isWall == 'x':
                     pygame.draw.rect(self.surface1, (200,200,200), (x-length//2, y, length, 1)) # mur vu : gris clair (200,200,200)
                 elif obstacle.isWall == 'y':
@@ -137,8 +137,8 @@ class Room():
     def defineObstaclesFromWalls(self):
 
         obstacles = []
-        radiusObstacles = 7
-        spaceBetweenObstaclesCenter = 30
+        radiusObstacles = 7                 # 2
+        spaceBetweenObstaclesCenter = 30    # 15
 
         
         for wall in self.walls: 

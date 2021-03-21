@@ -310,11 +310,12 @@ class SwarmExploratorUWBSLAM():
                     for coord in coords:
                         if coord not in self.graph or self.graph[coord] == 2 or self.graph[coord] == -1:
                             obs = False
-                            for obstacle in self.room.obstacles_seen:
-                                dist = distObjList(obstacle, coord)
-                                if dist < self.gridWidth//2:
-                                    obs = True
-                                    break
+                            for wall in self.room.walls:
+                                for obstacle in wall.obstacles_seen:
+                                    dist = distObjList(obstacle, coord)
+                                    if dist < self.gridWidth//2:
+                                        obs = True
+                                        break
                             if obs : 
                                 self.graph[coord] = -1
                                 self.removeNodeFromGraph(coord)
@@ -323,11 +324,12 @@ class SwarmExploratorUWBSLAM():
                                 self.graph[coord] = 2
                         elif self.graph[coord] != 1 : 
                             obs = False
-                            for obstacle in self.room.obstacles_seen:
-                                dist = distObjList(obstacle, coord)
-                                if dist < self.gridWidth//2:
-                                    obs = True
-                                    break
+                            for wall in self.room.walls:
+                                for obstacle in wall.obstacles_seen:
+                                    dist = distObjList(obstacle, coord)
+                                    if dist < self.gridWidth//2:
+                                        obs = True
+                                        break
                             if obs : 
                                 self.graph[coord] = -1
                                 self.removeNodeFromGraph(coord)
