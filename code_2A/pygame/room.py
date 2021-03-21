@@ -171,12 +171,16 @@ class Room():
 
 
     def updateExploration(self):
+        ### debugging
+        self.surface2.fill((0,0,0,200))
+        ###
         for bot in self.bots:
             # détection des murs et des zones visibles
             wallsInView, obstaclesInView, visibleSurface = bot.vision()
 
             # affichage de la vision
-            self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MIN)
+            if isinstance(bot,mb.MeasuringBot):
+                self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MAX)
 
             for wall in wallsInView:
                 for obstacle in obstaclesInView[wall]:
