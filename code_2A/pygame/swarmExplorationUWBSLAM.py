@@ -296,6 +296,7 @@ class SwarmExploratorUWBSLAM():
                     self.graph[obj] = 1
                     x, y = obj
                     w = self.gridWidth
+                    #à changer avec les coord de tous les carreaux vues et jamais vues auparavant
                     coordLeft = (x-w, y)
                     coordRight = (x+w, y)
                     coordTop = (x, y-w)
