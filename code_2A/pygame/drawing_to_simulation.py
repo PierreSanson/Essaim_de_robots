@@ -205,7 +205,7 @@ def load_and_launch_simulation():
     room, SC, SE, SEUWBSLAM, measuringBots, explorerBots, refPointBots = drawing_to_simulation(table,surface1,surface2)
 
     clock = pygame.time.Clock()
-    hz = 60
+    hz = 144
 
     run = True 
     while run:
