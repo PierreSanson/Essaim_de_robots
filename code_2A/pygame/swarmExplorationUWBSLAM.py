@@ -222,7 +222,7 @@ class SwarmExploratorUWBSLAM():
                 self.updateGrid()
                 self.graph[self.origin] = 1
                 self.createGraph()
-                # self.drawGraph()
+                # self.drawGraph() # à commenter ou non pour afficher le grpahe
                 coords = self.getNeighbours(self.origin)
                 self.updateNeighOneNode(self.origin)
                 for coord in coords:
