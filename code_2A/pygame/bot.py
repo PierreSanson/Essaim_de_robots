@@ -406,7 +406,7 @@ class Bot():
                 visibleSides.append('top')
 
         for obstacle in wall.obstacles:
-            if obstacle.positionInWall in visibleSides and distObj(obstacle,self) <= self.radiusDetection:
+            if obstacle.positionInWall in visibleSides and distObj(obstacle,self) <= self.radiusDetection + obstacle.radius:
                 visibleObs.append(obstacle)
         
         return visibleObs

@@ -3,7 +3,7 @@ import numpy as np
 
 import obstacle as obs
 import measuringBot as mb
-from utilities import distObj
+from utilities import distObj, placeObstaclesOnLine
 
 
 class Wall():
@@ -69,9 +69,9 @@ class Wall():
         tempXs = []
         tempYs = []
     
-        for obstacle in self.obstacles:
-            x = obstacle.x
-            y = obstacle.y
+        for corner in self.corners:
+            x = corner[0]
+            y = corner[1]
 
             if not x in tempXs:
                 tempXs.append(x)
@@ -129,16 +129,16 @@ class Room():
                 y = obstacle.y
                 length = obstacle.spacing
                 if obstacle.isWall == 'x':
-                    pygame.draw.rect(self.surface1, (200,200,200), (x-length//2, y, length, 1)) # mur vu : gris clair (200,200,200)
+                    pygame.draw.rect(self.surface1, (200,200,200), (x-length//2, y, length+1, 1)) # mur vu : gris clair (200,200,200)
                 elif obstacle.isWall == 'y':
-                    pygame.draw.rect(self.surface1, (200,200,200), (x, y-length//2, 1, length)) # mur vu : griselement clair (200,200,200)
+                    pygame.draw.rect(self.surface1, (200,200,200), (x, y-length//2, 1, length+1)) # mur vu : griselement clair (200,200,200)
 
                     
     def defineObstaclesFromWalls(self):
 
         obstacles = []
-        radiusObstacles = 7                 # 2
-        spaceBetweenObstaclesCenter = 30    # 15
+        radiusObstacles = 6                 
+        spaceBetweenObstaclesCenter = 18  # il ne faut pas que (spaceBetweenObstaclesCenter - 2*radiusObstacles) soit plus grand qu'un robot, sinon ils passent au travers des murs
 
         
         for wall in self.walls: 
@@ -149,21 +149,19 @@ class Room():
             right_line = [[wall.x_start + wall.width-1, wall.y_start],[wall.x_start + wall.width-1, wall.y_start + wall.height-1]]
             bot_line = [[wall.x_start, wall.y_start+wall.height-1],[wall.x_start+wall.width-1, wall.y_start + wall.height-1]]
             
-            y = top_line[0][1]
-            for x in range(top_line[0][0] + radiusObstacles, top_line[1][0], spaceBetweenObstaclesCenter):
-                wall_obstacles.append(obs.Obstacle(x, y, radiusObstacles, self,isWall='x', spacing = spaceBetweenObstaclesCenter, positionInWall='top'))
+            if wall.orientation == 'h':
+                y1 = top_line[0][1]
+                y2 = bot_line[0][1]
+                for x in placeObstaclesOnLine(top_line[0][0],top_line[1][0],radiusObstacles,spaceBetweenObstaclesCenter):
+                    wall_obstacles.append(obs.Obstacle(x, y1, radiusObstacles, self,isWall='x', spacing = spaceBetweenObstaclesCenter, positionInWall='top'))
+                    wall_obstacles.append(obs.Obstacle(x, y2, radiusObstacles, self,isWall='x', spacing = spaceBetweenObstaclesCenter, positionInWall='bot'))
 
-            y = bot_line[0][1]
-            for x in range(bot_line[0][0] + radiusObstacles, bot_line[1][0], spaceBetweenObstaclesCenter):
-                wall_obstacles.append(obs.Obstacle(x, y, radiusObstacles, self,isWall='x', spacing = spaceBetweenObstaclesCenter, positionInWall='bot'))
-                
-            x = left_line[0][0]
-            for y in range(left_line[0][1] + radiusObstacles, left_line[1][1], spaceBetweenObstaclesCenter):
-                wall_obstacles.append(obs.Obstacle(x, y, radiusObstacles, self,isWall='y', spacing = spaceBetweenObstaclesCenter, positionInWall='left'))
-
-            x = right_line[0][0]
-            for y in range(right_line[0][1] + radiusObstacles, right_line[1][1], spaceBetweenObstaclesCenter):
-                wall_obstacles.append(obs.Obstacle(x, y, radiusObstacles, self, isWall='y', spacing = spaceBetweenObstaclesCenter, positionInWall='right'))
+            elif wall.orientation == 'v':    
+                x1 = left_line[0][0]
+                x2 = right_line[0][0]
+                for y in placeObstaclesOnLine(left_line[0][1],left_line[1][1],radiusObstacles,spaceBetweenObstaclesCenter):
+                    wall_obstacles.append(obs.Obstacle(x1, y, radiusObstacles, self,isWall='y', spacing = spaceBetweenObstaclesCenter, positionInWall='left'))
+                    wall_obstacles.append(obs.Obstacle(x2, y, radiusObstacles, self, isWall='y', spacing = spaceBetweenObstaclesCenter, positionInWall='right'))                 
 
             obstacles += wall_obstacles
             wall.obstacles = wall_obstacles

@@ -321,3 +321,9 @@ def segmentsIntersect(seg1,seg2):
             return (x,y)
         else:
             return None
+
+def placeObstaclesOnLine(startLine,endLine,obstacleRadius,obstacleSpacing):
+    nbBots = int(np.round((endLine-startLine)/obstacleSpacing))
+    pos =  np.linspace(startLine+obstacleRadius,endLine-obstacleRadius,nbBots)
+    print(len(pos))
+    return np.round(pos)
