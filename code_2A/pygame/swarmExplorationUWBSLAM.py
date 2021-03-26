@@ -222,7 +222,7 @@ class SwarmExploratorUWBSLAM():
                 self.updateGrid()
                 self.graph[self.origin] = 1
                 self.createGraph()
-                # self.drawGraph() # à commenter ou non pour afficher le grpahe
+                # self.drawGraph() # à commenter ou non pour afficher le graphe
                 coords = self.getNeighbours(self.origin)
                 self.updateNeighOneNode(self.origin)
                 for coord in coords:
@@ -513,11 +513,11 @@ class SwarmExploratorUWBSLAM():
 
     def createGrid(self):
         polygonShapely = Polygon([])
-        if len(self.polygons)>0:
+        if len(self.polygons)>0: # on définit un polygone qui représente la zone couverte dans son ensemble
             polygonShapely = Polygon(self.polygons[0])
             for polygon in self.polygons[1:]:
                 polygonShapely = polygonShapely.union(Polygon(polygon))
-        if len(self.convexHull)>0:
+        if len(self.convexHull)>0: # on repère les coordonnés extrêmes de la zone couverte par les balises UWB
             xmin = int(min(self.convexHull, key=lambda x: x[0])[0])
             ymin = int(min(self.convexHull, key=lambda x: x[1])[1])
             xmax = int(max(self.convexHull, key=lambda x: x[0])[0])

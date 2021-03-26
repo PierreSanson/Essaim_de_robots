@@ -97,7 +97,7 @@ class Room():
         self.surface1 = surface1
         self.surface2 = surface2
         # surface2 va représenter les parties explorées ou non de la carte
-        self.surface2.fill((0,0,0,200))
+        self.surface2.fill((0,0,0,150))
 
         self.width = surface1.get_width()
         self.height = surface1.get_height()
@@ -179,7 +179,7 @@ class Room():
             wallsInView, obstaclesInView, visibleSurface = bot.vision(debug)
 
             # affichage de la vision
-            if debug:
+            if debug:    
                 self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MAX)
             else:
                 self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MIN)

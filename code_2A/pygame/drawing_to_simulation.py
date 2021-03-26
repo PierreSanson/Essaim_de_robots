@@ -165,7 +165,7 @@ def redrawGameWindow(room, background, control):
     
     ### Composition de la scène
     # on choisit et on applique la couleur de l'arrière plan de la simulation
-    background.fill((64,64,64))
+    background.fill((100,100,100))
 
     # ajout d'une surcouche transparente pour les zones déjà explorées et sombre dans les zones non explorées
     background.blit(room.surface2, (0,0))
@@ -224,7 +224,7 @@ def load_and_launch_simulation():
 
         ## Itération sur l'ensemble des robots pour les faire se déplacer
         for bot in room.bots:
-                bot.move()
+            bot.move()
 
         ## Prise en compte des nouvelles zones vues par les robots
         room.updateExploration(debug = False)
