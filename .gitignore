@@ -129,6 +129,7 @@ dmypy.json
 .pyre/
 
 # ajouts persos
-*.vscode
+.vscode/
+settings.json
 *.pickle
 test*.py
