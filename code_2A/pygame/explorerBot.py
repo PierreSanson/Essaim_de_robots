@@ -1,4 +1,5 @@
 from bot import Bot
+from utilities import *
 
 class ExplorerBot(Bot):
 

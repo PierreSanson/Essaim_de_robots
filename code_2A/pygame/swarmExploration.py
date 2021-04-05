@@ -1,3 +1,4 @@
+from numpy.core.numeric import True_
 from utilities import *
 import numpy as np
 import math
@@ -5,7 +6,8 @@ import pygame
 from igraph import *
 
 class RoomExplorator():
-    def __init__(self, room, swarmController):
+    def __init__(self, surface, room, swarmController):
+        self.surface = surface
         self.room = room
         self.SC = swarmController
         self.graph = {}
@@ -21,8 +23,10 @@ class RoomExplorator():
         self.lineintersEB = []
         self.nbLinesAbove, self.nbLinesBelow, self.nbLines, self.nbColsLeft, self.nbColsRight, self.nbCols, self.initNodeLine, self.initNodeCol = self.maxGridComputation()
         self.globalIndexObjectivesSeq = 0
+        self.margin = 15
         self.graphConstruction()
         self.globalVisited = []
+        
     
     def maxGridComputation(self):
         ExtremePoints= [[-1, -1], [-1, -1]]
@@ -199,7 +203,9 @@ class RoomExplorator():
         print("sequence of exploration : ", self.seq)
         self.defineObjectivesSeq()
         print("ObjectivesSeq : ", self.objectivesSeq)
-        self.drawGraph()
+
+        #self.drawGraph() # à commenter pour ne pas afficher les graphes
+
         return self.seq
     
     def cleanGraph(self):
@@ -309,7 +315,7 @@ class RoomExplorator():
 
     def defineObjectivesSeq(self):
         stepMB = self.SC.distRefPointBots
-        radiusMB = self.SC.measurerBot.radius
+        radiusMB = self.SC.measurerBot.radius + self.margin
         visitedNodes = []
         def exploreNode(node):
             intervalX = self.graph[node]
@@ -322,44 +328,84 @@ class RoomExplorator():
                 for x in range(int(initX), int(intervalX[0][0] + stepMB[0]), -int(stepMB[0])):
                     pathExist = True
                     for wall in self.walls:
-                        inter = lineSegmentInter([[0,1], [x, yNode]], wall)
+                        inters = [lineSegmentInter([[0,1], [x-radiusMB, yNode]], wall), lineSegmentInter([[0,1], [x, yNode]], wall), lineSegmentInter([[0,1], [x+radiusMB, yNode]], wall)]
+                        for inter in inters:
+                            if inter is not None:
+                                if abs(inter[1] - yNode) <= radiusMB:
+                                    pathExist = False
+                    if pathExist:
+                        self.objectivesSeq.append([x, yNode])
+                x = intervalX[0][0] + stepMB[0]/2
+                pathExist = True
+                for wall in self.walls:
+                    inters = [lineSegmentInter([[0,1], [x-radiusMB, yNode]], wall), lineSegmentInter([[0,1], [x, yNode]], wall), lineSegmentInter([[0,1], [x+radiusMB, yNode]], wall)]
+                    for inter in inters:
                         if inter is not None:
                             if abs(inter[1] - yNode) <= radiusMB:
                                 pathExist = False
-                    if pathExist:
-                        self.objectivesSeq.append([x, yNode])
-                self.objectivesSeq.append([intervalX[0][0] + stepMB[0]/2, yNode])
+                if pathExist:
+                    self.objectivesSeq.append([x, yNode])
                 for x in range(int(initX), int(intervalX[1][0] - stepMB[0]), int(stepMB[0])):
                     pathExist = True
                     for wall in self.walls:
-                        inter = lineSegmentInter([[0,1], [x, yNode]], wall)
+                        inters = [lineSegmentInter([[0,1], [x-radiusMB, yNode]], wall), lineSegmentInter([[0,1], [x, yNode]], wall), lineSegmentInter([[0,1], [x+radiusMB, yNode]], wall)]
+                        for inter in inters:
+                            if inter is not None:
+                                if abs(inter[1] - yNode) <= radiusMB:
+                                    pathExist = False
+                    if pathExist:
+                        self.objectivesSeq.append([x, yNode])
+                x = intervalX[1][0] - stepMB[0]/2
+                pathExist = True
+                for wall in self.walls:
+                    inters = [lineSegmentInter([[0,1], [x-radiusMB, yNode]], wall), lineSegmentInter([[0,1], [x, yNode]], wall), lineSegmentInter([[0,1], [x+radiusMB, yNode]], wall)]
+                    for inter in inters:
                         if inter is not None:
                             if abs(inter[1] - yNode) <= radiusMB:
                                 pathExist = False
-                    if pathExist:
-                        self.objectivesSeq.append([x, yNode])
-                self.objectivesSeq.append([intervalX[1][0] - stepMB[0]/2, yNode])
+                if pathExist:
+                    self.objectivesSeq.append([x, yNode])
             else :
                 for x in range(int(initX), int(intervalX[1][0] - stepMB[0]), int(stepMB[0])):
                     pathExist = True
                     for wall in self.walls:
-                        inter = lineSegmentInter([[0,1], [x, yNode]], wall)
+                        inters = [lineSegmentInter([[0,1], [x-radiusMB, yNode]], wall), lineSegmentInter([[0,1], [x, yNode]], wall), lineSegmentInter([[0,1], [x+radiusMB, yNode]], wall)]
+                        for inter in inters:
+                            if inter is not None:
+                                if abs(inter[1] - yNode) <= radiusMB:
+                                    pathExist = False
+                    if pathExist:
+                        self.objectivesSeq.append([x, yNode])
+                x = intervalX[1][0] - stepMB[0]/2
+                pathExist = True
+                for wall in self.walls:
+                    inters = [lineSegmentInter([[0,1], [x-radiusMB, yNode]], wall), lineSegmentInter([[0,1], [x, yNode]], wall), lineSegmentInter([[0,1], [x+radiusMB, yNode]], wall)]
+                    for inter in inters:
                         if inter is not None:
                             if abs(inter[1] - yNode) <= radiusMB:
                                 pathExist = False
-                    if pathExist:
-                        self.objectivesSeq.append([x, yNode])
-                self.objectivesSeq.append([intervalX[1][0] - stepMB[0]/2, yNode])
+                if pathExist:
+                    self.objectivesSeq.append([x, yNode])
                 for x in range(int(initX), int(intervalX[0][0] + stepMB[0]), -int(stepMB[0])):
                     pathExist = True
                     for wall in self.walls:
-                        inter = lineSegmentInter([[0,1], [x, yNode]], wall)
+                        inters = [lineSegmentInter([[0,1], [x-radiusMB, yNode]], wall), lineSegmentInter([[0,1], [x, yNode]], wall), lineSegmentInter([[0,1], [x+radiusMB, yNode]], wall)]
+                        for inter in inters:
+                            if inter is not None:
+                                if abs(inter[1] - yNode) <= radiusMB:
+                                    pathExist = False
+                    if pathExist:
+                        self.objectivesSeq.append([x, yNode])
+                x = intervalX[0][0] + stepMB[0]/2
+                pathExist = True
+                for wall in self.walls:
+                    inters = [lineSegmentInter([[0,1], [x-radiusMB, yNode]], wall), lineSegmentInter([[0,1], [x, yNode]], wall), lineSegmentInter([[0,1], [x+radiusMB, yNode]], wall)]
+                    for inter in inters:
                         if inter is not None:
                             if abs(inter[1] - yNode) <= radiusMB:
                                 pathExist = False
-                    if pathExist:
-                        self.objectivesSeq.append([x, yNode])
-                self.objectivesSeq.append([intervalX[0][0] + stepMB[0]/2, yNode])
+                if pathExist:
+                    self.objectivesSeq.append([x, yNode])
         
         def goToNextNode(i):
             node = self.seq[i]
@@ -371,28 +417,30 @@ class RoomExplorator():
             targetX = None
             potentialPathX = []
             for x in range(int(commonPart[0] + stepMB[0]//2), int(commonPart[1] - stepMB[0]//2), int(stepMB[0])):
+                potentialPath = True
                 for wall in self.walls:
-                    inter = lineSegmentInter([[0,1], [x, yNextNode]], wall)
-                    if inter is not None:
-                        # if not((yNode <= inter[1] <= yNextNode) or (yNextNode <= inter[1] <= yNode) or (yNode <= inter[1] + radiusMB/2 <= yNextNode) or (yNextNode <= inter[1] + radiusMB/2 <= yNode) or (yNode <= inter[1] - radiusMB/2 <= yNextNode) or (yNextNode <= inter[1] - radiusMB/2 <= yNode)):
-                        if not((yNode <= inter[1] <= yNextNode) or (yNextNode <= inter[1] <= yNode)):
-                            if not x in potentialPathX:
-                                potentialPathX.append(x)
-                    else:
-                        if not x in potentialPathX:
-                            potentialPathX.append(x)
+                    inters = [lineSegmentInter([[0,1], [x-radiusMB, yNode]], wall), lineSegmentInter([[0,1], [x, yNode]], wall), lineSegmentInter([[0,1], [x+radiusMB, yNode]], wall)]
+                    for inter in inters: 
+                        if inter is not None:
+                            if abs(inter[1] - yNode) < radiusMB or abs(inter[1] - yNextNode) < radiusMB or yNextNode<=inter[1]<=yNode or yNode <=inter[1]<=yNextNode:
+                                potentialPath=False
+                                
+                
+                if potentialPath:
+                    potentialPathX.append(x)
 
             for x in range(int(commonPart[1] - stepMB[0]//2), int(commonPart[0] + stepMB[0]//2), -int(stepMB[0])):
+                potentialPath = True
                 for wall in self.walls:
-                    inter = lineSegmentInter([[0,1], [x, yNextNode]], wall)
-                    if inter is not None:
-                        # if not((yNode <= inter[1] <= yNextNode) or (yNextNode <= inter[1] <= yNode) or (yNode <= inter[1] + radiusMB/2 <= yNextNode) or (yNextNode <= inter[1] + radiusMB/2 <= yNode) or (yNode <= inter[1] - radiusMB/2 <= yNextNode) or (yNextNode <= inter[1] - radiusMB/2 <= yNode)):
-                        if not((yNode <= inter[1] <= yNextNode) or (yNextNode <= inter[1] <= yNode)):
-                            if not x in potentialPathX:
-                                potentialPathX.append(x)
-                    else:
-                        if not x in potentialPathX:
-                            potentialPathX.append(x)
+                    inters = [lineSegmentInter([[0,1], [x-radiusMB, yNode]], wall), lineSegmentInter([[0,1], [x, yNode]], wall), lineSegmentInter([[0,1], [x+radiusMB, yNode]], wall)]
+                    for inter in inters: 
+                        if inter is not None:
+                            if abs(inter[1] - yNode) < radiusMB or abs(inter[1] - yNextNode) < radiusMB or yNextNode<=inter[1]<=yNode or yNode <=inter[1]<=yNextNode:
+                                potentialPath=False
+                                
+                
+                if potentialPath:
+                    potentialPathX.append(x)
             if len(potentialPathX)>0:
                 distX = [abs(potentialPathX[i] - initX) for i in range(len(potentialPathX))]
                 
@@ -412,15 +460,16 @@ class RoomExplorator():
         yChild = newLine[0][1]
         yParent = parent[0][1]
         stepMB = self.SC.distRefPointBots
-        radiusMB = self.SC.measurerBot.radius
+        radiusMB = self.SC.measurerBot.radius + self.margin
         
         for x in range(int(commonPart[0] + stepMB[0]//2), int(commonPart[1] - stepMB[1]//2), int(stepMB[0])):
             pathExist = True
             for wall in self.walls:
-                inter = lineSegmentInter([[0,1], [x, yChild]], wall)
-                if inter is not None:
-                    if (yChild <= inter[1] <= yParent) or (yParent <= inter[1] <= yChild) or (yChild <= inter[1] + radiusMB/2 <= yParent) or (yParent <= inter[1] + radiusMB/2 <= yChild) or (yChild <= inter[1] - radiusMB/2 <= yParent) or (yParent <= inter[1] - radiusMB/2 <= yChild):
-                        pathExist = False
+                inters = [lineSegmentInter([[0,1], [x-radiusMB, yParent]], wall), lineSegmentInter([[0,1], [x, yParent]], wall), lineSegmentInter([[0,1], [x+radiusMB, yParent]], wall)]
+                for inter in inters: 
+                    if inter is not None:
+                        if abs(inter[1] - yParent) < radiusMB or abs(inter[1] - yChild) < radiusMB  or yChild<=inter[1]<=yParent or yParent <=inter[1]<=yChild:
+                            pathExist = False
             if pathExist:
                 return True
         return False
@@ -450,39 +499,41 @@ class RoomExplorator():
             return True
         return False
 
-    def draw(self, win):
+    def draw(self):
+        width = self.room.surface1.get_width()
         for i in range(self.nbLinesAbove):
-            pygame.draw.line(win, (100,100,100), (0, self.SC.initMeasurerPos[1] - self.SC.distRefPointBots[1]*( i)), (self.room.width, self.SC.initMeasurerPos[1]  - self.SC.distRefPointBots[1]*(i)))
+            pygame.draw.line(self.surface, (100,100,100), (0, self.SC.initMeasurerPos[1] - self.SC.distRefPointBots[1]*( i)), (width, self.SC.initMeasurerPos[1]  - self.SC.distRefPointBots[1]*(i)))
 
         for i in range(self.nbLinesBelow):
-            pygame.draw.line(win, (100,100,100), (0, self.SC.initMeasurerPos[1]  + self.SC.distRefPointBots[1]*(i)), (self.room.width, self.SC.initMeasurerPos[1] + self.SC.distRefPointBots[1]*(i)))
+            pygame.draw.line(self.surface, (100,100,100), (0, self.SC.initMeasurerPos[1]  + self.SC.distRefPointBots[1]*(i)), (width, self.SC.initMeasurerPos[1] + self.SC.distRefPointBots[1]*(i)))
 
+        # height = self.room.surface1.get_height()
         # for i in range(self.nbColsLeft):
-        #     pygame.draw.line(win, (100,100,100), (self.SC.initMeasurerPos[0] - self.SC.distRefPointBots[0]*(1/2+ i), 0), (self.SC.initMeasurerPos[0]  - self.SC.distRefPointBots[0]*(1/2+ i), self.room.height))
+        #     pygame.draw.line(self.surface, (100,100,100), (self.SC.initMeasurerPos[0] - self.SC.distRefPointBots[0]*(1/2+ i), 0), (self.SC.initMeasurerPos[0]  - self.SC.distRefPointBots[0]*(1/2+ i), height))
 
         # for i in range(self.nbColsRight):
-        #     pygame.draw.line(win, (100,100,100), (self.SC.initMeasurerPos[0] + self.SC.distRefPointBots[0]*(1/2+ i), 0), (self.SC.initMeasurerPos[0]  + self.SC.distRefPointBots[0]*(1/2+ i), self.room.height))
+        #     pygame.draw.line(self.surface, (100,100,100), (self.SC.initMeasurerPos[0] + self.SC.distRefPointBots[0]*(1/2+ i), 0), (self.SC.initMeasurerPos[0]  + self.SC.distRefPointBots[0]*(1/2+ i), height))
 
         for inters in self.lineinters:
             for coord in inters:
-                pygame.draw.circle(win, (255,0,0), coord, 2)
+                pygame.draw.circle(self.surface, (255,0,0), coord, 2)
         pygame.font.init()
         myfont = pygame.font.SysFont('Arial', 20)
         for key in self.graph:
             pos = ((self.graph[key][0][0] +self.graph[key][1][0])/2 - 10 , (self.graph[key][0][1] +self.graph[key][1][1])/2 - 10)
             textsurface = myfont.render(key, False, (255, 255, 255))
-            win.blit(textsurface,pos)
+            self.surface.blit(textsurface,pos)
         
         for i in range(len(self.objectivesSeq)):
             if i < self.globalIndexObjectivesSeq:
-                pygame.draw.circle(win, (0,255,0), self.objectivesSeq[i], 4)
+                pygame.draw.circle(self.surface, (0,255,0), self.objectivesSeq[i], 4)
             else :
-                pygame.draw.circle(win, (255,0,255), self.objectivesSeq[i], 4)
+                pygame.draw.circle(self.surface, (255,0,255), self.objectivesSeq[i], 4)
             
 
         # for intersEB in self.lineintersEB:
         #     for coord in intersEB:
-        #         pygame.draw.circle(win, (0,0,255), coord, 2)
+        #         pygame.draw.circle(self.surface, (0,0,255), coord, 2)
     
     def drawGraph(self):
         g = Graph()

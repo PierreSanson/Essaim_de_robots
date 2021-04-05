@@ -2,7 +2,7 @@ from utilities import *
 from copy import deepcopy
 
 class SwarmController():
-    def __init__(self, win, measurerBot, refPointBots, distRefPointBots = [110, 110]) :
+    def __init__(self, surface, measurerBot, refPointBots, distRefPointBots = [110, 110]) :
         self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
         self.refPointBots = {}
@@ -19,7 +19,7 @@ class SwarmController():
         self.orientation = 'right'
         self.lastMesurerPos = (self.measurerBot.x, self.measurerBot.y)
         self.initMeasurerPos = (self.measurerBot.x, self.measurerBot.y)
-        self.win = win
+        self.surface = surface
 
 
         # initObjectives = []
@@ -264,52 +264,52 @@ class SwarmController():
             if self.nextMoves[i][0] == 'straight':
                 if previousOrientations[i] == 'right':
                     nextPos = (previousPositions[i][0] + self.nextMoves[i][1]*self.distRefPointBots[0], previousPositions[i][1])
-                    pygame.draw.circle(self.win, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
+                    pygame.draw.circle(self.surface, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
                 elif previousOrientations[i] == 'left':
                     nextPos = (previousPositions[i][0] - self.nextMoves[i][1]*self.distRefPointBots[0], previousPositions[i][1])
-                    pygame.draw.circle(self.win, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
+                    pygame.draw.circle(self.surface, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
                 elif previousOrientations[i] == 'up':
                     nextPos = (previousPositions[i][0] , previousPositions[i][1] - self.nextMoves[i][1]*self.distRefPointBots[1])
-                    pygame.draw.circle(self.win, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
+                    pygame.draw.circle(self.surface, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
                 elif previousOrientations[i] == 'down':
                     nextPos = (previousPositions[i][0], previousPositions[i][1] + self.nextMoves[i][1]*self.distRefPointBots[1])
-                    pygame.draw.circle(self.win, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
+                    pygame.draw.circle(self.surface, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
                 previousOrientation = previousOrientations[i]
 
             elif self.nextMoves[i][0] == 'turnRight':
                 if previousOrientations[i] == 'right':
                     nextPos = (previousPositions[i][0], previousPositions[i][1] + self.nextMoves[i][1]*self.distRefPointBots[1])
-                    pygame.draw.circle(self.win, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
+                    pygame.draw.circle(self.surface, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
                     previousOrientation = 'down'
                 elif previousOrientations[i] == 'left':
                     nextPos = (previousPositions[i][0] , previousPositions[i][1] - self.nextMoves[i][1]*self.distRefPointBots[1])
-                    pygame.draw.circle(self.win, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
+                    pygame.draw.circle(self.surface, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
                     previousOrientation = 'up'
                 elif previousOrientations[i] == 'up':
                     nextPos = (previousPositions[i][0] + self.nextMoves[i][1]*self.distRefPointBots[0], previousPositions[i][1])
-                    pygame.draw.circle(self.win, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
+                    pygame.draw.circle(self.surface, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
                     previousOrientation = 'right'
                 elif previousOrientations[i] == 'down':
                     nextPos = (previousPositions[i][0] - self.nextMoves[i][1]*self.distRefPointBots[0], previousPositions[i][1])
-                    pygame.draw.circle(self.win, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
+                    pygame.draw.circle(self.surface, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
                     previousOrientation = 'left'
 
             elif self.nextMoves[i][0] == 'turnLeft':
                 if previousOrientations[i] == 'right':
                     nextPos = (previousPositions[i][0] , previousPositions[i][1] - self.nextMoves[i][1]*self.distRefPointBots[1])
-                    pygame.draw.circle(self.win, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
+                    pygame.draw.circle(self.surface, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
                     previousOrientation  ='up'
                 elif previousOrientations[i] == 'left':
                     nextPos = (previousPositions[i][0], previousPositions[i][1] + self.nextMoves[i][1]*self.distRefPointBots[1])
-                    pygame.draw.circle(self.win, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
+                    pygame.draw.circle(self.surface, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
                     previousOrientation = 'down'
                 elif previousOrientations[i] == 'up':
                     nextPos = (previousPositions[i][0] - self.nextMoves[i][1]*self.distRefPointBots[0], previousPositions[i][1])
-                    pygame.draw.circle(self.win, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
+                    pygame.draw.circle(self.surface, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
                     previousOrientation = 'left'
                 elif previousOrientations[i] == 'down':
                     nextPos = (previousPositions[i][0] + self.nextMoves[i][1]*self.distRefPointBots[0], previousPositions[i][1])
-                    pygame.draw.circle(self.win, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
+                    pygame.draw.circle(self.surface, (0,255,0, 255/(i+1)), (nextPos[0], nextPos[1]) , self.measurerBot.radius)
                     previousOrientation = 'right'
             previousOrientations.append(previousOrientation)
             previousPositions.append(nextPos)

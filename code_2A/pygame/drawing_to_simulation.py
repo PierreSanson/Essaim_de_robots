@@ -7,13 +7,14 @@ import numpy as np
 import pickle
 
 import bot
+import obstacle as obs
 import explorerBot as eb
 import refPointBot as rpb
 import measuringBot as mb
-from room import*
+from room import *
 import swarmControl as sc
 import swarmExploration as se
-from main import redrawGameWindow
+import swarmExplorationUWBSLAM as seUWBSLAM
 
 
 def LoadFile():
@@ -101,8 +102,7 @@ def find_walls_corners(table):
     return walls_corners
 
 
-def drawing_to_simulation(table):
-    walls_corners = find_walls_corners(table)
+def drawing_to_simulation(table,surface1,surface2):
 
     robots_centers = []
     for row in range(len(table)):
@@ -119,6 +119,7 @@ def drawing_to_simulation(table):
     # facteur multiplicatif pour avoir des distances de l'ordre de la taille de l'écran (on part de 220x128 et on va vers 1600*900)
     scale = 7
 
+    walls_corners = find_walls_corners(table)
     for i in range(len(walls_corners)):
         for j in range(4):
             walls_corners[i][j][0] = walls_corners[i][j][0]*scale + offset
@@ -128,13 +129,8 @@ def drawing_to_simulation(table):
         robots_centers[i][0][0] = robots_centers[i][0][0]*scale  + offset
         robots_centers[i][0][1] = robots_centers[i][0][1]*scale  + offset
 
-    # création de la salle, attention les dimensions sont fixées, peut-être à changer
-    sw, sh = 1600, 900
-    screen = pg.display.set_mode((sw, sh))
-    room = Room(sw,sh,screen)
-
-    for corners in walls_corners:
-        room.addWall(corners)
+    # création de la salle
+    room = Room(walls_corners,surface1,surface2)
 
     measuringBots = []
     explorerBots = []
@@ -143,57 +139,94 @@ def drawing_to_simulation(table):
     for bot in robots_centers:
         botType = bot.pop()
         if botType == 1:
-            measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 10, room, objective = None, haveObjective = False))
+            measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 10, room, objective = None, haveObjective = False, showDetails=True))
         elif botType == 2:
             explorerBots.append(eb.ExplorerBot(bot[0][0], bot[0][1], 8, room, objective = [0, 0], randomObjective = True, randomInterval =1, showDetails = True))
-        # elif botType == 3:
-        #     refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 6, room, objective = None, haveObjective = False, showDetails = True))
+        elif botType == 3:
+            refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 6, room, objective = None, haveObjective = False, showDetails = True))
 
             
     bots = measuringBots + explorerBots + refPointBots
 
-    room.addObjects(bots)
+    room.addBots(bots)
 
-    SC = sc.SwarmController(screen, measuringBots[0], refPointBots, distRefPointBots=[60,60])
-    SE = se.RoomExplorator(room,SC)
+    # SC = sc.SwarmController(screen, measuringBots[0], refPointBots, distRefPointBots=[60,60])
+    # SE = se.RoomExplorator(room,SC)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface1, room, measuringBots[0], refPointBots)
 
-    SC.initMove()
+    # SC.initMove()
+    SC = None
+    SE = None
 
-    return room, SC,SE, measuringBots, explorerBots, refPointBots  
+    return room, SC,SE,SEUWBSLAM, measuringBots, explorerBots, refPointBots
+
+
+def redrawGameWindow(room, background, control):
+    
+    ### Composition de la scène
+    # on choisit et on applique la couleur de l'arrière plan de la simulation
+    background.fill((64,64,64))
+
+    # ajout d'une surcouche transparente pour les zones déjà explorées et sombre dans les zones non explorées
+    background.blit(room.surface2, (0,0))
+
+    # ajout des murs et robots au dessus de l'arrière plan
+    room.surface1.fill((0,0,0,0)) # (noir) transparent
+    # mise à jour des robots
+    for bot in room.bots:
+        bot.draw()
+
+    # affichage optionel des obtsacles :
+    # for obstacle in room.obstacles:
+    #     obstacle.draw()
+
+    # mise à jour des murs
+    room.draw_walls()
+    background.blit(room.surface1, (0,0))
+
+    # on ajoute à l'arrière plan tous les affichages spécifiques à la méthode de contrôle de l'essaim choisie
+    control.draw()
+    background.blit(control.surface, (0,0))
+
+    ### mise à jour de l'affichage complet
+    pygame.display.flip()
 
 
 def load_and_launch_simulation():
 
     table = LoadFile()
 
-    room, SC, SE, measuringBots, explorerBots, refPointBots = drawing_to_simulation(table)
-
     sw, sh = 1600, 900
-    win = pg.display.set_mode((sw, sh))
+    background = pg.display.set_mode((sw, sh))
     surface1 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+    surface2 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+
+    room, SC, SE, SEUWBSLAM, measuringBots, explorerBots, refPointBots = drawing_to_simulation(table,surface1,surface2)
 
     clock = pygame.time.Clock()
-    hz = 60
+    hz = 144
 
     run = True 
     while run:
         clock.tick(hz)
-        redrawGameWindow(room, win, surface1)
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
-        # SC.move()
-        SE.move()
-        SE.draw(win)
-        for obj in room.objects:
-            if isinstance(obj, eb.ExplorerBot) or isinstance(obj, rpb.RefPointBot) or isinstance(obj, mb.MeasuringBot) or (isinstance(obj, bot.Obstacle) and obj.movable):
-                obj.move(surface1)
-        win.blit(surface1, (0,0))
-        pygame.display.update()
+                run = False  
 
+        ## Choix du type de déplacement
+        # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
+        #                   SE (exploration d'une salle connue), 
+        #                   SCUWBSLAM, 
+        #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère)
+        control = SEUWBSLAM
+        control.move()
 
-# test = np.array([[1,0,0,4],[5,0,0,8],[5,0,0,8],[9,1,5,7]])
-# print(test)
-# print(find_walls_corners(test))
-# print(test.transpose())
-# print(find_walls_corners(test.transpose()))
+        ## Itération sur l'ensemble des robots pour les faire se déplacer
+        for bot in room.bots:
+                bot.move()
+
+        ## Prise en compte des nouvelles zones vues par les robots
+        room.updateExploration(debug = False)
+
+        redrawGameWindow(room, background, control)      
