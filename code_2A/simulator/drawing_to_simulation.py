@@ -158,7 +158,7 @@ def drawing_to_simulation(table,surface1,surface2):
     SC = None
     SE = None
 
-    return room, SC,SE,SEUWBSLAM, measuringBots, explorerBots, refPointBots
+    return room, SC, SE, SEUWBSLAM
 
 
 def redrawGameWindow(room, background, control):
@@ -196,37 +196,39 @@ def load_and_launch_simulation():
 
     table = LoadFile()
 
-    sw, sh = 1600, 900
-    background = pg.display.set_mode((sw, sh))
-    surface1 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
-    surface2 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+    if table != None : # évite un crash si on ne sélectionne pas de fichier
 
-    room, SC, SE, SEUWBSLAM, measuringBots, explorerBots, refPointBots = drawing_to_simulation(table,surface1,surface2)
+        sw, sh = 1600, 900
+        background = pg.display.set_mode((sw, sh))
+        surface1 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+        surface2 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
 
-    clock = pygame.time.Clock()
-    hz = 144
+        room, SC, SE, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2)
 
-    run = True 
-    while run:
-        clock.tick(hz)
-        
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False  
+        clock = pygame.time.Clock()
+        hz = 144
 
-        ## Choix du type de déplacement
-        # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
-        #                   SE (exploration d'une salle connue), 
-        #                   SCUWBSLAM, 
-        #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère)
-        control = SEUWBSLAM
-        control.move()
+        run = True 
+        while run:
+            clock.tick(hz)
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False  
 
-        ## Itération sur l'ensemble des robots pour les faire se déplacer
-        for bot in room.bots:
-            bot.move()
+            ## Choix du type de déplacement
+            # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
+            #                   SE (exploration d'une salle connue), 
+            #                   SCUWBSLAM, 
+            #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère)
+            control = SEUWBSLAM
+            control.move()
 
-        ## Prise en compte des nouvelles zones vues par les robots
-        room.updateExploration(debug = False)
+            ## Itération sur l'ensemble des robots pour les faire se déplacer
+            for bot in room.bots:
+                bot.move()
 
-        redrawGameWindow(room, background, control)      
+            ## Prise en compte des nouvelles zones vues par les robots
+            room.updateExploration(debug = False)
+
+            redrawGameWindow(room, background, control)
