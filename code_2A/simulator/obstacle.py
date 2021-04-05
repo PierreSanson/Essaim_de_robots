@@ -1,7 +1,8 @@
+from copy import deepcopy
 import pygame
 
 from utilities import createPolygonMask
-from copy import deepcopy
+
 
 class Obstacle():
     def __init__(self, x, y, radius, room, color = (100,100,100), movable = False, vel = 2, margin = 2, isWall = False, spacing = 15, positionInWall = None):

@@ -180,8 +180,8 @@ def fill_bottom_right_corner(table): # rempli les coins de type "en bas à droit
 
         # on parcourt tout le tableau en groupe de carrés 2x2
         if col2 != 219:
-                col1 += 1
-                col2 += 1
+            col1 += 1
+            col2 += 1
         else :
             row += 1
             col1 = 1
@@ -362,28 +362,28 @@ def find_color_groups(color, table):
     color_groups = []
     for (Row,Col) in left_to_visit:
 
-            if not (Row,Col) in already_visited:
+        if not (Row,Col) in already_visited:
+            
+            color_group_indexes = [(Row,Col)]
+            already_visited.append((Row,Col))
+            neighbours_indexes = neighbours_pixel(Row,Col)
+            to_check = []
+
+            for index in neighbours_indexes:
+                if not index in already_visited:
+                    to_check.append(index)
+
+            while len(to_check) > 0:
+                (row,col) = to_check.pop()
+                already_visited.append((row,col))
                 
-                color_group_indexes = [(Row,Col)]
-                already_visited.append((Row,Col))
-                neighbours_indexes = neighbours_pixel(Row,Col)
-                to_check = []
-
-                for index in neighbours_indexes:
-                    if not index in already_visited:
-                        to_check.append(index)
-
-                while len(to_check) > 0:
-                    (row,col) = to_check.pop()
-                    already_visited.append((row,col))
-                    
-                    if not (row,col) in color_group_indexes: 
-                        color_group_indexes.append((row,col))
-                        neighbours_indexes = neighbours_pixel(row,col)
-                        for index in neighbours_indexes:
-                            if not index in already_visited:
-                                if not index in to_check:
-                                    to_check.append(index)
+                if not (row,col) in color_group_indexes: 
+                    color_group_indexes.append((row,col))
+                    neighbours_indexes = neighbours_pixel(row,col)
+                    for index in neighbours_indexes:
+                        if not index in already_visited:
+                            if not index in to_check:
+                                to_check.append(index)
                                         
                                     
                 color_groups.append(color_group_indexes)

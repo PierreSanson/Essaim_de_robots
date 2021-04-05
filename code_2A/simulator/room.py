@@ -1,8 +1,6 @@
 import pygame
-import numpy as np
 
 import obstacle as obs
-import measuringBot as mb
 from utilities import distObj, placeObstaclesOnLine
 
 
@@ -24,33 +22,33 @@ class Wall():
 
         ### ATTENTION : A CE MOMENT, LES COINS SONT ENCORE AU FORMAT  (ROW,COL)
         if orientation == 'v':
-                self.width = corners[1][1] - corners[0][1]
-                self.height = corners[3][0] - corners[0][0]
+            self.width = corners[1][1] - corners[0][1]
+            self.height = corners[3][0] - corners[0][0]
 
-                # lignes:
-                X = list(range(corners[0][1], corners[1][1],10))
-                if not corners[1][1] in X:
-                    X.append(corners[1][1])
-                   
-                # colonnes:
-                Y = list(range(corners[0][0], corners[2][0],10))
-                if not corners[2][0] in Y:
-                    Y.append(corners[2][0])
+            # lignes:
+            X = list(range(corners[0][1], corners[1][1],10))
+            if not corners[1][1] in X:
+                X.append(corners[1][1])
+                
+            # colonnes:
+            Y = list(range(corners[0][0], corners[2][0],10))
+            if not corners[2][0] in Y:
+                Y.append(corners[2][0])
 
 
         elif orientation == 'h':
-                self.width = corners[3][1] - corners[0][1]
-                self.height = corners[1][0] - corners[0][0]
+            self.width = corners[3][1] - corners[0][1]
+            self.height = corners[1][0] - corners[0][0]
 
-                # lignes:
-                X = list(range(corners[0][1], corners[2][1],10))
-                if not corners[2][1] in X:
-                    X.append(corners[2][1])
-                   
-                # colonnes:
-                Y = list(range(corners[0][0], corners[1][0],10))
-                if not corners[1][0] in Y:
-                    Y.append(corners[1][0])
+            # lignes:
+            X = list(range(corners[0][1], corners[2][1],10))
+            if not corners[2][1] in X:
+                X.append(corners[2][1])
+                
+            # colonnes:
+            Y = list(range(corners[0][0], corners[1][0],10))
+            if not corners[1][0] in Y:
+                Y.append(corners[1][0])
 
         ### UNE FOIS LE TRAITEMENT EFFECTUE, ON REVIENT AU FORMAT (X,Y)
         for corner in self.corners:

@@ -1,12 +1,13 @@
-from numpy.core.fromnumeric import argmin
-from utilities import *
+from copy import deepcopy
+import random
+import numpy as np
 
 import pygame
-import numpy as np
-import random
-from copy import deepcopy, copy
+
+from numpy.core.fromnumeric import argmin
 from scipy.spatial import ConvexHull
 
+from utilities import *
 import obstacle as obs
 
 from shapely.geometry import Point

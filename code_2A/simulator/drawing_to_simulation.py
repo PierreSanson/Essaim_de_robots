@@ -1,19 +1,14 @@
-import pygame as pg
 from tkinter import *
-from tkinter import messagebox
 from tkinter.filedialog import askopenfilename
-import sys
-import numpy as np
-import pickle
 
-import bot
-import obstacle as obs
+import sys
+import pickle
+import pygame
+
 import explorerBot as eb
 import refPointBot as rpb
 import measuringBot as mb
 from room import *
-import swarmControl as sc
-import swarmExploration as se
 import swarmExplorationUWBSLAM as seUWBSLAM
 
 
@@ -36,9 +31,11 @@ def LoadFile():
         
         filePathList = filePath.split("/")
         fileName = filePathList[-1]
-        pg.display.set_caption("Simulation - " + fileName)
+        pygame.display.set_caption("Simulation - " + fileName)
 
         return colors
+    
+    return None
 
 
 def find_walls_corners(table):
@@ -56,13 +53,13 @@ def find_walls_corners(table):
             in_a_wall = False
             for r in range(len(table)):
                 
-                if potential_walls[r,:][0] == 0 and potential_walls[r,:][1] == 0 and in_a_wall == False:
+                if potential_walls[r,:][0] == 0 and potential_walls[r,:][1] == 0 and not in_a_wall:
                     in_a_wall = True
                     new_wall = [[r,c],[r,c+1]]
                     length_wall = 1
-                elif potential_walls[r,:][0] == 0 and potential_walls[r,:][1] == 0 and in_a_wall == True:
+                elif potential_walls[r,:][0] == 0 and potential_walls[r,:][1] == 0 and in_a_wall:
                     length_wall += 1
-                elif (potential_walls[r,:][0] != 0 or potential_walls[r,:][1] != 0) and in_a_wall == True:
+                elif (potential_walls[r,:][0] != 0 or potential_walls[r,:][1] != 0) and in_a_wall:
                     in_a_wall = False
                     new_wall.append([r-1,c])
                     new_wall.append([r-1,c+1])
@@ -83,13 +80,13 @@ def find_walls_corners(table):
             c = 0
             in_a_wall = False
             for c in range(len(table[0])):
-                if potential_walls[:,c][0] == 0 and potential_walls[:,c][1] == 0 and in_a_wall == False:
+                if potential_walls[:,c][0] == 0 and potential_walls[:,c][1] == 0 and not in_a_wall:
                     in_a_wall = True
                     new_wall = [[r,c],[r+1,c]]
                     length_wall = 1
-                elif potential_walls[:,c][0] == 0 and potential_walls[:,c][1] == 0 and in_a_wall == True:
+                elif potential_walls[:,c][0] == 0 and potential_walls[:,c][1] == 0 and in_a_wall:
                     length_wall += 1
-                elif (potential_walls[:,c][0] != 0 or potential_walls[:,c][1] != 0) and in_a_wall == True:
+                elif (potential_walls[:,c][0] != 0 or potential_walls[:,c][1] != 0) and in_a_wall:
                     in_a_wall = False
                     new_wall.append([r,c-1])
                     new_wall.append([r+1,c-1])
@@ -150,15 +147,9 @@ def drawing_to_simulation(table,surface1,surface2):
 
     room.addBots(bots)
 
-    # SC = sc.SwarmController(screen, measuringBots[0], refPointBots, distRefPointBots=[60,60])
-    # SE = se.RoomExplorator(room,SC)
     SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface1, room, measuringBots[0], refPointBots)
 
-    # SC.initMove()
-    SC = None
-    SE = None
-
-    return room, SC, SE, SEUWBSLAM
+    return room, SEUWBSLAM
 
 
 def redrawGameWindow(room, background, control):
@@ -196,14 +187,14 @@ def load_and_launch_simulation():
 
     table = LoadFile()
 
-    if table != None : # évite un crash si on ne sélectionne pas de fichier
+    if table is not None : # évite un crash si on ne sélectionne pas de fichier
 
         sw, sh = 1600, 900
-        background = pg.display.set_mode((sw, sh))
+        background = pygame.display.set_mode((sw, sh))
         surface1 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
         surface2 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
 
-        room, SC, SE, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2)
+        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2)
 
         clock = pygame.time.Clock()
         hz = 144
@@ -220,7 +211,7 @@ def load_and_launch_simulation():
             # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
             #                   SE (exploration d'une salle connue), 
             #                   SCUWBSLAM, 
-            #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère)
+            #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère) <--- seule méthode conservée
             control = SEUWBSLAM
             control.move()
 

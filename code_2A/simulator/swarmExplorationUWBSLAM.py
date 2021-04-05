@@ -1,16 +1,16 @@
-from token import SEMI
-from igraph.drawing import graph
-
-import numpy as np
-from utilities import *
-from copy import deepcopy
-import numpy as np
-from scipy.spatial import ConvexHull
 from itertools import chain
 import colorsys
-from igraph import *
 from heapq import *
-import random
+
+from scipy.spatial import ConvexHull
+
+import numpy as np
+
+from token import SEMI
+from igraph import *
+from igraph.drawing import graph
+
+from utilities import *
 
 # à laisser en bas de la liste des import
 from shapely.geometry import Point
@@ -607,7 +607,7 @@ class SwarmExploratorUWBSLAM():
 
     def defineConvexHulls(self):
         for key in self.refPointBots:
-                self.check3RefPointBotsAvailable(key)
+            self.check3RefPointBotsAvailable(key)
         convexHulls = []
         changed  = True
         while changed:
@@ -701,7 +701,7 @@ class SwarmExploratorUWBSLAM():
             elif self.graph[coord] == 2:
                 pygame.draw.rect(self.surface, (200, 100, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
             elif self.graph[coord] == 0.5:
-                    pygame.draw.rect(self.surface, (200, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+                pygame.draw.rect(self.surface, (200, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
             else:
                 pygame.draw.rect(self.surface, (200, 200, 200, 40), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
         for i in range(len(self.mainPath)-1):
@@ -725,14 +725,10 @@ class SwarmExploratorUWBSLAM():
         g.add_vertices(len(self.graph))
         g.vs["name"] = list(self.graph.keys())
         for neighbours in self.graphLinks:
-                v1 = g.vs['name'].index(neighbours[0])
-                v2 = g.vs['name'].index(neighbours[1])
-                g.add_edge(v1, v2)
+            v1 = g.vs['name'].index(neighbours[0])
+            v2 = g.vs['name'].index(neighbours[1])
+            g.add_edge(v1, v2)
         g.vs["label"] = g.vs["name"]
 
         layout = g.layout("fr")
         plot(g, layout = layout)
-
-
-                
-

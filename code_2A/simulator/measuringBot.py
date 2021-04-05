@@ -8,3 +8,4 @@ class MeasuringBot(Bot):
 
     def show_self(self):
         print(self.message)
+        

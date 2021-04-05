@@ -1,10 +1,5 @@
-import pygame, pygame_menu
-
-from main import Room, demos
-from bot import Bot
-from measuringBot import MeasuringBot
-from refPointBot import RefPointBot
-from explorerBot import ExplorerBot
+import pygame
+import pygame_menu
 
 from draw import draw_initial_config
 from drawing_to_simulation import load_and_launch_simulation
