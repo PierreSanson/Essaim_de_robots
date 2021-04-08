@@ -10,7 +10,7 @@ import refPointBot as rpb
 import measuringBot as mb
 from room import *
 import swarmExplorationUWBSLAM as seUWBSLAM
-
+import time
 
 def LoadFile():
     
@@ -209,7 +209,23 @@ def load_and_launch_simulation():
         clock = pygame.time.Clock()
         hz = 60
 
-        control = SEUWBSLAM
+    run = True 
+    ## Choix du type de déplacement
+        # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
+        #                   SE (exploration d'une salle connue), 
+        #                   SCUWBSLAM, 
+        #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère)
+    control = SEUWBSLAM
+    while run:
+        clock.tick(hz)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False  
+
+        t = time.time()
+        control.move()
+        print("duration of control.move() : ", time.time() - t)
 
         run = True 
         while run:
@@ -230,8 +246,13 @@ def load_and_launch_simulation():
             ## Itération sur l'ensemble des robots pour les faire se déplacer
             for bot in room.bots:
                 bot.move()
+        
 
-            ## Prise en compte des nouvelles zones vues par les robots
-            room.updateExploration(debug = False)
+        ## Prise en compte des nouvelles zones vues par les robots
+        t = time.time()
+        room.updateExploration(debug = False)
+        print("duration of updateExploration : ", time.time() - t)
 
-            redrawGameWindow(room, background, control)
+        t = time.time()
+        redrawGameWindow(room, background, control)      
+        print("duration of redrawGameWindow : ", time.time() - t)

@@ -2,6 +2,8 @@ from itertools import chain
 import colorsys
 from heapq import *
 from token import SEMI
+import random
+import time
 
 from scipy.spatial import ConvexHull
 import numpy as np
@@ -13,6 +15,7 @@ from igraph.drawing import graph
 
 from utilities import *
 from grid_and_graph import Tile, Grid
+
 
 # à laisser en bas de la liste des import
 from shapely.geometry import Point
@@ -27,21 +30,13 @@ class SwarmExploratorUWBSLAM():
         self.measurerBot = measurerBot
         self.refPointBots = {}
         self.nbRefPointBots = len(refPointBots)
-        self.orientation = 'h'
-        self.status = 0
-        # self.nextMoves = [['straight', 7], ['turnRight', 1],  ['turnRight', 1], ['straight', 8], ['turnLeft', 1], ['turnLeft', 1], ['straight',8]]
-        # self.nextMoves = [['straight', 4], ['turnRight', 2]]
-        self.actualSequenceLength = 0
-        self.actualSequenceCount = 0
-        self.actualOneStepCount = 0
-        self.actualDeplacement = None
-        self.maxOneStepCount = (self.nbRefPointBots//2 - 2)
-        self.orientation = 'right'
+        
         self.initMeasurerPos = (self.measurerBot.x, self.measurerBot.y)
+
         self.surfaceUWB = surfaceUWB
         self.surfaceGrid = surfaceGrid
         self.surfaceReferenceBot = surfaceReferenceBot
-        self.initCount = 0
+
         self.theta = 2*np.pi/self.nbRefPointBots
         self.refPointBotsVisibleBots = {}
         HSV_tuples = [(x*1.0/self.nbRefPointBots, 0.5, 0.5) for x in range(self.nbRefPointBots)]
@@ -67,6 +62,13 @@ class SwarmExploratorUWBSLAM():
         self.convexHulls = []
         self.polygons = []
 
+        self.status = "init"
+        self.initCount = 0
+        self.moveMeasuringBotCount = 0
+        self.moveRefPointBot = 0
+        self.instantMoving = True
+        self.time = 0
+
         initObjectives = []
         for i in range(self.nbRefPointBots):
             initObjectives.append((self.measurerBot.x + initRadius*np.cos(self.theta*i), self.measurerBot.y +initRadius*np.sin(self.theta*i)))
@@ -85,7 +87,8 @@ class SwarmExploratorUWBSLAM():
             robotsPlaced.append(minKey)
         
         for i in range(self.nbRefPointBots):
-            self.refPointBots[i].defineObjective(initObjectives[i])
+            #self.refPointBots[i].defineObjective(initObjectives[i])
+            self.refPointBots[i].x, self.refPointBots[i].y = initObjectives[i]
 
 
         for wall in self.room.walls:
@@ -101,6 +104,7 @@ class SwarmExploratorUWBSLAM():
         #########################################
 
     
+    # Initial move of the refPointBots
     def initMove(self):
         refPointBotsStatus = self.checkMovingRefPointBots()
         if not refPointBotsStatus[0]:
@@ -112,18 +116,20 @@ class SwarmExploratorUWBSLAM():
             if not self.check3RefPointBotsAvailable(refPointBotsStatus[1]):
                 self.refPointBots[refPointBotsStatus[1]].wallDetectionAction()
 
-
+    # check if refPointBots are moving
     def checkMovingRefPointBots(self):
         for key in self.refPointBots:
             if self.refPointBots[key].haveObjective:
                 return True, key
         return False, None
 
+    # check if MeasurerBot is still moving
     def checkMovingMeasurerBot(self):
         if self.measurerBot.haveObjective:
             return True
         return False
     
+    # check to see if the refPointBot "key" can see at least 3 other refpointBots
     def check3RefPointBotsAvailable(self, key):
         refPointBotMoving = self.refPointBots[key]
         countNotvisible = 0
@@ -149,134 +155,121 @@ class SwarmExploratorUWBSLAM():
             return False
         return True
 
+    # update the polygons of visibility between the refPointBots
     def updatePolygon(self):
         self.refPointBotsVisible = {}
         for key in self.refPointBots:
             if self.check3RefPointBotsAvailable(key):
                 self.refPointBotsVisible[key] = self.refPointBots[key]
 
-
+    # principal move function
     def move(self):
-        # print(self.initCount, self.nbRefPointBots)
-        self.createGrid()
-
-        if self.initCount == len(self.refPointBots) + 2:
+        # self.createGrid()
+        tMove = time.time()
+        print("########### duration of step : ", tMove - self.time)
+        self.time = tMove
+        if self.status == "init":
+            if self.initCount < self.nbRefPointBots:
+                self.initMove()
+                if self.initCount == self.nbRefPointBots:
+                    self.status = "FirstTranferRefPointBotToMeasuringBot"
+        
+        if self.status == "movingRefPointBots":
             self.moveRefPointBotsStep()
 
-        if self.hasObj:
-            step = self.goToObj()
-            if step == "end":
-                self.updatePolygon()
-                # refPointBotsPoints = list(chain.from_iterable([[(self.refPointBots[keyBot].x, self.refPointBots[keyBot].y)] for keyBot in self.refPointBotsVisible]))
-                # convexHullObstacles = ConvexHull(refPointBotsPoints)
-                # self.convexHull = [refPointBotsPoints[i] for i in list(convexHullObstacles.vertices)[:]]
-                self.defineConvexHulls()
-                self.updateGrid()
 
-                target = self.findFurthestPoint()
-                if target is not None: 
-                    self.mainPathIndex = 0
-                    source = self.lastObj
-                    weight, self.mainPath = (self.djikstra(source, target))
-                    self.addWeigthToPath()
-                    # self.lastObj = target
-                else : 
-                    self.hasObj = False
-                    self.moveRefPointBotsStep()
-                    self.initCount = len(self.refPointBots) + 2
-            elif step == "changedObj":
-                self.updatePolygon()
-                # refPointBotsPoints = list(chain.from_iterable([[(self.refPointBots[keyBot].x, self.refPointBots[keyBot].y)] for keyBot in self.refPointBotsVisible]))
-                # convexHullObstacles = ConvexHull(refPointBotsPoints)
-                # self.convexHull = [refPointBotsPoints[i] for i in list(convexHullObstacles.vertices)[:]]
-                self.defineConvexHulls()
-                self.updateGrid()
-                target = self.findFurthestPoint()
-                if target is not None: 
+        if self.status == "movingMeasuringBot":
+            tTot = time.time()
+            if self.hasObj:
+                step = self.goToObj()
+                if step == "end":
+                    # t = time.time()
+                    # self.updatePolygon()
+                    # print("duration of updatePolygon : ", time.time() - t)
+                    # t = time.time()
+                    # self.defineConvexHulls()
+                    # print("duration of defineConvexHulls : ", time.time() - t)
+                    self.updateGrid()
+                    target = self.findFurthestPoint()
+                    if target is not None: 
+                        self.mainPathIndex = 0
+                        source = self.lastObj
+                        self.updateNeighOneNode(self.lastObj)
+                        weight, self.mainPath = (self.djikstra(source, target))
+                        self.addWeigthToPath()
+                    else : 
+                        self.hasObj = False
+                        self.moveRefPointBotsStep()
+                        self.status = "movingRefPointBots"
+                elif step == "changedObj":
+                    self.updatePolygon()
+                    self.defineConvexHulls()
+                    self.updateGrid()
+                    target = self.findFurthestPoint()
+                    if target is not None: 
+                        source = self.mainPath[self.mainPathIndex-1][0]
+                        self.mainPathIndex = 0
+                        weight, self.mainPath = (self.djikstra(source, target))
+                        self.addWeigthToPath()
+                    else : 
+                        self.hasObj = False
+                        self.moveRefPointBotsStep()
+                        self.status = "movingRefPointBots"
+
+                elif step == "changed":
+                    self.updatePolygon()
+                    self.defineConvexHulls()
+                    self.updateGrid()
+                    target = self.lastObj
                     source = self.mainPath[self.mainPathIndex-1][0]
                     self.mainPathIndex = 0
                     weight, self.mainPath = (self.djikstra(source, target))
                     self.addWeigthToPath()
-                    # self.lastObj = target
-                else : 
-                    self.hasObj = False
-                    self.moveRefPointBotsStep()
-                    self.initCount = len(self.refPointBots) + 2
+                print("duration of tTot : ", time.time() - tTot)
 
-            elif step == "changed":
-                self.updatePolygon()
-                # refPointBotsPoints = list(chain.from_iterable([[(self.refPointBots[keyBot].x, self.refPointBots[keyBot].y)] for keyBot in self.refPointBotsVisible]))
-                # convexHullObstacles = ConvexHull(refPointBotsPoints)
-                # self.convexHull = [refPointBotsPoints[i] for i in list(convexHullObstacles.vertices)[:]]
-                self.defineConvexHulls()
-                self.updateGrid()
-                target = self.lastObj
-                source = self.mainPath[self.mainPathIndex-1][0]
-                self.mainPathIndex = 0
-                weight, self.mainPath = (self.djikstra(source, target))
-                self.addWeigthToPath()
-                # self.lastObj = target
-            
-        
-        if self.initCount < self.nbRefPointBots:
-            self.initMove()
-        if self.initCount == self.nbRefPointBots:
+        if self.status == "FirstTranferRefPointBotToMeasuringBot":
             if not self.checkMovingRefPointBots()[0]:
 
                 self.updatePolygon()
-                # refPointBotsPoints = list(chain.from_iterable([self.refPointBots[keyBot].polygonPoints for keyBot in self.refPointBotsVisible]))
-                # convexHullObstacles = ConvexHull(refPointBotsPoints)
-                # self.convexHull = [refPointBotsPoints[i] for i in list(convexHullObstacles.vertices)[:]]
                 self.defineConvexHulls()
                 self.updateGrid()
-                self.graph[self.origin] = 1
+                self.graph[self.origin] = [1]
                 self.createGraph()
                 # self.drawGraph() # à commenter ou non pour afficher le graphe
                 coords = self.getNeighbours(self.origin)
+                self.checkNeighbours(self.origin)
                 self.updateNeighOneNode(self.origin)
-                for coord in coords:
-                    if coord not in self.graph or self.graph[coord] == 2 or self.graph[coord] == -1:
-                        self.graph[coord] = 2
-                    elif self.graph[coord] != 1 : 
-                        self.graph[coord] = 0.5
                 target = self.findFurthestPoint()
                 if target is not None:
                     source = (self.origin[0], self.origin[1])
                     weight, self.mainPath = (self.djikstra(source, target))
                     self.addWeigthToPath()
-                    # self.lastObj = target
                     self.hasObj = True
-                    self.initCount+=1
+                    self.status = "movingMeasuringBot"
                 else:
                     self.hasObj = False
                     self.moveRefPointBotsStep()
-                    self.initCount = len(self.refPointBots) + 2
+                    self.status = "movingRefPointBots"
 
-        if self.initCount == self.nbRefPointBots+3:
+        if self.status == "tranferRefPointBotToMeasuringBot":
             if not self.checkMovingRefPointBots()[0]:
-
                 self.updatePolygon()
-                # refPointBotsPoints = list(chain.from_iterable([self.refPointBots[keyBot].polygonPoints for keyBot in self.refPointBotsVisible]))
-                # convexHullObstacles = ConvexHull(refPointBotsPoints)
-                # self.convexHull = [refPointBotsPoints[i] for i in list(convexHullObstacles.vertices)[:]]
                 self.defineConvexHulls()
                 self.updateGrid()
-                # self.graph[self.origin] = 1
                 self.createGraph()
-                # self.drawGraph()
                 target = self.findFurthestPoint()
                 if target is not None:
-                    # source = self.lastObj
                     self.mainPathIndex = 0
                     source = self.lastObj
                     weight, self.mainPath = (self.djikstra(source, target))
                     self.addWeigthToPath()
-                    # self.lastObj = target
                     self.hasObj = True
+                    self.status = "movingMeasuringBot"
                     self.initCount+=1
                 else:
                     self.hasObj = False
                     self.moveRefPointBotsStep()
+                    self.status = "movingRefPointBots"
                     self.initCount = len(self.refPointBots) + 2
 
         ###########
@@ -284,76 +277,107 @@ class SwarmExploratorUWBSLAM():
         ###########
         
         
+        print("########### duration of move : ", time.time()- tMove)
+    # find closest cell to define as objective for Djikstra    
     def findClosestCell(self):
         minDist = 10000
         minCoord = None
         for coord in self.graph:
-            if self.graph[coord] == 1:
+            if self.graph[coord][-1] == 1:
                 dist = distObjList(self.measurerBot, coord)
                 if dist < minDist:
                     minDist = dist
                     minCoord = coord
         return minCoord
 
+    # add status of all the cells in the paths as info for dynamic Djikstra
     def addWeigthToPath(self):
         for i in range(len(self.mainPath)):
-            self.mainPath[i] = [self.mainPath[i], self.graph[self.mainPath[i]]]
+            self.mainPath[i] = [self.mainPath[i], self.graph[self.mainPath[i]][-1]]
 
+    # updates status of newly seen cells (to modify)
+    def checkNeighbours(self, posMeasuringBot):
+        x,y = posMeasuringBot
+        w = self.gridWidth
+        #à changer avec les coord de tous les carreaux vues et jamais vues auparavant
+        coordLeft = (x-w, y)
+        coordRight = (x+w, y)
+        coordTop = (x, y-w)
+        coordBottom = (x, y+w)
+        coordTopLeft = (x-w, y-w)
+        coordTopRight = (x+w, y-w)
+        coordBottomRight = (x+w, y+w)
+        coordBottomLeft= (x-w, y+w)
+        coords = [coordLeft, coordRight, coordTop,coordBottom,coordTopLeft, coordTopRight, coordBottomRight, coordBottomLeft]
+        for coord in coords:
+            if coord not in self.graph or self.graph[coord][-1] == 0:
+                obs = False
+                for wall in self.room.walls:
+                    for obstacle in wall.obstacles_seen:
+                        dist = distObjList(obstacle, coord)
+                        if dist < self.gridWidth//2:
+                            obs = True
+                            break
+                if obs : 
+                    if coord not in self.graph:
+                        self.graph[coord] = [-1]
+                    elif self.graph[coord][-1] != -1 :
+                        self.graph[coord].append(-1)
+                    self.removeNodeFromGraph(coord)
+
+                else :
+                    if self.gridCheck3RefPointBots(coord):
+                        if coord not in self.graph:
+                            self.graph[coord] = [0.5]
+                        elif self.graph[coord][-1] !=0.5:
+                            self.graph[coord].append(0.5)
+                    else:
+                        if coord not in self.graph:
+                            self.graph[coord] = [2]
+                        elif self.graph[coord][-1] !=2:
+                            self.graph[coord].append(2)
+            # elif self.graph[coord][-1] != 1 : 
+            #     obs = False
+            #     for wall in self.room.walls:
+            #         for obstacle in wall.obstacles_seen:
+            #             dist = distObjList(obstacle, coord)
+            #             if dist < self.gridWidth//2:
+            #                 obs = True
+            #                 break
+            #     if obs : 
+            #         if self.graph[coord][-1] != -1:
+            #             self.graph[coord].append(-1)
+            #         self.removeNodeFromGraph(coord)
+            #     else :
+            #         self.graph[coord].append(0.5)
+   
+    # attributes intermediary objectives to the measurerBot
     def goToObj(self):
         if self.mainPathIndex < len(self.mainPath):
             if not self.checkMovingMeasurerBot():
                 status = self.checkPathUpdates(self.mainPathIndex)
+                print(status)
                 if status == "ok":
                     obj = self.mainPath[self.mainPathIndex][0]
                     self.lastObj = obj
-                    self.measurerBot.defineObjective(obj)
-                    self.graph[obj] = 1
-                    x, y = obj
-                    w = self.gridWidth
-                    # à changer avec les coord de tous les carreaux vues et jamais vues auparavant
-                    coordLeft = (x-w, y)
-                    coordRight = (x+w, y)
-                    coordTop = (x, y-w)
-                    coordBottom = (x, y+w)
-                    coordTopLeft = (x-w, y-w)
-                    coordTopRight = (x+w, y-w)
-                    coordBottomRight = (x+w, y+w)
-                    coordBottomLeft= (x-w, y+w)
-                    coords = [coordLeft, coordRight, coordTop,coordBottom,coordTopLeft, coordTopRight, coordBottomRight, coordBottomLeft]
-                    self.updateNeighOneNode(obj)
-                    for coord in coords:
-                        if coord not in self.graph or self.graph[coord] == 2 or self.graph[coord] == -1:
-                            obs = False
-                            for wall in self.room.walls:
-                                for obstacle in wall.obstacles_seen:
-                                    dist = distObjList(obstacle, coord)
-                                    if dist < self.gridWidth//2:
-                                        obs = True
-                                        break
-                            if obs : 
-                                self.graph[coord] = -1
-                                self.removeNodeFromGraph(coord)
+                    if self.instantMoving:
+                        self.measurerBot.defineObjective(obj)
+                        x, y = obj
+                        self.measurerBot.x, self.measurerBot.y = obj
+                    else:
+                        self.measurerBot.defineObjective(obj)
 
-                            else :
-                                self.graph[coord] = 2
-                        elif self.graph[coord] != 1 : 
-                            obs = False
-                            for wall in self.room.walls:
-                                for obstacle in wall.obstacles_seen:
-                                    dist = distObjList(obstacle, coord)
-                                    if dist < self.gridWidth//2:
-                                        obs = True
-                                        break
-                            if obs : 
-                                self.graph[coord] = -1
-                                self.removeNodeFromGraph(coord)
-                            else :
-                                self.graph[coord] = 0.5
+                    if self.graph[obj][-1] != 1:
+                        self.graph[obj].append(1)
+                    self.updateNeighOneNode(obj)
+                    x, y = obj
+                    self.checkNeighbours((x,y))
                     self.mainPathIndex +=1
                 return status
             return "moving"
         return "end"
 
+    
     def removeNodeFromGraph(self, coord):
         self.adjacencyList[coord] = []
         neighbours = self.getNeighbours(coord)
@@ -362,13 +386,12 @@ class SwarmExploratorUWBSLAM():
                 if coord in self.adjacencyList[neigh]:
                     self.adjacencyList[neigh].remove(coord)
 
-
     def findFurthestPoint(self):
         maxDist = 10000
         maxCoord = None
         for coord in self.graph:
             # if self.graph[coord] == 0 or self.graph[coord] == 0.5:
-            if self.graph[coord] == 0.5:
+            if self.graph[coord][-1] == 0.5:
                 dist = distLists(self.lastObj, coord)
                 if  dist < maxDist:
                     maxDist = dist
@@ -379,7 +402,7 @@ class SwarmExploratorUWBSLAM():
         M = set()
         d = {s: 0}
         p = {}
-        suivants = [(0, s)] #Â tas de couples (d[x],x)
+        suivants = [(0, s)]
 
         while suivants != []:
 
@@ -412,7 +435,7 @@ class SwarmExploratorUWBSLAM():
     def checkPathUpdates(self, index):
         for element in self.mainPath[index:]:
             coord, weight = element[0], element[1]
-            if self.graph[coord] == -1:
+            if self.graph[coord][-1] == -1:
                 if coord == self.lastObj:
                     return "changedObj"
                 else:
@@ -451,13 +474,13 @@ class SwarmExploratorUWBSLAM():
                 if distObjList(self.refPointBots[self.nextRefStepGoal[0]], self.nextRefStepGoal[1]) < 3:
                     self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoals[self.nextRefStepGoal[1]])
                     self.nextRefStepIndex = 0
-                    self.initCount+=1
+                    self.status = "tranferRefPointBotToMeasuringBot"
                 else:
                     self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoal[1])
-
+    
     def detectExplorablePart(self):
         for coord in self.graph:  
-            if self.graph[coord] == 2:
+            if self.graph[coord][-1] == 2:
                 neighbours = self.getNeighbours(coord)
                 neighInCluster = False
                 for neigh in neighbours:
@@ -510,8 +533,6 @@ class SwarmExploratorUWBSLAM():
             self.nearestPoints.append(line)
             self.nextRefStepGoals[point] = nextGoal
 
-
-    
     def getNeighbours(self, coord):
         x,y = coord
         w = self.gridWidth
@@ -526,57 +547,107 @@ class SwarmExploratorUWBSLAM():
         coordsNeighbours = [coordLeft, coordRight, coordTop,coordBottom, coordTopLeft, coordTopRight, coordBottomRight, coordBottomLeft]
         return coordsNeighbours
 
+    def gridCheck3RefPointBots(self, coord):
+        x, y = coord
+        countVisible = 0
+        for keyAnchor in self.refPointBots:
+            visible=True
+            refPointBot = self.refPointBots[keyAnchor]
+            vectorDir = np.array([refPointBot.x - x,refPointBot.y - y])
+            for wall in self.walls:
+                inter = lineSegmentInter([vectorDir, [x , y]], wall)
+                if inter != None:
+                    vectorCol = np.array([inter[0] - x, inter[1] - y])
+                    if np.dot(vectorDir, vectorCol)>0:
+                        if np.linalg.norm(vectorCol) < np.linalg.norm(vectorDir):
+                            visible = False
+            if visible:
+                countVisible+=1
+            if countVisible>=3:
+                break
+            
+        if countVisible >= 3:
+            return True
+        return False
+
     def createGrid(self):
         polygonShapely = Polygon([])
         if len(self.polygons)>0: # on définit un polygone qui représente la zone couverte dans son ensemble
             polygonShapely = Polygon(self.polygons[0])
             for polygon in self.polygons[1:]:
                 polygonShapely = polygonShapely.union(Polygon(polygon))
-        if len(self.convexHull)>0: # on repère les coordonnés extrêmes de la zone couverte par les balises UWB
-            xmin = int(min(self.convexHull, key=lambda x: x[0])[0])
-            ymin = int(min(self.convexHull, key=lambda x: x[1])[1])
-            xmax = int(max(self.convexHull, key=lambda x: x[0])[0])
-            ymax = int(max(self.convexHull, key=lambda x: x[1])[1])
+        if len(self.convexHull)>0:
+            xmin = 0
+            ymin = 0
+            xmax = 1600
+            ymax = 900
 
             for x in range (self.origin[0], xmax+self.gridWidth, self.gridWidth):
                 for y in range(self.origin[1], ymax+self.gridWidth, self.gridWidth):
                     if (x, y) not in self.graph:
+                        # if self.gridCheck3RefPointBots((x, y)):
+                        #     self.graph[(x, y)] = 0
+                        # else : 
+                        #     self.graph[(x, y)] = -1
                         point = Point(x, y)
                         if polygonShapely.contains(point):
-                            self.graph[(x, y)] = 0
+                            self.graph[(x, y)] = [0]
                 for y in range(self.origin[1]-self.gridWidth, ymin - self.gridWidth, -self.gridWidth):
                     if (x, y) not in self.graph:
+                        # if self.gridCheck3RefPointBots((x, y)):
+                        #     self.graph[(x, y)] = 0
+                        # else : 
+                        #     self.graph[(x, y)] = -1
                         point = Point(x, y)
                         if polygonShapely.contains(point):
-                            self.graph[(x, y)] = 0
+                            self.graph[(x, y)] = [0]
             for x in range (self.origin[0]-self.gridWidth, xmin -self.gridWidth, -self.gridWidth):
                 for y in range(self.origin[1], ymax+self.gridWidth, self.gridWidth):
                     if (x, y) not in self.graph:
+                        # if self.gridCheck3RefPointBots((x, y)):
+                        #     self.graph[(x, y)] = 0
+                        # else : 
+                        #     self.graph[(x, y)] = -1
                         point = Point(x, y)
                         if polygonShapely.contains(point):
-                            self.graph[(x, y)] = 0
+                            self.graph[(x, y)] = [0]
                 for y in range(self.origin[1]-self.gridWidth, ymin - self.gridWidth, -self.gridWidth):
                     if (x, y) not in self.graph:
+                        # if self.gridCheck3RefPointBots((x, y)):
+                        #     self.graph[(x, y)] = 0
+                        # else : 
+                        #     self.graph[(x, y)] = -1
                         point = Point(x, y)
                         if polygonShapely.contains(point):
-                            self.graph[(x, y)] = 0
+                            self.graph[(x, y)] = [0]
 
     def updateGrid(self):
         polygonShapely = Polygon(self.polygons[0])
         for polygon in self.polygons[1:]:
             polygonShapely = polygonShapely.union(Polygon(polygon))
-        for x, y in self.graph:
-            point = Point(x, y)
-            if self.graph[(x, y)] != 2:    
-                if self.graph[(x, y)] != 1 :
-                    if not polygonShapely.contains(point):
-                        self.graph[(x, y)] = -1
-            elif polygonShapely.contains(point):
-                self.graph[(x, y)] = 0.5
+        # for x, y in self.graph:
+        #     point = Point(x, y)
+        #     if self.graph[(x, y)][-1] != 2:    
+        #         if self.graph[(x, y)][-1] != -1:
+        #             if self.graph[(x, y)][-1] == -2 :
+        #                 if 1 in self.graph[(x, y)]:
+        #                     self.graph[(x, y)].append(1.5)
+        #                 elif 0.5 in self.graph[(x, y)]:
+        #                     self.graph[(x, y)].append(2)
+        #             # elif not self.gridCheck3RefPointBots((x, y)):
+        #             #     if self.graph[(x, y)][-1] != -2 :
+        #             #         self.graph[(x, y)].append(-2)
+                   
+        #             # if not polygonShapely.contains(point):
+        #             #     self.graph[(x, y)] = -1
+        #     elif self.gridCheck3RefPointBots((x, y)):
+        #         self.graph[(x, y)].append(0.5)
+        #     # elif polygonShapely.contains(point):
+        #     #     self.graph[(x, y)] = 0.5
     
     def createGraph(self):
         for coord in self.graph:
-            if self.graph[coord]!=-1:
+            if self.graph[coord][-1]!=-1:
                 x,y = coord
                 w = self.gridWidth
                 coordLeft = (x-w, y)
@@ -591,7 +662,7 @@ class SwarmExploratorUWBSLAM():
                 coordsDiag = [coordTopLeft, coordTopRight, coordBottomRight, coordBottomLeft]
                 for neigh in coordsStraight:
                     if neigh in self.graph:
-                        if self.graph[neigh] != -1:
+                        if self.graph[neigh][-1] == 0.5 or self.graph[neigh][-1] == 1:
                             if (coord, neigh) not in self.graphLinks and (neigh, coord) not in self.graphLinks:
                                 self.graphLinks.append((coord, neigh))
                             if coord not in self.adjacencyList:
@@ -606,7 +677,7 @@ class SwarmExploratorUWBSLAM():
                                     self.adjacencyList[neigh].append((coord,1))
                 for neigh in coordsDiag:
                     if neigh in self.graph:
-                        if self.graph[neigh] != -1:
+                        if self.graph[neigh][-1] == 0.5 or self.graph[neigh][-1] == 1:
                             if (coord, neigh) not in self.graphLinks and (neigh, coord) not in self.graphLinks:
                                 self.graphLinks.append((coord, neigh))
                             if coord not in self.adjacencyList:
@@ -664,7 +735,7 @@ class SwarmExploratorUWBSLAM():
         coordsDiag = [coordTopLeft, coordTopRight, coordBottomRight, coordBottomLeft]
         for neigh in coordsStraight:
             if neigh in self.graph:
-                if self.graph[neigh] != -1:
+                if self.graph[neigh][-1] == 0.5 or self.graph[neigh][-1] == 1:
                     if (coord, neigh) not in self.graphLinks and (neigh, coord) not in self.graphLinks:
                         self.graphLinks.append((coord, neigh))
                     if coord not in self.adjacencyList:
@@ -679,7 +750,7 @@ class SwarmExploratorUWBSLAM():
                             self.adjacencyList[neigh].append((coord,1))
         for neigh in coordsDiag:
             if neigh in self.graph:
-                if self.graph[neigh] != -1:
+                if self.graph[neigh][-1] == 0.5 or self.graph[neigh][-1] == 1:
                     if (coord, neigh) not in self.graphLinks and (neigh, coord) not in self.graphLinks:
                         self.graphLinks.append((coord, neigh))
                     if coord not in self.adjacencyList:
@@ -708,18 +779,22 @@ class SwarmExploratorUWBSLAM():
                 self.polygons.append(polygon)
                 pygame.draw.polygon(self.surfaceUWB, (0, 0, 100, 64), polygon)
 
-        # for coord in self.graph:
-        #     if self.graph[coord] == 1:
-        #         pygame.draw.rect(self.surface, (0, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
-        #     elif self.graph[coord] == -1:
-        #         pygame.draw.rect(self.surface, (200, 0, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
-        #     elif self.graph[coord] == 2:
-        #         pygame.draw.rect(self.surface, (200, 100, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
-        #     elif self.graph[coord] == 0.5:
-        #         pygame.draw.rect(self.surface, (200, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
-        #     else:
-        #         pygame.draw.rect(self.surface, (200, 200, 200, 40), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
 
+        for coord in self.graph:
+            if self.graph[coord][-1] == 1:
+                pygame.draw.rect(self.surface, (0, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+            elif self.graph[coord][-1] == -1:
+                pygame.draw.rect(self.surface, (200, 0, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+            elif self.graph[coord][-1] == 2:
+                pygame.draw.rect(self.surface, (200, 100, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+            elif self.graph[coord][-1] == 0.5:
+                pygame.draw.rect(self.surface, (200, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+            elif self.graph[coord][-1] == -2:
+                pygame.draw.rect(self.surface, (200, 0, 200, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+            elif self.graph[coord][-1] == 1.5:
+                pygame.draw.rect(self.surface, (0, 200, 200, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+            else:
+                pygame.draw.rect(self.surface, (200, 200, 200, 40), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
         for i in range(len(self.mainPath)-1):
             line = (self.mainPath[i][0], self.mainPath[i+1][0])
             if line not in self.trajectory:
