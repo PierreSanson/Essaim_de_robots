@@ -1,12 +1,13 @@
 from itertools import chain
 import colorsys
 from heapq import *
+from token import SEMI
 
 from scipy.spatial import ConvexHull
-
 import numpy as np
 
-from token import SEMI
+import pygame
+
 from igraph import *
 from igraph.drawing import graph
 
@@ -440,6 +441,7 @@ class SwarmExploratorUWBSLAM():
                     self.initCount+=1
                 else:
                     self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoal[1])
+
     def detectExplorablePart(self):
         for coord in self.graph:  
             if self.graph[coord] == 2:
