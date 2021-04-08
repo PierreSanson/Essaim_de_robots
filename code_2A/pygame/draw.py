@@ -436,8 +436,11 @@ def draw_initial_config():
     selectedColor = [0,0,0]
     clicking = False
 
+    round = -1
     clock = pg.time.Clock()
     holdingCTRL = False
+    mouseRelPosX = 0
+    mouseRelPosY = 0
 
     positions = [(1357, 406), (1382, 406), (1407, 406), (1432, 406)]
 
@@ -459,6 +462,7 @@ def draw_initial_config():
                 elif event.button == 1:
                     if pg.mouse.get_pos()[0] < g1.xCount*g1.cellSize and pg.mouse.get_pos()[1] < g1.yCount*g1.cellSize:
                         if selectedTool in (0,1):
+                            mouseRelPosX, mouseRelPosY =  paint(selectedTool,g1,S_brushSize,S_eraserSize,colorUsing)
                             clicking = True
                     else:
                         for i, Scolor in enumerate(colorCells):
@@ -499,6 +503,7 @@ def draw_initial_config():
                 if event.button == 3:
                     selectedTool = selectedToolBefore
                 elif event.button == 1:
+                    round *= -1
                     clicking = False
 
                     for but in S_buttons:
@@ -508,6 +513,7 @@ def draw_initial_config():
                 if pg.mouse.get_pos()[0] < g1.xCount * g1.cellSize and pg.mouse.get_pos()[1] < g1.yCount * g1.cellSize:
                     pg.mouse.set_visible(False)
                 else:
+                    pass
                     pg.mouse.set_visible(True)
                 if clicking:
                     if pg.mouse.get_pos()[0] < g1.xCount * g1.cellSize and pg.mouse.get_pos()[1] < g1.yCount * g1.cellSize:

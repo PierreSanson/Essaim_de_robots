@@ -21,7 +21,7 @@ from shapely.ops import nearest_points
 
 
 class SwarmExploratorUWBSLAM():
-    def __init__(self, surfaceUWB, surfaceGrid, room, measurerBot, refPointBots, distRefPointBots = [110, 110], initRadius=50) :
+    def __init__(self, surfaceUWB, surfaceGrid, surfaceReferenceBot, room, measurerBot, refPointBots, distRefPointBots = [110, 110], initRadius=50) :
         self.room = room
         self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
@@ -40,6 +40,7 @@ class SwarmExploratorUWBSLAM():
         self.initMeasurerPos = (self.measurerBot.x, self.measurerBot.y)
         self.surfaceUWB = surfaceUWB
         self.surfaceGrid = surfaceGrid
+        self.surfaceReferenceBot = surfaceReferenceBot
         self.initCount = 0
         self.theta = 2*np.pi/self.nbRefPointBots
         self.refPointBotsVisibleBots = {}
@@ -96,7 +97,7 @@ class SwarmExploratorUWBSLAM():
         self.refPointBotsVisible = self.refPointBots.copy()
 
         ################# TEST ##################
-        self.test = Grid(room,measurerBot.x,measurerBot.y,50)
+        self.test = Grid(room,measurerBot,50)
         #########################################
 
     
@@ -279,7 +280,7 @@ class SwarmExploratorUWBSLAM():
                     self.initCount = len(self.refPointBots) + 2
 
         ###########
-        self.test.update(self.surfaceUWB)
+        self.test.update(self.surfaceUWB,self.status)
         ###########
         
         
@@ -309,7 +310,7 @@ class SwarmExploratorUWBSLAM():
                     self.graph[obj] = 1
                     x, y = obj
                     w = self.gridWidth
-                    #à changer avec les coord de tous les carreaux vues et jamais vues auparavant
+                    # à changer avec les coord de tous les carreaux vues et jamais vues auparavant
                     coordLeft = (x-w, y)
                     coordRight = (x+w, y)
                     coordTop = (x, y-w)
@@ -718,20 +719,21 @@ class SwarmExploratorUWBSLAM():
         #         pygame.draw.rect(self.surface, (200, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
         #     else:
         #         pygame.draw.rect(self.surface, (200, 200, 200, 40), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+
         for i in range(len(self.mainPath)-1):
             line = (self.mainPath[i][0], self.mainPath[i+1][0])
             if line not in self.trajectory:
                 self.trajectory.append(line)
         for line in self.trajectory:
-            pygame.draw.line(self.surfaceUWB, (0, 0, 100, 200), line[0], line[1], 3)
+            pygame.draw.line(self.surfaceReferenceBot, (0, 0, 100, 200), line[0], line[1], 3)
         for coord in self.explorableClustersDict:
-            pygame.draw.circle(self.surfaceUWB, (200, 100, 0, 200), coord, 4)
+            pygame.draw.circle(self.surfaceReferenceBot, (200, 100, 0, 200), coord, 4)
         for coord in self.nearestPoints:
             p1 = coord[0]
             p2 = coord[1]
             a = (p1[1]-p2[1])/(p1[0]-p2[0])
             b = p1[1]-a*p1[0]
-            pygame.draw.line(self.surfaceUWB, (200, 0, 200, 200),(0,int(b)), (1600,int(a*1600+b)) , 1)
+            pygame.draw.line(self.surfaceReferenceBot, (200, 0, 200, 200),(0,int(b)), (1600,int(a*1600+b)) , 1)
 
         ############
         self.test.draw(self.surfaceGrid) 

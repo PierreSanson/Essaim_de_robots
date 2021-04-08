@@ -99,7 +99,7 @@ def find_walls_corners(table):
     return walls_corners
 
 
-def drawing_to_simulation(table,surface1,surface2,surface3,surface4):
+def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5):
 
     robots_centers = []
     for row in range(len(table)):
@@ -147,7 +147,7 @@ def drawing_to_simulation(table,surface1,surface2,surface3,surface4):
 
     room.addBots(bots)
 
-    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface3, surface4, room, measuringBots[0], refPointBots)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface3, surface4, surface5, room, measuringBots[0], refPointBots)
 
     return room, SEUWBSLAM
 
@@ -168,8 +168,8 @@ def redrawGameWindow(room, background, control):
         bot.draw()
 
     # affichage optionel des obtsacles :
-    # for obstacle in room.obstacles:
-    #     obstacle.draw()
+    for obstacle in room.obstacles:
+        obstacle.draw()
 
     # mise à jour des murs vus
     room.draw_walls()
@@ -179,6 +179,7 @@ def redrawGameWindow(room, background, control):
     control.draw()
     background.blit(control.surfaceUWB, (0,0))
     background.blit(control.surfaceGrid, (0,0))
+    background.blit(control.surfaceReferenceBot,(0,0))
 
     ### mise à jour de l'affichage complet
     pygame.display.flip()
@@ -200,8 +201,10 @@ def load_and_launch_simulation():
         surface3 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
         # la grille qui sert aux déplacements
         surface4 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+        # une surface supplémentaire pour des affichages annexes
+        surface5 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
 
-        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4)
+        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5)
 
         clock = pygame.time.Clock()
         hz = 60

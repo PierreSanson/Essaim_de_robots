@@ -41,14 +41,9 @@ class Tile():
         #                                                                                                               #
         #################################################################################################################
 
-        ### Probablement à sortir de cet objet qui va être créé plein de fois
-        
 
 
-
-
-
-    def update(self,surfaceVision,surfaceUWB,bots,color_dictionary):
+    def update(self,surfaceVision,surfaceUWB,bots,color_dictionary,measuringBot,status):
         
         # On vérifie si la case a été vue. Si oui, elle restera vue.
         if not self.seen:
@@ -81,10 +76,12 @@ class Tile():
                     else:
                         self.obstacle = 0
                 k += 1
-        ###
+        
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
-        # A modifier avant de faire appel à cet update donc, sinon l'état de la case ne sera pas correctement mis à jour.
-        ###
+        point = Point(measuringBot.x,measuringBot.y)
+        if status == "ok" and self.polygon.contains(point):
+            self.measured = 1
+        
 
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured])
 
@@ -94,10 +91,15 @@ class Tile():
 
 
 class Grid():
-    def __init__(self,room,xMeasurer,yMeasurer,tileWidth):
+    def __init__(self,room,measuringBot,tileWidth):
         self.room = room
         self.tileWidth = tileWidth
         self.tiles = {}
+
+        self.measuringBot = measuringBot
+
+        xMeasurer = measuringBot.x
+        yMeasurer = measuringBot.y
         
         # Construction de toute la grille une bonne fois pour toutes
         i = 0
@@ -133,7 +135,6 @@ class Grid():
             i += 1
 
         
-
         # On cherche toutes les cases qui contiennent un mur
         obstacles = self.room.obstacles
         for tile in self.tiles.values():
@@ -173,9 +174,9 @@ class Grid():
         ############
 
 
-    def update(self,surfaceUWB):
+    def update(self,surfaceUWB,status):
         for tile in self.tiles.values():
-            tile.update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary)
+            tile.update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.measuringBot,status)
     
     def draw(self,surface):
         for tile in self.tiles.values():
