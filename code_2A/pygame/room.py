@@ -137,8 +137,8 @@ class Room():
     def defineObstaclesFromWalls(self):
 
         obstacles = []
-        radiusObstacles = 7                 # 2
-        spaceBetweenObstaclesCenter = 30    # 15
+        radiusObstacles = 2                 # 2
+        spaceBetweenObstaclesCenter = 15    # 15
 
         
         for wall in self.walls: 
