@@ -766,6 +766,9 @@ class SwarmExploratorUWBSLAM():
                             
 
     def draw(self):
+        self.surfaceUWB.fill((0,0,0,0))
+        self.surfaceGrid.fill((0,0,0,0))
+        self.surfaceReferenceBot.fill((0,0,0,0))
         refPointBotsPoints = list(chain.from_iterable([[(self.refPointBots[keyBot].x, self.refPointBots[keyBot].y)] for keyBot in self.refPointBotsVisible]))
         convexHullObstacles = ConvexHull(refPointBotsPoints)
         self.convexHull = [refPointBotsPoints[i] for i in list(convexHullObstacles.vertices)[:]]
