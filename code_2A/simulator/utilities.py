@@ -95,10 +95,10 @@ def lineSegmentInter(line, segment):
     b = -line[0][0]
     c = -b*line[1][1] -a*line[1][0]
     
-    # sols = []
+    sols = []
 
     x, y = 0, 0
-    # xP, yP = 0,0
+    xP, yP = 0,0
 
     vectLine = np.array([segment[1][0] - segment[0][0], segment[1][1] - segment[0][1]])
     lenLine = np.linalg.norm(vectLine)
@@ -108,7 +108,7 @@ def lineSegmentInter(line, segment):
 
     aP = bL
     bP = -aL
-    # cP = -bP*line[1][1] -aP*line[1][0]
+    cP = -bP*line[1][1] -aP*line[1][0]
 
     if b != 0 and aL*b - a*bL != 0:
         x = (-cL*b + bL*c)/(aL*b-a*bL)
@@ -125,21 +125,21 @@ def lineSegmentInter(line, segment):
 
     vectCol = np.array([x - segment[0][0], y - segment[0][1]])
 
-    # if bP != 0 and aL*bP - aP*bL != 0:
-    #     xP = (-cL*bP + bL*cP)/(aL*bP-aP*bL)
-    #     yP = (-cP-aP*xP)/bP
+    if bP != 0 and aL*bP - aP*bL != 0:
+        xP = (-cL*bP + bL*cP)/(aL*bP-aP*bL)
+        yP = (-cP-aP*xP)/bP
 
-    # elif bP == 0 and bL != 0 and aP!=0:
-    #     xP = -cP/aP
-    #     yP = -cL/bL + aL*cP/(bL*aP)
-    # elif bL == 0 and bP != 0 and aL!=0 :
-    #     xP = -cL/aL
-    #     yP = -cP/bP + aP*cL/(bP*aL)
-    if aL*bP -aP*bL == 0:
+    elif bP == 0 and bL != 0 and aP!=0:
+        xP = -cP/aP
+        yP = -cL/bL + aL*cP/(bL*aP)
+    elif bL == 0 and bP != 0 and aL!=0 :
+        xP = -cL/aL
+        yP = -cP/bP + aP*cL/(bP*aL)
+    elif aL*bP -aP*bL == 0:
         return None
 
-    # vectP = np.array([xP - line[1][0], yP - line[1][1]])
-    # vectP2 = np.array([xP - segment[0][0], yP - segment[0][1]])
+    vectP = np.array([xP - line[1][0], yP - line[1][1]])
+    vectP2 = np.array([xP - segment[0][0], yP - segment[0][1]])
 
     if np.linalg.norm(vectCol) <= lenLine and (np.dot(vectLine, vectCol)) >= 0 :
         return(x,y)

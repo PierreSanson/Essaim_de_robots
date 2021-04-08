@@ -1,5 +1,7 @@
 import pygame
 
+from measuringBot import MeasuringBot
+
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
@@ -46,38 +48,39 @@ class Tile():
 
 
 
-    def update(self,surfaceToCheck,polygonsUWB,bots,color_dictionary):
-        self.state_has_changed = 0
+    def update(self,surfaceVision,surfaceUWB,bots,color_dictionary):
         
         # On vérifie si la case a été vue. Si oui, elle restera vue.
         if not self.seen:
-            if surfaceToCheck.get_at(self.center) == (0,0,0,0):
+            if surfaceVision.get_at(self.center) == (0,0,0,0):
                 self.seen = 1
             # Cas particulier : cases vues partiellement à cause d'un mur, on ne peut pas se contentet de regarder le centre
             if self.containsWall:
                 for corner in self.corners:
-                    if surfaceToCheck.get_at(corner) == (0,0,0,0):
+                    if surfaceVision.get_at(corner) == (0,0,0,0):
                         self.seen = 1
 
         # On vérifie si la case est couverte
-        point = Point(self.center)
-        for poly in polygonsUWB:
-            polygonUWB = Polygon(poly)
-            if polygonUWB.contains(point):
-                self.covered = 1
-            else:
-                self.covered = 0
+        if surfaceUWB.get_at(self.center) == (0, 0, 100, 64):
+            self.covered = 1
+        else:
+            self.covered = 0
 
         # On vérifie si la case contient un obstacle
         # Si la case contient un mur, ça ne vas pas changer.
-        if not self.containsWall:    
-            for bot in bots:
-                point = Point(bot.x,bot.y)
-                if self.polygon.contains(point):
-                    self.obstacle = 1
-                else:
-                    self.obstacle = 0
-
+        if not self.containsWall:
+            obstacleFound = False
+            k = 0    
+            while not obstacleFound and k < len(bots):
+                bot = bots[k]
+                if not isinstance(bot,MeasuringBot):
+                    point = Point(bot.x,bot.y)
+                    if self.polygon.contains(point):
+                        self.obstacle = 1
+                        obstacleFound = True
+                    else:
+                        self.obstacle = 0
+                k += 1
         ###
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
         # A modifier avant de faire appel à cet update donc, sinon l'état de la case ne sera pas correctement mis à jour.
@@ -163,16 +166,17 @@ class Grid():
             '1101' : (0,200,0,100)
         }
 
+
         # Initialisation du graphe 
         ############
         
         ############
 
 
-    def update(self,polygonUWB):
+    def update(self,surfaceUWB):
         for tile in self.tiles.values():
-            tile.update(self.room.surface2,polygonUWB,self.room.bots,self.color_dictionary)
+            tile.update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary)
     
     def draw(self,surface):
         for tile in self.tiles.values():
-            pygame.draw.rect(surface, tile.color, (tile.corners[0][0], tile.corners[0][1], tile.width, tile.height),width = 2)
+            pygame.draw.rect(surface, tile.color, (tile.corners[0][0], tile.corners[0][1], tile.width, tile.height),width = 1)

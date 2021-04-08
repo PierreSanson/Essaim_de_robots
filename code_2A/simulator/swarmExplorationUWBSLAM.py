@@ -172,12 +172,6 @@ class SwarmExploratorUWBSLAM():
                 self.defineConvexHulls()
                 self.updateGrid()
 
-
-                ###########
-                self.test.update(self.polygons)
-                ###########
-
-
                 target = self.findFurthestPoint()
                 if target is not None: 
                     self.mainPathIndex = 0
@@ -283,6 +277,11 @@ class SwarmExploratorUWBSLAM():
                     self.hasObj = False
                     self.moveRefPointBotsStep()
                     self.initCount = len(self.refPointBots) + 2
+
+        ###########
+        self.test.update(self.surfaceUWB)
+        ###########
+        
         
     def findClosestCell(self):
         minDist = 10000
@@ -706,7 +705,7 @@ class SwarmExploratorUWBSLAM():
                 convexHullObstacles = ConvexHull(refPointBotsPoints)
                 polygon = [refPointBotsPoints[i] for i in list(convexHullObstacles.vertices)[:]]
                 self.polygons.append(polygon)
-                #pygame.draw.polygon(self.surfaceUWB, (0, 0, 100, 64), polygon)
+                pygame.draw.polygon(self.surfaceUWB, (0, 0, 100, 64), polygon)
 
         # for coord in self.graph:
         #     if self.graph[coord] == 1:
