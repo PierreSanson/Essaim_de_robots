@@ -100,7 +100,7 @@ class SwarmExploratorUWBSLAM():
         self.refPointBotsVisible = self.refPointBots.copy()
 
         ################# TEST ##################
-        self.test = Grid(room,measurerBot,50)
+        # self.test = Grid(room,measurerBot,50)
         #########################################
 
     
@@ -273,7 +273,7 @@ class SwarmExploratorUWBSLAM():
                     self.initCount = len(self.refPointBots) + 2
 
         ###########
-        self.test.update(self.surfaceUWB,self.status)
+        # self.test.update(self.surfaceUWB,self.status)
         ###########
         
         
@@ -782,19 +782,20 @@ class SwarmExploratorUWBSLAM():
 
         for coord in self.graph:
             if self.graph[coord][-1] == 1:
-                pygame.draw.rect(self.surface, (0, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+                pygame.draw.rect(self.surfaceGrid, (0, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
             elif self.graph[coord][-1] == -1:
-                pygame.draw.rect(self.surface, (200, 0, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+                pygame.draw.rect(self.surfaceGrid, (200, 0, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
             elif self.graph[coord][-1] == 2:
-                pygame.draw.rect(self.surface, (200, 100, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+                pygame.draw.rect(self.surfaceGrid, (200, 100, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
             elif self.graph[coord][-1] == 0.5:
-                pygame.draw.rect(self.surface, (200, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+                pygame.draw.rect(self.surfaceGrid, (200, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
             elif self.graph[coord][-1] == -2:
-                pygame.draw.rect(self.surface, (200, 0, 200, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+                pygame.draw.rect(self.surfaceGrid, (200, 0, 200, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
             elif self.graph[coord][-1] == 1.5:
-                pygame.draw.rect(self.surface, (0, 200, 200, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+                pygame.draw.rect(self.surfaceGrid, (0, 200, 200, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
             else:
-                pygame.draw.rect(self.surface, (200, 200, 200, 40), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+                pygame.draw.rect(self.surfaceGrid, (200, 200, 200, 40), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+                
         for i in range(len(self.mainPath)-1):
             line = (self.mainPath[i][0], self.mainPath[i+1][0])
             if line not in self.trajectory:
@@ -811,7 +812,7 @@ class SwarmExploratorUWBSLAM():
             pygame.draw.line(self.surfaceReferenceBot, (200, 0, 200, 200),(0,int(b)), (1600,int(a*1600+b)) , 1)
 
         ############
-        self.test.draw(self.surfaceGrid) 
+        #self.test.draw(self.surfaceGrid) 
         ############   
 
 
