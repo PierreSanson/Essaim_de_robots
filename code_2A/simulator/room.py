@@ -109,7 +109,6 @@ class Room():
             wall.saveObstaclesMainCoord()
 
 
-
     def addBots(self,bots):
         self.bots += bots 
         self.objects += bots

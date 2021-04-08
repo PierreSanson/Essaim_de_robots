@@ -99,7 +99,7 @@ def find_walls_corners(table):
     return walls_corners
 
 
-def drawing_to_simulation(table,surface1,surface2):
+def drawing_to_simulation(table,surface1,surface2,surface3,surface4):
 
     robots_centers = []
     for row in range(len(table)):
@@ -147,7 +147,7 @@ def drawing_to_simulation(table,surface1,surface2):
 
     room.addBots(bots)
 
-    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface1, room, measuringBots[0], refPointBots)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface3, surface4, room, measuringBots[0], refPointBots)
 
     return room, SEUWBSLAM
 
@@ -171,13 +171,14 @@ def redrawGameWindow(room, background, control):
     # for obstacle in room.obstacles:
     #     obstacle.draw()
 
-    # mise à jour des murs
+    # mise à jour des murs vus
     room.draw_walls()
     background.blit(room.surface1, (0,0))
 
     # on ajoute à l'arrière plan tous les affichages spécifiques à la méthode de contrôle de l'essaim choisie
     control.draw()
-    background.blit(control.surface, (0,0))
+    background.blit(control.surfaceUWB, (0,0))
+    background.blit(control.surfaceGrid, (0,0))
 
     ### mise à jour de l'affichage complet
     pygame.display.flip()
@@ -191,13 +192,21 @@ def load_and_launch_simulation():
 
         sw, sh = 1600, 900
         background = pygame.display.set_mode((sw, sh))
+        # les murs et les robots
         surface1 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+        # la vision des robots
         surface2 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+        # la surface couverte par les balises UWB
+        surface3 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+        # la grille qui sert aux déplacements
+        surface4 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
 
-        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2)
+        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4)
 
         clock = pygame.time.Clock()
-        hz = 144
+        hz = 60
+
+        control = SEUWBSLAM
 
         run = True 
         while run:
@@ -212,7 +221,7 @@ def load_and_launch_simulation():
             #                   SE (exploration d'une salle connue), 
             #                   SCUWBSLAM, 
             #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère) <--- seule méthode conservée
-            control = SEUWBSLAM
+            
             control.move()
 
             ## Itération sur l'ensemble des robots pour les faire se déplacer

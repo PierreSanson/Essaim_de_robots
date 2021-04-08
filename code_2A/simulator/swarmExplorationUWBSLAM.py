@@ -12,6 +12,7 @@ from igraph import *
 from igraph.drawing import graph
 
 from utilities import *
+from grid_and_graph import Tile, Grid
 
 # à laisser en bas de la liste des import
 from shapely.geometry import Point
@@ -20,7 +21,7 @@ from shapely.ops import nearest_points
 
 
 class SwarmExploratorUWBSLAM():
-    def __init__(self, surface, room, measurerBot, refPointBots, distRefPointBots = [110, 110], initRadius=50) :
+    def __init__(self, surfaceUWB, surfaceGrid, room, measurerBot, refPointBots, distRefPointBots = [110, 110], initRadius=50) :
         self.room = room
         self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
@@ -37,7 +38,8 @@ class SwarmExploratorUWBSLAM():
         self.maxOneStepCount = (self.nbRefPointBots//2 - 2)
         self.orientation = 'right'
         self.initMeasurerPos = (self.measurerBot.x, self.measurerBot.y)
-        self.surface = surface
+        self.surfaceUWB = surfaceUWB
+        self.surfaceGrid = surfaceGrid
         self.initCount = 0
         self.theta = 2*np.pi/self.nbRefPointBots
         self.refPointBotsVisibleBots = {}
@@ -63,7 +65,6 @@ class SwarmExploratorUWBSLAM():
         self.nextRefStepIndex = 0
         self.convexHulls = []
         self.polygons = []
-
 
         initObjectives = []
         for i in range(self.nbRefPointBots):
@@ -93,6 +94,11 @@ class SwarmExploratorUWBSLAM():
             self.walls.append([[wall.x_start, wall.y_start+wall.height],[wall.x_start+wall.width, wall.y_start + wall.height]])
 
         self.refPointBotsVisible = self.refPointBots.copy()
+
+        ################# TEST ##################
+        self.test = Grid(room,measurerBot.x,measurerBot.y,50)
+        #########################################
+
     
     def initMove(self):
         refPointBotsStatus = self.checkMovingRefPointBots()
@@ -165,6 +171,13 @@ class SwarmExploratorUWBSLAM():
                 # self.convexHull = [refPointBotsPoints[i] for i in list(convexHullObstacles.vertices)[:]]
                 self.defineConvexHulls()
                 self.updateGrid()
+
+
+                ###########
+                self.test.update(self.polygons)
+                ###########
+
+
                 target = self.findFurthestPoint()
                 if target is not None: 
                     self.mainPathIndex = 0
@@ -693,33 +706,37 @@ class SwarmExploratorUWBSLAM():
                 convexHullObstacles = ConvexHull(refPointBotsPoints)
                 polygon = [refPointBotsPoints[i] for i in list(convexHullObstacles.vertices)[:]]
                 self.polygons.append(polygon)
-                pygame.draw.polygon(self.surface, (0, 0, 100, 64), polygon)
+                #pygame.draw.polygon(self.surfaceUWB, (0, 0, 100, 64), polygon)
 
-        for coord in self.graph:
-            if self.graph[coord] == 1:
-                pygame.draw.rect(self.surface, (0, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
-            elif self.graph[coord] == -1:
-                pygame.draw.rect(self.surface, (200, 0, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
-            elif self.graph[coord] == 2:
-                pygame.draw.rect(self.surface, (200, 100, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
-            elif self.graph[coord] == 0.5:
-                pygame.draw.rect(self.surface, (200, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
-            else:
-                pygame.draw.rect(self.surface, (200, 200, 200, 40), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+        # for coord in self.graph:
+        #     if self.graph[coord] == 1:
+        #         pygame.draw.rect(self.surface, (0, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+        #     elif self.graph[coord] == -1:
+        #         pygame.draw.rect(self.surface, (200, 0, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+        #     elif self.graph[coord] == 2:
+        #         pygame.draw.rect(self.surface, (200, 100, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+        #     elif self.graph[coord] == 0.5:
+        #         pygame.draw.rect(self.surface, (200, 200, 0, 100), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
+        #     else:
+        #         pygame.draw.rect(self.surface, (200, 200, 200, 40), (coord[0]-self.gridWidth//2, coord[1] -self.gridWidth//2, self.gridWidth, self.gridWidth), width = 1)
         for i in range(len(self.mainPath)-1):
             line = (self.mainPath[i][0], self.mainPath[i+1][0])
             if line not in self.trajectory:
                 self.trajectory.append(line)
         for line in self.trajectory:
-            pygame.draw.line(self.surface, (0, 0, 100, 200), line[0], line[1], 3)
+            pygame.draw.line(self.surfaceUWB, (0, 0, 100, 200), line[0], line[1], 3)
         for coord in self.explorableClustersDict:
-            pygame.draw.circle(self.surface, (200, 100, 0, 200), coord, 4)
+            pygame.draw.circle(self.surfaceUWB, (200, 100, 0, 200), coord, 4)
         for coord in self.nearestPoints:
             p1 = coord[0]
             p2 = coord[1]
             a = (p1[1]-p2[1])/(p1[0]-p2[0])
             b = p1[1]-a*p1[0]
-            pygame.draw.line(self.surface, (200, 0, 200, 200),(0,int(b)), (1600,int(a*1600+b)) , 1)
+            pygame.draw.line(self.surfaceUWB, (200, 0, 200, 200),(0,int(b)), (1600,int(a*1600+b)) , 1)
+
+        ############
+        self.test.draw(self.surfaceGrid) 
+        ############   
 
 
     def drawGraph(self):
