@@ -57,7 +57,7 @@ class Tile():
                         self.seen = 1
 
         # On vérifie si la case est couverte
-        if surfaceUWB.get_at(self.center) == (0, 0, 100, 64):
+        if surfaceUWB.get_at(self.center) == (0, 0, 200, 60): # cf fonction updateUWBcoverArea de la classe Room
             self.covered = 1
         else:
             self.covered = 0

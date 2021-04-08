@@ -14,7 +14,7 @@ class RefPointBot(Bot):
         self.message = message
         self.wallDetectionRadius = 30
 
-        self.UWBradius = 300
+        self.UWBradius = 600
 
     def show_self(self):
         print(self.message)
@@ -378,7 +378,7 @@ class RefPointBot(Bot):
         # on identifie les murs qui sont à portée du robot
         wallsInView = []
         for wall in self.room.walls:
-            if wall.visibleForBot(self):
+            if wall.visibleForBotUWB(self):
                 wallsInView.append(wall)
 
         # on identifie les obstacles (portions de mur) qui sont visibles pour le robot
@@ -391,7 +391,6 @@ class RefPointBot(Bot):
         
         # on compose toutes ces zones non visibles avec le cercle de vision du robot pour obtenir la vraie zone visible
         visibleSurface = pygame.Surface((self.room.width,self.room.height),  pygame.SRCALPHA)
-        visibleSurface.fill((0,0,0,0))
         pygame.draw.circle(visibleSurface,(0,0,20,20),(self.x,self.y),self.UWBradius) # zone bleue (transparente)
         for area in forbiddenAreas:    
             pygame.draw.polygon(visibleSurface,(0,0,0,0),area)

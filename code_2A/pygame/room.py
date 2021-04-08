@@ -62,6 +62,12 @@ class Wall():
                 return True
         return False
 
+    def visibleForBotUWB(self,bot):
+        for obstacle in self.obstacles :
+            if distObj(obstacle,bot) <= bot.UWBradius:
+                return True
+        return False
+
 
     def saveObstaclesMainCoord(self):
         # on cherche toutes les coordonnées uniques
@@ -188,18 +194,19 @@ class Room():
                         wall.obstacles_seen.append(obstacle)
     
 
-    def updateUWBcoverArea(self,surfaceUWB):
+    def updateUWBcoverArea(self):
+        temp = pygame.Surface((self.width,self.height),  pygame.SRCALPHA)
+        newSurfaceUWB = pygame.Surface((self.width,self.height),  pygame.SRCALPHA)
         for bot in self.bots:
             if isinstance(bot,RefPointBot):
                 # détection des murs et des zones visibles
                 visibleSurface = bot.UWBcover()
 
                 # affichage de la portée de chaque robot
-                surfaceUWB.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_ADD)
+                temp.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_ADD)
 
         # On ne conserve que les zones de couleur >= à (0,0,60,60)
-        newSurfaceUWB = pygame.Surface((self.width,self.height),  pygame.SRCALPHA)
-        newSurfaceUWB.fill((0,255,0,255))
-        pygame.transform.threshold(newSurfaceUWB, surfaceUWB, (0,0,255,255), set_color=(0,0,0,0), threshold=(0,0,195,195))
+        UWBcolor = (0,0,200,60)
+        pygame.transform.threshold(newSurfaceUWB, temp, (0,0,255,255), set_color = UWBcolor, threshold=(0,0,195,195),inverse_set=True)
 
         return newSurfaceUWB
