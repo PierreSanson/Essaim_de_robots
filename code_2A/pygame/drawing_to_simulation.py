@@ -159,7 +159,7 @@ def redrawGameWindow(room, background, control):
     background.fill((100,100,100))
 
     # ajout d'une surcouche transparente pour les zones déjà explorées et sombre dans les zones non explorées
-    background.blit(room.surface2, (0,0))
+    #background.blit(room.surface2, (0,0))
 
     # ajout des murs et robots au dessus de l'arrière plan
     room.surface1.fill((0,0,0,0)) # (noir) transparent
@@ -178,8 +178,8 @@ def redrawGameWindow(room, background, control):
     # on ajoute à l'arrière plan tous les affichages spécifiques à la méthode de contrôle de l'essaim choisie
     control.draw()
     background.blit(control.surfaceUWB, (0,0))
-    background.blit(control.surfaceGrid, (0,0))
-    background.blit(control.surfaceReferenceBot,(0,0))
+    #background.blit(control.surfaceGrid, (0,0))
+    #background.blit(control.surfaceReferenceBot,(0,0))
 
     ### mise à jour de l'affichage complet
     pygame.display.flip()
@@ -225,7 +225,7 @@ def load_and_launch_simulation():
 
             t = time.time()
             control.move()
-            print("duration of control.move() : ", time.time() - t)
+            #print("duration of control.move() : ", time.time() - t)
 
             run = True 
             while run:
@@ -249,10 +249,10 @@ def load_and_launch_simulation():
             
 
                 ## Prise en compte des nouvelles zones vues par les robots
-                t = time.time()
+                #t = time.time()
                 room.updateExploration(debug = False)
-                print("duration of updateExploration : ", time.time() - t)
+                #print("duration of updateExploration : ", time.time() - t)
 
-                t = time.time()
+                #t = time.time()
                 redrawGameWindow(room, background, control)      
-                print("duration of redrawGameWindow : ", time.time() - t)
+                #print("duration of redrawGameWindow : ", time.time() - t)

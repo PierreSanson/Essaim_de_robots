@@ -33,17 +33,18 @@ class Tile():
         #                                                                                                               #
         # 00-- : non vu, non couvert (UWB)                      couleur : transparent (invisible)   (0,0,0,0)           #
         # 01-- : non vu, couvert (UWB)                          couleur : blanc                     (255,255,255,100)   #
-        # 100- : vu, non couvert (UWB), pas d'obstacle          couleur : orange                    (200,100,0,100)     #
+        # 1000 : vu, non couvert (UWB), pas d'obstacle          couleur : orange                    (200,100,0,100)     #
         # 101- : vu, non couvert (UWB), obstacle                couleur : rouge                     (200,0,0,100)       #
         # 111- : vu et couvert, obstacle                        couleur : rouge                     (200,0,0,100)       #
         # 1100 : vu et couvert, pas d'obstacle, pas mesuré      couleur : jaune                     (200,200,0,100)     #
         # 1101 : vu et couvert, pas d'obstacle, mesuré          couleur : vert                      (0,200,0,100)       #
+        # 1001 : vu et plus couvert, déjà mesuré                couleur : vert                      (0,200,0,100)       #
         #                                                                                                               #
         #################################################################################################################
 
 
 
-    def update(self,surfaceVision,surfaceUWB,bots,color_dictionary,measuringBot,status):
+    def update(self,surfaceVision,surfaceUWB,bots,color_dictionary,measuringBot,oldObjective):
         
         # On vérifie si la case a été vue. Si oui, elle restera vue.
         if not self.seen:
@@ -76,12 +77,6 @@ class Tile():
                     else:
                         self.obstacle = 0
                 k += 1
-        
-        # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
-        point = Point(measuringBot.x,measuringBot.y)
-        if status == "ok" and self.polygon.contains(point):
-            self.measured = 1
-        
 
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured])
 
@@ -97,6 +92,7 @@ class Grid():
         self.tiles = {}
 
         self.measuringBot = measuringBot
+        self.oldObjective = measuringBot.objective
 
         xMeasurer = measuringBot.x
         yMeasurer = measuringBot.y
@@ -158,7 +154,7 @@ class Grid():
             '0110' : (255,255,255,100),
             '0111' : (255,255,255,100),
             '1000' : (200,100,0,100),
-            '1001' : (200,100,0,100),
+            '1001' : (0,200,0,100),
             '1010' : (200,0,0,100),
             '1011' : (200,0,0,100),
             '1110' : (200,0,0,100),
@@ -175,8 +171,15 @@ class Grid():
 
 
     def update(self,surfaceUWB,status):
+        # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
+        # Une case a été mesurée si le robot a changé d'objectif
+        if self.measuringBot.objective != self.oldObjective and self.oldObjective is not None:
+            self.tiles[tuple(self.oldObjective)].measured = 1
+
         for tile in self.tiles.values():
-            tile.update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.measuringBot,status)
+            tile.update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.measuringBot,self.oldObjective)
+
+        self.oldObjective = self.measuringBot.objective
     
     def draw(self,surface):
         for tile in self.tiles.values():
