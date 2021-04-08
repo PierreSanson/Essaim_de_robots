@@ -7,17 +7,16 @@
 # Original purpose :  A 64x64 pixel painter program made in python pygame
 ####################################################################
 
-# besoins du programme de base
-import pygame as pg
-from tkinter import *
-from tkinter import messagebox
-from tkinter.filedialog import askopenfilename, asksaveasfilename
-import sys
 
-# mes besoins
 import os
-import numpy as np
+import sys
 import pickle
+from tkinter import *
+from tkinter.filedialog import askopenfilename, asksaveasfilename
+
+import pygame as pg
+import numpy as np
+
 from clean_draw import straighten_walls, clean_walls_and_robots
 
 
@@ -62,7 +61,7 @@ class Cell(object):
         win.blit(self.subsurface, self.pos)
 
 
-class Grid(object):
+class myGrid(object):
     def __init__(self, xc, yc, csize, x, y, color=[255, 255, 255]):
         self.xCount = xc
         self.yCount = yc
@@ -73,7 +72,7 @@ class Grid(object):
         
         for row in range(self.yCount):
             self.grid.append([])
-            for column in range(self.xCount):
+            for _ in range(self.xCount): # '_' correspond ici aux colonnes, mais on utilise ce nom de variable pour montrer qu'on ne s'intéresse pas à sa valeur, par convention
                 self.grid[row].append(Cell(self.cellSize, self.color))
        
     def Draw(self, win):
@@ -91,18 +90,18 @@ class Grid(object):
 
 
 
-class Button(object):
+class myButton(object):
     active = False
     clicked = False
     rollOver = False
 
-    def __init__(self, posX, posY, width, height, color, text="Button", type=1, fontSize=25, fontColor=(0, 0, 0)):
+    def __init__(self, posX, posY, width, height, color, text="Button", buttonType=1, fontSize=25, fontColor=(0, 0, 0)):
         self.pos = [posX, posY]
         self.drawPos = self.pos.copy()
         self.width, self.height = width, height
         self.color = color
         self.text, self.fontSize, self.fontColor = text, fontSize, fontColor
-        self.type = type
+        self.buttonType = buttonType
         self.subsurface = pg.Surface((self.width, self.height))
         self.subsurface.fill(self.color)
         self.font = pg.font.SysFont(None, self.fontSize)
@@ -110,7 +109,7 @@ class Button(object):
         self.slideVal = 0
 
     def Draw(self, win, val=-1):
-        if self.type == 1:
+        if self.buttonType == 1:
             if self.rollOver and not self.clicked:
                 self.subsurface.set_alpha(255)
             else:
@@ -119,7 +118,7 @@ class Button(object):
             win.blit(self.subsurface, self.pos)
             self.subsurface.blit(self.mes, (15, self.height/3))
 
-        elif self.type == 2:
+        elif self.buttonType == 2:
             self.slideVal = Remap(-60,60,1,3,(self.pos[0]- self.drawPos[0]))
             pg.draw.rect(win, (200,200,200), (self.drawPos[0]-100, self.drawPos[1]-30, 168, 60))
             pg.draw.rect(win, (140,140,140), (self.drawPos[0]-60, self.drawPos[1]+self.height/3, 120, self.height/2))
@@ -224,6 +223,8 @@ def FileManager(var):
         name = filename[:]
         return name
 
+    return None
+
 
 def SaveFile(gridObject, filePath):
     
@@ -284,7 +285,9 @@ def OpenFile(filePath, gridObject):
         fileName = filePathList[-1]
         pg.display.set_caption("Initial configuration - " + fileName)
 
-        return(fileName)
+        return fileName
+
+    return None
 
 
 def Clean(gridObject):
@@ -292,32 +295,32 @@ def Clean(gridObject):
     colors = np.zeros((128,220))
 
     for row in range(gridObject.yCount):
-            for column in range(gridObject.xCount):
-                if gridObject.grid[row][column].color[0] == 0 and gridObject.grid[row][column].color[1] == 0 and gridObject.grid[row][column].color[2] == 0:      # 0 pour un mur (noir)
-                    colors[row][column] = 0
-                elif gridObject.grid[row][column].color[0] == 255 and gridObject.grid[row][column].color[1] == 0:  # 1 pour un mesureur (rouge) ####### on y rentre dans tous les cas pour du blanc 
-                    colors[row][column] = 1
-                elif gridObject.grid[row][column].color[1] == 255 and gridObject.grid[row][column].color[0] == 0:  # 2 pour un mesureur (vert)
-                    colors[row][column] = 2
-                elif gridObject.grid[row][column].color[2] == 255 and gridObject.grid[row][column].color[0] == 0:  # 3 pour un mesureur (bleu)
-                    colors[row][column] = 3
-                else:                                               # -1 pour rien du tout
-                    colors[row][column] = -1 
+        for column in range(gridObject.xCount):
+            if gridObject.grid[row][column].color[0] == 0 and gridObject.grid[row][column].color[1] == 0 and gridObject.grid[row][column].color[2] == 0:      # 0 pour un mur (noir)
+                colors[row][column] = 0
+            elif gridObject.grid[row][column].color[0] == 255 and gridObject.grid[row][column].color[1] == 0:  # 1 pour un mesureur (rouge) ####### on y rentre dans tous les cas pour du blanc 
+                colors[row][column] = 1
+            elif gridObject.grid[row][column].color[1] == 255 and gridObject.grid[row][column].color[0] == 0:  # 2 pour un mesureur (vert)
+                colors[row][column] = 2
+            elif gridObject.grid[row][column].color[2] == 255 and gridObject.grid[row][column].color[0] == 0:  # 3 pour un mesureur (bleu)
+                colors[row][column] = 3
+            else:                                               # -1 pour rien du tout
+                colors[row][column] = -1 
 
     colors = clean_walls_and_robots(colors)
 
     for row in range(gridObject.yCount):
-            for column in range(gridObject.xCount):
-                if colors[row][column] == 0:
-                    gridObject.change_color(row,column,[0,0,0])
-                elif colors[row][column] == 1:
-                    gridObject.change_color(row,column,[255,0,0])
-                elif colors[row][column] == 2:
-                    gridObject.change_color(row,column,[0,255,0])
-                elif colors[row][column] == 3:
-                    gridObject.change_color(row,column,[0,0,255])
-                else:
-                    gridObject.change_color(row,column,[255,255,255])     
+        for column in range(gridObject.xCount):
+            if colors[row][column] == 0:
+                gridObject.change_color(row,column,[0,0,0])
+            elif colors[row][column] == 1:
+                gridObject.change_color(row,column,[255,0,0])
+            elif colors[row][column] == 2:
+                gridObject.change_color(row,column,[0,255,0])
+            elif colors[row][column] == 3:
+                gridObject.change_color(row,column,[0,0,255])
+            else:
+                gridObject.change_color(row,column,[255,255,255])     
 
 
 def Straighten(gridObject):
@@ -325,33 +328,33 @@ def Straighten(gridObject):
     colors = np.zeros((128,220))
 
     for row in range(len(gridObject.grid)):
-            for column in range(len(gridObject.grid[row])):
-                if gridObject.grid[row][column].color[0] == 0 and gridObject.grid[row][column].color[1] == 0 and gridObject.grid[row][column].color[2] == 0:      # 0 pour un mur (noir)
-                    colors[row][column] = 0
-                elif gridObject.grid[row][column].color[0] == 255 and gridObject.grid[row][column].color[1] == 0:  # 1 pour un mesureur (rouge) ####### on y rentre dans tous les cas pour du blanc 
-                    colors[row][column] = 1
-                elif gridObject.grid[row][column].color[1] == 255 and gridObject.grid[row][column].color[0] == 0:  # 2 pour un mesureur (vert)
-                    colors[row][column] = 2
-                elif gridObject.grid[row][column].color[2] == 255 and gridObject.grid[row][column].color[0] == 0:  # 3 pour un mesureur (bleu)
-                    colors[row][column] = 3
-                else:                                               # -1 pour rien du tout
-                    colors[row][column] = -1 
+        for column in range(len(gridObject.grid[row])):
+            if gridObject.grid[row][column].color[0] == 0 and gridObject.grid[row][column].color[1] == 0 and gridObject.grid[row][column].color[2] == 0:      # 0 pour un mur (noir)
+                colors[row][column] = 0
+            elif gridObject.grid[row][column].color[0] == 255 and gridObject.grid[row][column].color[1] == 0:  # 1 pour un mesureur (rouge) ####### on y rentre dans tous les cas pour du blanc 
+                colors[row][column] = 1
+            elif gridObject.grid[row][column].color[1] == 255 and gridObject.grid[row][column].color[0] == 0:  # 2 pour un mesureur (vert)
+                colors[row][column] = 2
+            elif gridObject.grid[row][column].color[2] == 255 and gridObject.grid[row][column].color[0] == 0:  # 3 pour un mesureur (bleu)
+                colors[row][column] = 3
+            else:                                               # -1 pour rien du tout
+                colors[row][column] = -1 
 
     while not np.equal(colors,straighten_walls(colors)).all():
         colors = straighten_walls(colors)
 
     for row in range(gridObject.yCount):
-            for column in range(gridObject.xCount):
-                if colors[row][column] == 0:
-                    gridObject.change_color(row,column,[0,0,0])
-                elif colors[row][column] == 1:
-                    gridObject.change_color(row,column,[255,0,0])
-                elif colors[row][column] == 2:
-                    gridObject.change_color(row,column,[0,255,0])
-                elif colors[row][column] == 3:
-                    gridObject.change_color(row,column,[0,0,255])
-                else:
-                    gridObject.change_color(row,column,[255,255,255])    
+        for column in range(gridObject.xCount):
+            if colors[row][column] == 0:
+                gridObject.change_color(row,column,[0,0,0])
+            elif colors[row][column] == 1:
+                gridObject.change_color(row,column,[255,0,0])
+            elif colors[row][column] == 2:
+                gridObject.change_color(row,column,[0,255,0])
+            elif colors[row][column] == 3:
+                gridObject.change_color(row,column,[0,0,255])
+            else:
+                gridObject.change_color(row,column,[255,255,255])    
 
 
 def key_event_up(event, holdingCTRL, gridObject, B_Buttons, selected_tool):
@@ -405,20 +408,20 @@ def draw_initial_config():
 
     colorTitleFont = pg.font.SysFont(None, 25)
     colorTitle = colorTitleFont.render("Color Palette", True, (50,50,50))
-    g1 = Grid(220, 128, 6, 0, 0)
-    save_b = Button(20,790,85,40, (200, 200, 200), "S a v e", 1)
-    load_b = Button(120,790,85,40, (200, 200, 200), "L o a d", 1)
-    straighten_b  = Button(220,790,160,40, (200, 200, 200), "S t r a i g h t e n", 1)
-    clean_b = Button(400,790,95,40, (200, 200, 200), "C l e a n", 1)
+    g1 = myGrid(220, 128, 6, 0, 0)
+    save_b = myButton(20,790,85,40, (200, 200, 200), "S a v e", 1)
+    load_b = myButton(120,790,85,40, (200, 200, 200), "L o a d", 1)
+    straighten_b  = myButton(220,790,160,40, (200, 200, 200), "S t r a i g h t e n", 1)
+    clean_b = myButton(400,790,95,40, (200, 200, 200), "C l e a n", 1)
     SL_Buttons = [save_b, load_b, straighten_b, clean_b]
 
-    S_brushSize = Button(1450, 305, 10,20, (240,240,240), "Brush Size", 2)
-    S_eraserSize = Button(1450, 225, 10,20, (240,240,240), "Eraser Size", 2)
+    S_brushSize = myButton(1450, 305, 10,20, (240,240,240), "Brush Size", 2)
+    S_eraserSize = myButton(1450, 225, 10,20, (240,240,240), "Eraser Size", 2)
     S_buttons = [S_brushSize, S_eraserSize]
 
-    B_penTool = Button(1395, 60, 30, 30, (80,80,80), "", 1)
-    B_eraserTool = Button(1445, 60, 30, 30, (80,80,80), "", 1)
-    B_trash = Button(1420, 110, 30, 30, (80,80,80), "", 1)
+    B_penTool = myButton(1395, 60, 30, 30, (80,80,80), "", 1)
+    B_eraserTool = myButton(1445, 60, 30, 30, (80,80,80), "", 1)
+    B_trash = myButton(1420, 110, 30, 30, (80,80,80), "", 1)
     B_Buttons = [B_penTool, B_eraserTool, B_trash]
 
     fileFont = pg.font.SysFont(None, 30)
@@ -458,7 +461,7 @@ def draw_initial_config():
                     selectedTool = 1
                 elif event.button == 1:
                     if pg.mouse.get_pos()[0] < g1.xCount*g1.cellSize and pg.mouse.get_pos()[1] < g1.yCount*g1.cellSize:
-                        if selectedTool == 0 or selectedTool == 1:
+                        if selectedTool in (0,1):
                             mouseRelPosX, mouseRelPosY =  paint(selectedTool,g1,S_brushSize,S_eraserSize,colorUsing)
                             clicking = True
                     else:

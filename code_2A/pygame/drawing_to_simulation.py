@@ -1,19 +1,14 @@
-import pygame as pg
 from tkinter import *
-from tkinter import messagebox
 from tkinter.filedialog import askopenfilename
-import sys
-import numpy as np
-import pickle
 
-import bot
-import obstacle as obs
+import sys
+import pickle
+import pygame
+
 import explorerBot as eb
 import refPointBot as rpb
 import measuringBot as mb
 from room import *
-import swarmControl as sc
-import swarmExploration as se
 import swarmExplorationUWBSLAM as seUWBSLAM
 
 
@@ -36,9 +31,11 @@ def LoadFile():
         
         filePathList = filePath.split("/")
         fileName = filePathList[-1]
-        pg.display.set_caption("Simulation - " + fileName)
+        pygame.display.set_caption("Simulation - " + fileName)
 
         return colors
+    
+    return None
 
 
 def find_walls_corners(table):
@@ -56,13 +53,13 @@ def find_walls_corners(table):
             in_a_wall = False
             for r in range(len(table)):
                 
-                if potential_walls[r,:][0] == 0 and potential_walls[r,:][1] == 0 and in_a_wall == False:
+                if potential_walls[r,:][0] == 0 and potential_walls[r,:][1] == 0 and not in_a_wall:
                     in_a_wall = True
                     new_wall = [[r,c],[r,c+1]]
                     length_wall = 1
-                elif potential_walls[r,:][0] == 0 and potential_walls[r,:][1] == 0 and in_a_wall == True:
+                elif potential_walls[r,:][0] == 0 and potential_walls[r,:][1] == 0 and in_a_wall:
                     length_wall += 1
-                elif (potential_walls[r,:][0] != 0 or potential_walls[r,:][1] != 0) and in_a_wall == True:
+                elif (potential_walls[r,:][0] != 0 or potential_walls[r,:][1] != 0) and in_a_wall:
                     in_a_wall = False
                     new_wall.append([r-1,c])
                     new_wall.append([r-1,c+1])
@@ -83,13 +80,13 @@ def find_walls_corners(table):
             c = 0
             in_a_wall = False
             for c in range(len(table[0])):
-                if potential_walls[:,c][0] == 0 and potential_walls[:,c][1] == 0 and in_a_wall == False:
+                if potential_walls[:,c][0] == 0 and potential_walls[:,c][1] == 0 and not in_a_wall:
                     in_a_wall = True
                     new_wall = [[r,c],[r+1,c]]
                     length_wall = 1
-                elif potential_walls[:,c][0] == 0 and potential_walls[:,c][1] == 0 and in_a_wall == True:
+                elif potential_walls[:,c][0] == 0 and potential_walls[:,c][1] == 0 and in_a_wall:
                     length_wall += 1
-                elif (potential_walls[:,c][0] != 0 or potential_walls[:,c][1] != 0) and in_a_wall == True:
+                elif (potential_walls[:,c][0] != 0 or potential_walls[:,c][1] != 0) and in_a_wall:
                     in_a_wall = False
                     new_wall.append([r,c-1])
                     new_wall.append([r+1,c-1])
@@ -102,7 +99,7 @@ def find_walls_corners(table):
     return walls_corners
 
 
-def drawing_to_simulation(table,surface1,surface2):
+def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5):
 
     robots_centers = []
     for row in range(len(table)):
@@ -150,22 +147,16 @@ def drawing_to_simulation(table,surface1,surface2):
 
     room.addBots(bots)
 
-    # SC = sc.SwarmController(screen, measuringBots[0], refPointBots, distRefPointBots=[60,60])
-    # SE = se.RoomExplorator(room,SC)
-    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface1, room, measuringBots[0], refPointBots)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface3, surface4, surface5, room, measuringBots[0], refPointBots)
 
-    # SC.initMove()
-    SC = None
-    SE = None
-
-    return room, SC,SE,SEUWBSLAM, measuringBots, explorerBots, refPointBots
+    return room, SEUWBSLAM
 
 
 def redrawGameWindow(room, background, control):
     
     ### Composition de la scène
     # on choisit et on applique la couleur de l'arrière plan de la simulation
-    background.fill((64,64,64))
+    background.fill((100,100,100))
 
     # ajout d'une surcouche transparente pour les zones déjà explorées et sombre dans les zones non explorées
     background.blit(room.surface2, (0,0))
@@ -177,16 +168,18 @@ def redrawGameWindow(room, background, control):
         bot.draw()
 
     # affichage optionel des obtsacles :
-    # for obstacle in room.obstacles:
-    #     obstacle.draw()
+    for obstacle in room.obstacles:
+        obstacle.draw()
 
-    # mise à jour des murs
+    # mise à jour des murs vus
     room.draw_walls()
     background.blit(room.surface1, (0,0))
 
     # on ajoute à l'arrière plan tous les affichages spécifiques à la méthode de contrôle de l'essaim choisie
     control.draw()
-    background.blit(control.surface, (0,0))
+    background.blit(control.surfaceUWB, (0,0))
+    background.blit(control.surfaceGrid, (0,0))
+    background.blit(control.surfaceReferenceBot,(0,0))
 
     ### mise à jour de l'affichage complet
     pygame.display.flip()
@@ -196,37 +189,49 @@ def load_and_launch_simulation():
 
     table = LoadFile()
 
-    sw, sh = 1600, 900
-    background = pg.display.set_mode((sw, sh))
-    surface1 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
-    surface2 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+    if table is not None : # évite un crash si on ne sélectionne pas de fichier
 
-    room, SC, SE, SEUWBSLAM, measuringBots, explorerBots, refPointBots = drawing_to_simulation(table,surface1,surface2)
+        sw, sh = 1600, 900
+        background = pygame.display.set_mode((sw, sh))
+        # les murs et les robots
+        surface1 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+        # la vision des robots
+        surface2 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+        # la surface couverte par les balises UWB
+        surface3 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+        # la grille qui sert aux déplacements
+        surface4 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+        # une surface supplémentaire pour des affichages annexes
+        surface5 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
 
-    clock = pygame.time.Clock()
-    hz = 144
+        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5)
 
-    run = True 
-    while run:
-        clock.tick(hz)
-        
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False  
+        clock = pygame.time.Clock()
+        hz = 60
 
-        ## Choix du type de déplacement
-        # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
-        #                   SE (exploration d'une salle connue), 
-        #                   SCUWBSLAM, 
-        #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère)
         control = SEUWBSLAM
-        control.move()
 
-        ## Itération sur l'ensemble des robots pour les faire se déplacer
-        for bot in room.bots:
+        run = True 
+        while run:
+            clock.tick(hz)
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False  
+
+            ## Choix du type de déplacement
+            # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
+            #                   SE (exploration d'une salle connue), 
+            #                   SCUWBSLAM, 
+            #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère) <--- seule méthode conservée
+            
+            control.move()
+
+            ## Itération sur l'ensemble des robots pour les faire se déplacer
+            for bot in room.bots:
                 bot.move()
 
-        ## Prise en compte des nouvelles zones vues par les robots
-        room.updateExploration(debug = False)
+            ## Prise en compte des nouvelles zones vues par les robots
+            room.updateExploration(debug = False)
 
-        redrawGameWindow(room, background, control)      
+            redrawGameWindow(room, background, control)

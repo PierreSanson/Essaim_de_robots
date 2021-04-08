@@ -37,11 +37,10 @@ class RefPointBot(Bot):
                                     if np.linalg.norm(self.vel2D)!=0:
                                         angleCheck = signedAngle2Vects2(self.vel2D, (sol['x']-self.x, sol['y']-self.y))
                                         if abs(angleCheck)*360/np.pi < 7.5:
-                                            collision_wall = True
                                             self.wallDetectionAction()
                                             return collision
                     else:
-                        if (obj not in self.detectedObj):
+                        if obj not in self.detectedObj:
                             self.detectedObj.append(obj)
                         if distO <= 50 + obj.radius*1.5 + self.radius:
                             sols = circleLineInter(self, obj, self.vel2D)

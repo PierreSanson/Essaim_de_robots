@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# ajouts persos
+.vscode/
+settings.json
+*.pickle
+test*.py

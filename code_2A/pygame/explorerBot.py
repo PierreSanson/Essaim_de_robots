@@ -9,3 +9,4 @@ class ExplorerBot(Bot):
 
     def show_self(self):
         print(self.message)
+        
