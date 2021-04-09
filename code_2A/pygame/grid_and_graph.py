@@ -223,8 +223,7 @@ class Grid():
 
         for coord in self.tiles:
             self.tiles[coord].update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary,self.measuringBot,self.oldObjective)
-            if self.tiles[coord].has_changed:
-                self.graph[coord] = self.tiles[coord].graph_status
+            self.graph[coord] = self.tiles[coord].graph_status
 
         self.oldObjective = self.measuringBot.objective
     
@@ -289,10 +288,12 @@ class Grid():
                             self.adjacencyList[neigh].append((coord,np.sqrt(2)))
 
 
-    # def updateGraph(self):
-    #     for coord in self.graph:
-    #         if self.tiles[coord].has_changed:
-    #             self.updateNeighOneNode(coord)
+    def updateGraph(self):
+        for coord in self.graph:
+            if self.tiles[coord].has_changed:
+                self.updateNeighOneNode(coord)
+            if self.graph[coord] == -1:
+                self.removeNodeFromGraph(coord)
 
 
     def removeNodeFromGraph(self, coord):

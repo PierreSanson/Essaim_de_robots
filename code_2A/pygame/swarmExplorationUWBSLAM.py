@@ -170,14 +170,14 @@ class SwarmExploratorUWBSLAM():
             if self.initCount < self.nbRefPointBots:
                 self.initMove()
                 if self.initCount == self.nbRefPointBots:
-                    self.status = "FirstTranferRefPointBotToMeasuringBot"
+                    self.status = "FirsttransferRefPointBotToMeasuringBot"
         
         if self.status == "movingRefPointBots":
             self.moveRefPointBotsStep()
 
 
         if self.status == "movingMeasuringBot":
-            # self.grid.updateGraph()
+            self.grid.updateGraph()
 
             #tTot = time.time()
             if self.hasObj:
@@ -219,8 +219,8 @@ class SwarmExploratorUWBSLAM():
 
                 # print("duration of tTot : ", time.time() - tTot)
 
-        if self.status == "FirstTranferRefPointBotToMeasuringBot":
-            # self.grid.updateGraph()
+        if self.status == "FirsttransferRefPointBotToMeasuringBot":
+            self.grid.updateGraph()
 
             if not self.checkMovingRefPointBots()[0]:
 
@@ -243,8 +243,8 @@ class SwarmExploratorUWBSLAM():
                     self.moveRefPointBotsStep()
                     self.status = "movingRefPointBots"
 
-        if self.status == "tranferRefPointBotToMeasuringBot":
-            # self.grid.updateGraph()
+        if self.status == "transferRefPointBotToMeasuringBot":
+            self.grid.updateGraph()
 
             if not self.checkMovingRefPointBots()[0]:
                 #self.updatePolygon()
@@ -376,16 +376,18 @@ class SwarmExploratorUWBSLAM():
 
     def findLeastUsefulBots(self):
         self.defineConvexHulls()
-        polygons = []
+        self.polygons = []
+        polygonsBot = []
         for hull in self.convexHulls:
             if len(hull)>=3:
                 refPointBotsPoints = list(chain.from_iterable([[[self.refPointBots[keyBot].x, self.refPointBots[keyBot].y, keyBot]] for keyBot in hull]))
                 coordList = [refPointBotsPoints[i][:2] for i in range(len(refPointBotsPoints))]
                 convexHullObstacles = ConvexHull(coordList)
                 polygon = [(coordList[i],refPointBotsPoints[i][2]) for i in list(convexHullObstacles.vertices)[:]]
-                polygons.append(polygon)
+                self.polygons.append(coordList)
+                polygonsBot.append(polygon)
         leastUseful = (np.pi,0)
-        for polygon in polygons:
+        for polygon in polygonsBot:
             for i in range(len(polygon)):
                 selfCoord, selfKey = polygon[i]
                 v1 = polygon[(i-1)%(len(polygon))][0]
@@ -402,7 +404,7 @@ class SwarmExploratorUWBSLAM():
         if not self.checkMovingRefPointBots()[0] and not self.checkMovingMeasurerBot():
             key = self.findLeastUsefulBots()
             for bot in self.refPointBots:
-                bot.color = (0, 0, 255)
+                self.refPointBots[bot].color = (0, 0, 255)
             self.refPointBots[key].color = (150, 0, 255)
             if self.nextRefStepIndex == 0:
                 #self.defineConvexHulls()
@@ -434,7 +436,7 @@ class SwarmExploratorUWBSLAM():
                 if distObjList(self.refPointBots[self.nextRefStepGoal[0]], self.nextRefStepGoal[1]) < 3:
                     self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoals[self.nextRefStepGoal[1]])
                     self.nextRefStepIndex = 0
-                    self.status = "tranferRefPointBotToMeasuringBot"
+                    self.status = "transferRefPointBotToMeasuringBot"
                 else:
                     self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoal[1])
     
