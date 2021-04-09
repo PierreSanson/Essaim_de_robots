@@ -165,6 +165,7 @@ class SwarmExploratorUWBSLAM():
         #tMove = time.time()
         #print("########### duration of step : ", tMove - self.time)
         #self.time = tMove
+
         if self.status == "init":
             if self.initCount < self.nbRefPointBots:
                 self.initMove()
@@ -182,15 +183,9 @@ class SwarmExploratorUWBSLAM():
             if self.hasObj:
                 step = self.goToObj()
                 if step == "end":
-                    # t = time.time()
-                    # self.updatePolygon()
-                    # print("duration of updatePolygon : ", time.time() - t)
-                    # t = time.time()
-                    # self.defineConvexHulls()
-                    # print("duration of defineConvexHulls : ", time.time() - t)
-                    
+
                     target = self.findClosestCell()
-                    print(target)
+
                     if target is not None: 
                         self.mainPathIndex = 0
                         source = self.lastObj
@@ -201,10 +196,9 @@ class SwarmExploratorUWBSLAM():
                         self.moveRefPointBotsStep()
                         self.status = "movingRefPointBots"
                 elif step == "changedObj":
-                    #self.updatePolygon()
-                    #self.defineConvexHulls()
                     
                     target = self.findClosestCell()
+
                     if target is not None: 
                         source = self.mainPath[self.mainPathIndex-1][0]
                         self.mainPathIndex = 0
@@ -216,15 +210,14 @@ class SwarmExploratorUWBSLAM():
                         self.status = "movingRefPointBots"
 
                 elif step == "changed":
-                    #self.updatePolygon()
-                    #self.defineConvexHulls()
-                    
+
                     target = self.lastObj
                     source = self.mainPath[self.mainPathIndex-1][0]
                     self.mainPathIndex = 0
                     weight, self.mainPath = (self.djikstra(source, target))
                     self.addWeigthToPath()
-                #print("duration of tTot : ", time.time() - tTot)
+
+                # print("duration of tTot : ", time.time() - tTot)
 
         if self.status == "FirstTranferRefPointBotToMeasuringBot":
             # self.grid.updateGraph()
@@ -270,8 +263,7 @@ class SwarmExploratorUWBSLAM():
                     self.hasObj = False
                     self.moveRefPointBotsStep()
                     self.status = "movingRefPointBots"
-                    self.initCount = len(self.refPointBots) + 2
-        
+                    self.initCount = len(self.refPointBots) + 2   
 
         #print("########### duration of move : ", time.time()- tMove)
 
@@ -382,8 +374,36 @@ class SwarmExploratorUWBSLAM():
         return "ok"
 
 
+    def findLeastUsefulBots(self):
+        self.defineConvexHulls()
+        polygons = []
+        for hull in self.convexHulls:
+            if len(hull)>=3:
+                refPointBotsPoints = list(chain.from_iterable([[[self.refPointBots[keyBot].x, self.refPointBots[keyBot].y, keyBot]] for keyBot in hull]))
+                coordList = [refPointBotsPoints[i][:2] for i in range(len(refPointBotsPoints))]
+                convexHullObstacles = ConvexHull(coordList)
+                polygon = [(coordList[i],refPointBotsPoints[i][2]) for i in list(convexHullObstacles.vertices)[:]]
+                polygons.append(polygon)
+        leastUseful = (np.pi,0)
+        for polygon in polygons:
+            for i in range(len(polygon)):
+                selfCoord, selfKey = polygon[i]
+                v1 = polygon[(i-1)%(len(polygon))][0]
+                v2 = polygon[(i+1)%(len(polygon))][0]
+                vect1 = (v1[0]-selfCoord[0], v1[1] - selfCoord[1])
+                vect2 = (v2[0]-selfCoord[0], v2[1] - selfCoord[1])
+                theta = signedAngle2Vects2(vect1, vect2)
+                if abs(abs(theta)-np.pi) < leastUseful[0]:
+                    leastUseful = (abs(abs(theta)-np.pi), selfKey)
+        return leastUseful[1]
+
+
     def moveRefPointBotsStep(self):
         if not self.checkMovingRefPointBots()[0] and not self.checkMovingMeasurerBot():
+            key = self.findLeastUsefulBots()
+            for bot in self.refPointBots:
+                bot.color = (0, 0, 255)
+            self.refPointBots[key].color = (150, 0, 255)
             if self.nextRefStepIndex == 0:
                 #self.defineConvexHulls()
                 self.explorableClusters = []
@@ -406,6 +426,7 @@ class SwarmExploratorUWBSLAM():
                         if dist < mindist : 
                             mindist = dist
                             minBot = bot
+                    minBot = key
                     self.nextRefStepGoal = [minBot, nextGoal]
                     self.refPointBots[minBot].defineObjective(nextGoal)
                     self.nextRefStepIndex += 1
@@ -489,8 +510,37 @@ class SwarmExploratorUWBSLAM():
         coordsNeighbours = [coordLeft, coordRight, coordTop,coordBottom, coordTopLeft, coordTopRight, coordBottomRight, coordBottomLeft]
 
         return coordsNeighbours
-     
-                            
+
+      
+    def defineConvexHulls(self):
+        for key in self.refPointBots:
+            self.check3RefPointBotsAvailable(key)
+        convexHulls = []
+        changed  = True
+        while changed:
+            changed = False
+            for key in self.refPointBotsVisibleBots:
+                noHullVisible = True
+                for hull in convexHulls:
+                    if key in hull:
+                        noHullVisible = False
+                    else:
+                        hullVisible=True 
+                        for bot in hull:
+                            if bot not in self.refPointBotsVisibleBots[key]:
+                                hullVisible=False
+                                break
+                        if hullVisible:
+                            hull.append(key)
+                            noHullVisible = False
+                            changed = True
+                if noHullVisible:
+                    convexHulls.append([key])
+                    changed = True
+
+        self.convexHulls = convexHulls
+    
+   
     def draw(self):
         # on réinitialise les surfaces
         self.surfaceUWB.fill((0,0,0,0))

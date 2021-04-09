@@ -223,8 +223,9 @@ def load_and_launch_simulation():
                 if event.type == pygame.QUIT:
                     run = False  
 
-            t = time.time()
+            # t = time.time()
             control.move()
+
             #print("duration of control.move() : ", time.time() - t)
 
             run = True 
@@ -256,3 +257,4 @@ def load_and_launch_simulation():
                 #t = time.time()
                 redrawGameWindow(room, background, control)      
                 #print("duration of redrawGameWindow : ", time.time() - t)
+
