@@ -225,7 +225,8 @@ def load_and_launch_simulation():
 
             # t = time.time()
             control.move()
-            # print("duration of control.move() : ", time.time() - t)
+
+            #print("duration of control.move() : ", time.time() - t)
 
             run = True 
             while run:
@@ -249,10 +250,11 @@ def load_and_launch_simulation():
             
 
                 ## Prise en compte des nouvelles zones vues par les robots
-                # t = time.time()
+                #t = time.time()
                 room.updateExploration(debug = False)
-                # print("duration of updateExploration : ", time.time() - t)
+                #print("duration of updateExploration : ", time.time() - t)
 
-                # t = time.time()
+                #t = time.time()
                 redrawGameWindow(room, background, control)      
-                # print("duration of redrawGameWindow : ", time.time() - t)
+                #print("duration of redrawGameWindow : ", time.time() - t)
+

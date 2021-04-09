@@ -1,6 +1,7 @@
 import pygame
 
 import obstacle as obs
+from refPointBot import RefPointBot
 from utilities import distObj, placeObstaclesOnLine
 
 
@@ -58,6 +59,12 @@ class Wall():
     def visibleForBot(self,bot):
         for obstacle in self.obstacles :
             if distObj(obstacle,bot) <= bot.radiusDetection:
+                return True
+        return False
+
+    def visibleForBotUWB(self,bot):
+        for obstacle in self.obstacles :
+            if distObj(obstacle,bot) <= bot.UWBradius:
                 return True
         return False
 
@@ -184,4 +191,22 @@ class Room():
             for wall in wallsInView:
                 for obstacle in obstaclesInView[wall]:
                     if obstacle not in wall.obstacles_seen :
-                        wall.obstacles_seen.append(obstacle)       
+                        wall.obstacles_seen.append(obstacle)
+    
+
+    def updateUWBcoverArea(self):
+        temp = pygame.Surface((self.width,self.height),  pygame.SRCALPHA)
+        newSurfaceUWB = pygame.Surface((self.width,self.height),  pygame.SRCALPHA)
+        for bot in self.bots:
+            if isinstance(bot,RefPointBot):
+                # détection des murs et des zones visibles
+                visibleSurface = bot.UWBcover()
+
+                # affichage de la portée de chaque robot
+                temp.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_ADD)
+
+        # On ne conserve que les zones de couleur >= à (0,0,60,60)
+        UWBcolor = (0,0,200,60)
+        pygame.transform.threshold(newSurfaceUWB, temp, (0,0,255,255), set_color = UWBcolor, threshold=(0,0,195,195),inverse_set=True)
+
+        return newSurfaceUWB
