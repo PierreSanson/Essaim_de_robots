@@ -27,9 +27,11 @@ class Tile():
         self.measured = 0
 
         self.containsWall = 0
+        self.has_changed = False
 
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured]) # on stocke l'état sous la forme d'une châine de caractères
         self.color = (0,0,0,0) # transparent
+        self.graph_status = 0
 
         #################################################################################################################
         # CATALOGUE DES ETATS #                                                                                         #
@@ -48,8 +50,10 @@ class Tile():
 
 
 
-    def update(self,surfaceVision,surfaceUWB,bots,color_dictionary,measuringBot,oldObjective):
+    def update(self,surfaceVision,surfaceUWB,bots,color_dictionary,graph_status_dictionary,measuringBot,oldObjective):
         
+        oldState = self.state
+
         # On vérifie si la case a été vue. Si oui, elle restera vue.
         if not self.seen:
             if surfaceVision.get_at(self.center) == (0,0,0,0):
@@ -83,9 +87,12 @@ class Tile():
                 k += 1
 
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured])
+        if self.state != oldState:
+            self.has_changed = True
 
         # mise à jour de la couleur
         self.color = color_dictionary[self.state]
+        self.graph_status = graph_status_dictionary[self.state]
 
 
 
@@ -147,9 +154,6 @@ class Grid():
 
             i += 1
 
-        # Initialisation de tous les liens dans le graphe
-        self.createGraph()
-
         
         # On cherche toutes les cases qui contiennent un mur
         obstacles = self.room.obstacles
@@ -174,34 +178,34 @@ class Grid():
             '0101' : (255,255,255,100),
             '0110' : (255,255,255,100),
             '0111' : (255,255,255,100),
-            '1000' : (200,100,0,100),
-            '1001' : (0,200,0,100),
-            '1010' : (200,0,0,100),
-            '1011' : (200,0,0,100),
-            '1110' : (200,0,0,100),
-            '1111' : (200,0,0,100),
-            '1100' : (200,200,0,100),
-            '1101' : (0,200,0,100)
+            '1000' : (200,100,0,200),
+            '1001' : (0,200,0,200),
+            '1010' : (200,0,0,200),
+            '1011' : (200,0,0,200),
+            '1110' : (200,0,0,200),
+            '1111' : (200,0,0,200),
+            '1100' : (200,200,0,200),
+            '1101' : (0,200,0,200)
         }
 
         # Dictionnaire des couleurs des cases en fonction des états
         self.graph_status_dictionary = {
-            '0000' : (0,0,0,0),
-            '0001' : (0,0,0,0),
-            '0010' : (0,0,0,0),
-            '0011' : (0,0,0,0),
-            '0100' : (255,255,255,100),
-            '0101' : (255,255,255,100),
-            '0110' : (255,255,255,100),
-            '0111' : (255,255,255,100),
-            '1000' : (200,100,0,100),
-            '1001' : (0,200,0,100),
-            '1010' : (200,0,0,100),
-            '1011' : (200,0,0,100),
-            '1110' : (200,0,0,100),
-            '1111' : (200,0,0,100),
-            '1100' : (200,200,0,100),
-            '1101' : (0,200,0,100)
+            '0000' : 0,
+            '0001' : 0,
+            '0010' : 0,
+            '0011' : 0,
+            '0100' : 0,
+            '0101' : 0,
+            '0110' : 0,
+            '0111' : 0,
+            '1000' : 2,
+            '1001' : 1,
+            '1010' : -1,
+            '1011' : -1,
+            '1110' : -1,
+            '1111' : -1,
+            '1100' : 0.5,
+            '1101' : 1
         }
 
 
@@ -210,11 +214,17 @@ class Grid():
     def update(self,surfaceUWB,status):
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
         # Une case a été mesurée si le robot a changé d'objectif
-        if self.measuringBot.objective != self.oldObjective and self.oldObjective is not None:
-            self.tiles[tuple(self.oldObjective)].measured = 1
 
-        for tile in self.tiles.values():
-            tile.update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.measuringBot,self.oldObjective)
+        #################
+        # if self.measuringBot.objective != self.oldObjective and self.oldObjective is not None:
+        #     self.tiles[tuple(self.oldObjective)].measured = 1
+        if self.measuringBot.objective != None:
+            self.tiles[tuple(self.measuringBot.objective)].measured = 1
+
+        for coord in self.tiles:
+            self.tiles[coord].update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary,self.measuringBot,self.oldObjective)
+            if self.tiles[coord].has_changed:
+                self.graph[coord] = self.tiles[coord].graph_status
 
         self.oldObjective = self.measuringBot.objective
     
@@ -261,6 +271,7 @@ class Grid():
                     else:
                         if coord not in self.adjacencyList[neigh]:
                             self.adjacencyList[neigh].append((coord,1))
+
         for neigh in coordsDiag:
             if neigh in self.graph:
                 if self.graph[neigh] == 0.5 or self.graph[neigh] == 1:
@@ -278,29 +289,20 @@ class Grid():
                             self.adjacencyList[neigh].append((coord,np.sqrt(2)))
 
 
-    def createGraph(self):
-        for coord in self.graph:
-            self.updateNeighOneNode(coord)
+    # def updateGraph(self):
+    #     for coord in self.graph:
+    #         if self.tiles[coord].has_changed:
+    #             self.updateNeighOneNode(coord)
+
 
     def removeNodeFromGraph(self, coord):
         self.adjacencyList[coord] = []
-        neighbours = self.getNeighbours(coord)
+        coordsStraight,coordsDiag = self.getNeighbours(coord)
+        neighbours = coordsStraight + coordsDiag
         for neigh in neighbours:
             if neigh in self.adjacencyList:
                 if coord in self.adjacencyList[neigh]:
                     self.adjacencyList[neigh].remove(coord)
-
-        del self.graph[coord]
-
-
-    # updates status of all nodes
-    def updateNodesStatus(self):
-        for coord in self.graph:
-            if self.tiles[coord].containsWall == 1:
-                self.removeNodeFromGraph(coord)
-            else:
-                status = self.tiles[coord].graph_status
-                self.graph[coord] = status
 
 
     def drawGraph(self):
@@ -315,3 +317,4 @@ class Grid():
 
         layout = g.layout("fr")
         plot(g, layout = layout)
+        

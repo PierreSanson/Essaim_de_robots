@@ -1,5 +1,4 @@
 from itertools import chain
-import colorsys
 from heapq import *
 from token import SEMI
 import random
@@ -39,8 +38,6 @@ class SwarmExploratorUWBSLAM():
 
         self.theta = 2*np.pi/self.nbRefPointBots
         self.refPointBotsVisibleBots = {}
-        HSV_tuples = [(x*1.0/self.nbRefPointBots, 0.5, 0.5) for x in range(self.nbRefPointBots)]
-        self.RGB_tuples = list(map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples))
         self.walls = []
         
         self.hasObj = False
@@ -95,9 +92,9 @@ class SwarmExploratorUWBSLAM():
 
         self.refPointBotsVisible = self.refPointBots.copy()
 
-        ################# TEST ##################
+
         self.grid = Grid(self.room,self.measurerBot)
-        #########################################
+
 
     
     # Initial move of the refPointBots
@@ -158,22 +155,13 @@ class SwarmExploratorUWBSLAM():
             
         return True
 
-################################################
 
-    # update the polygons of visibility between the refPointBots        ######### obsolète
-    # def updatePolygon(self):
-    #     self.refPointBotsVisible = {}
-    #     for key in self.refPointBots:
-    #         if self.check3RefPointBotsAvailable(key):
-    #             self.refPointBotsVisible[key] = self.refPointBots[key]
 
     # principal move function
     def move(self):
 
         self.grid.update(self.surfaceUWB,self.status)
-        self.grid.updateNodesStatus()
 
-        # self.createGrid()
         #tMove = time.time()
         #print("########### duration of step : ", tMove - self.time)
         #self.time = tMove
@@ -188,6 +176,8 @@ class SwarmExploratorUWBSLAM():
 
 
         if self.status == "movingMeasuringBot":
+            # self.grid.updateGraph()
+
             #tTot = time.time()
             if self.hasObj:
                 step = self.goToObj()
@@ -199,7 +189,8 @@ class SwarmExploratorUWBSLAM():
                     # self.defineConvexHulls()
                     # print("duration of defineConvexHulls : ", time.time() - t)
                     
-                    target = self.findFurthestPoint()
+                    target = self.findClosestCell()
+                    print(target)
                     if target is not None: 
                         self.mainPathIndex = 0
                         source = self.lastObj
@@ -213,7 +204,7 @@ class SwarmExploratorUWBSLAM():
                     #self.updatePolygon()
                     #self.defineConvexHulls()
                     
-                    target = self.findFurthestPoint()
+                    target = self.findClosestCell()
                     if target is not None: 
                         source = self.mainPath[self.mainPathIndex-1][0]
                         self.mainPathIndex = 0
@@ -236,6 +227,8 @@ class SwarmExploratorUWBSLAM():
                 #print("duration of tTot : ", time.time() - tTot)
 
         if self.status == "FirstTranferRefPointBotToMeasuringBot":
+            # self.grid.updateGraph()
+
             if not self.checkMovingRefPointBots()[0]:
 
                 #self.updatePolygon()
@@ -245,7 +238,7 @@ class SwarmExploratorUWBSLAM():
 
                 # self.drawGraph() # à commenter ou non pour afficher le graphe
 
-                target = self.findFurthestPoint()
+                target = self.findClosestCell()
                 if target is not None:
                     source = (self.grid.origin[0], self.grid.origin[1])
                     weight, self.mainPath = (self.djikstra(source, target))
@@ -258,11 +251,13 @@ class SwarmExploratorUWBSLAM():
                     self.status = "movingRefPointBots"
 
         if self.status == "tranferRefPointBotToMeasuringBot":
+            # self.grid.updateGraph()
+
             if not self.checkMovingRefPointBots()[0]:
                 #self.updatePolygon()
                 #self.defineConvexHulls()
                 
-                target = self.findFurthestPoint()
+                target = self.findClosestCell()
                 if target is not None:
                     self.mainPathIndex = 0
                     source = self.lastObj
@@ -277,7 +272,7 @@ class SwarmExploratorUWBSLAM():
                     self.status = "movingRefPointBots"
                     self.initCount = len(self.refPointBots) + 2
         
-        
+
         #print("########### duration of move : ", time.time()- tMove)
 
     # find closest cell to define as objective for Djikstra    
@@ -285,7 +280,7 @@ class SwarmExploratorUWBSLAM():
         minDist = 10000
         minCoord = None
         for coord in self.grid.graph:
-            if self.grid.graph[coord][-1] == 1:
+            if self.grid.graph[coord] == 0.5:
                 dist = distObjList(self.measurerBot, coord)
                 if dist < minDist:
                     minDist = dist
@@ -295,7 +290,7 @@ class SwarmExploratorUWBSLAM():
     # add status of all the cells in the paths as info for dynamic Djikstra
     def addWeigthToPath(self):
         for i in range(len(self.mainPath)):
-            self.mainPath[i] = [self.mainPath[i], self.grid.graph[self.mainPath[i]][-1]]
+            self.mainPath[i] = [self.mainPath[i], self.grid.graph[self.mainPath[i]]]
 
    
 
@@ -313,10 +308,10 @@ class SwarmExploratorUWBSLAM():
                         x, y = obj
                         self.measurerBot.x, self.measurerBot.y = obj
                     else:
-                        self.measurerBot.defineObjective(obj)
+                        self.measurerBot.defineObjective(obj)               
 
-                    if self.grid.graph[obj][-1] != 1:
-                        self.grid.graph[obj].append(1)
+                    if self.grid.graph[obj] != 1:
+                        self.grid.graph[obj] = 1
                     # self.grid.updateNeighOneNode(obj)
                     x, y = obj
                     # self.checkNeighbours((x,y))
@@ -326,16 +321,17 @@ class SwarmExploratorUWBSLAM():
         return "end"
 
 
-    def findFurthestPoint(self):
-        maxDist = 10000
+    def findFurthestCell(self):
+        maxDist = 0
         maxCoord = None
+
         for coord in self.grid.graph:
-            # if self.grid.graph[coord] == 0 or self.grid.graph[coord] == 0.5:
-            if self.grid.graph[coord][-1] == 0.5:
+            if self.grid.graph[coord] == 0.5:
                 dist = distLists(self.lastObj, coord)
-                if  dist < maxDist:
+                if  dist > maxDist:
                     maxDist = dist
                     maxCoord = coord
+
         return maxCoord
 
 
@@ -377,7 +373,7 @@ class SwarmExploratorUWBSLAM():
     def checkPathUpdates(self, index):
         for element in self.mainPath[index:]:
             coord, weight = element[0], element[1]
-            if self.grid.graph[coord][-1] == -1:
+            if self.grid.graph[coord] == -1:
                 if coord == self.lastObj:
                     return "changedObj"
                 else:
@@ -424,7 +420,7 @@ class SwarmExploratorUWBSLAM():
 
     def detectExplorablePart(self):
         for coord in self.grid.graph:  
-            if self.grid.graph[coord][-1] == 2:
+            if self.grid.graph[coord] == 2:
                 neighbours = self.getNeighbours(coord)
                 neighInCluster = False
                 for neigh in neighbours:
