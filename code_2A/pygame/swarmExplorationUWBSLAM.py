@@ -179,7 +179,6 @@ class SwarmExploratorUWBSLAM():
 
 
         if self.status == "movingMeasuringBot":
-            # self.grid.updateGraph()
 
             #tTot = time.time()
             if self.hasObj:
@@ -224,7 +223,6 @@ class SwarmExploratorUWBSLAM():
                 # print("duration of tTot : ", time.time() - tTot)
 
         if self.status == "FirsttransferRefPointBotToMeasuringBot":
-            # self.grid.updateGraph()
 
             if not self.checkMovingRefPointBots()[0]:
 
@@ -249,7 +247,6 @@ class SwarmExploratorUWBSLAM():
                     self.status = "movingRefPointBots"
 
         if self.status == "transferRefPointBotToMeasuringBot":
-            
 
             if not self.checkMovingRefPointBots()[0]:
                 
@@ -315,9 +312,8 @@ class SwarmExploratorUWBSLAM():
 
                     if self.grid.graph[obj] != 1:
                         self.grid.graph[obj] = 1
-                    # self.grid.updateNeighOneNode(obj)
+                    
                     x, y = obj
-                    # self.checkNeighbours((x,y))
                     self.mainPathIndex +=1
                 return status
             return "moving"

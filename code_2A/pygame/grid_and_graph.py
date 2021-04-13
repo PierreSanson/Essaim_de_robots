@@ -51,6 +51,7 @@ class Tile():
 
 
     def update(self,surfaceVision,surfaceUWB,bots,color_dictionary,graph_status_dictionary):
+
         self.has_changed = False
         oldState = self.state
 
@@ -227,6 +228,7 @@ class Grid():
                 self.updateNeighOneNode(coord)
             if self.graph[coord] == -1:
                 self.removeNodeFromGraph(coord)
+
     
     def draw(self,surface):
         for tile in self.tiles.values():
@@ -286,15 +288,7 @@ class Grid():
                         self.adjacencyList[neigh] = [(coord,np.sqrt(2))]
                     else:
                         if coord not in self.adjacencyList[neigh]:
-                            self.adjacencyList[neigh].append((coord,np.sqrt(2)))
-
-
-    def updateGraph(self):
-        for coord in self.graph:
-            if self.tiles[coord].has_changed:
-                self.updateNeighOneNode(coord)
-            if self.graph[coord] == -1:
-                self.removeNodeFromGraph(coord)
+                            self.adjacencyList[neigh].append((coord,np.sqrt(2)))           
 
 
     def removeNodeFromGraph(self, coord):
