@@ -50,8 +50,9 @@ class Tile():
 
 
 
-    def update(self,surfaceVision,surfaceUWB,bots,color_dictionary,graph_status_dictionary,measuringBot,oldObjective):
+    def update(self,surfaceVision,surfaceUWB,bots,color_dictionary,graph_status_dictionary):
         
+        self.has_changed = False
         oldState = self.state
 
         # On vérifie si la case a été vue. Si oui, elle restera vue.
@@ -222,10 +223,13 @@ class Grid():
             self.tiles[tuple(self.measuringBot.objective)].measured = 1
 
         for coord in self.tiles:
-            self.tiles[coord].update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary,self.measuringBot,self.oldObjective)
+            self.tiles[coord].update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary)
             self.graph[coord] = self.tiles[coord].graph_status
+            if self.tiles[coord].has_changed:
+                self.updateNeighOneNode(coord)
+            if self.graph[coord] == -1:
+                self.removeNodeFromGraph(coord)
 
-        self.oldObjective = self.measuringBot.objective
     
     def draw(self,surface):
         for tile in self.tiles.values():
@@ -285,15 +289,7 @@ class Grid():
                         self.adjacencyList[neigh] = [(coord,np.sqrt(2))]
                     else:
                         if coord not in self.adjacencyList[neigh]:
-                            self.adjacencyList[neigh].append((coord,np.sqrt(2)))
-
-
-    def updateGraph(self):
-        for coord in self.graph:
-            if self.tiles[coord].has_changed:
-                self.updateNeighOneNode(coord)
-            if self.graph[coord] == -1:
-                self.removeNodeFromGraph(coord)
+                            self.adjacencyList[neigh].append((coord,np.sqrt(2)))           
 
 
     def removeNodeFromGraph(self, coord):
