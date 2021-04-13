@@ -50,8 +50,8 @@ class Tile():
 
 
 
-    def update(self,surfaceVision,surfaceUWB,bots,color_dictionary,graph_status_dictionary,measuringBot,oldObjective):
-        
+    def update(self,surfaceVision,surfaceUWB,bots,color_dictionary,graph_status_dictionary):
+        self.has_changed = False
         oldState = self.state
 
         # On vérifie si la case a été vue. Si oui, elle restera vue.
@@ -214,7 +214,6 @@ class Grid():
     def update(self,surfaceUWB,status):
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
         # Une case a été mesurée si le robot a changé d'objectif
-
         #################
         # if self.measuringBot.objective != self.oldObjective and self.oldObjective is not None:
         #     self.tiles[tuple(self.oldObjective)].measured = 1
@@ -222,10 +221,12 @@ class Grid():
             self.tiles[tuple(self.measuringBot.objective)].measured = 1
 
         for coord in self.tiles:
-            self.tiles[coord].update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary,self.measuringBot,self.oldObjective)
+            self.tiles[coord].update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary)
             self.graph[coord] = self.tiles[coord].graph_status
-
-        self.oldObjective = self.measuringBot.objective
+            if self.tiles[coord].has_changed:
+                self.updateNeighOneNode(coord)
+            if self.graph[coord] == -1:
+                self.removeNodeFromGraph(coord)
     
     def draw(self,surface):
         for tile in self.tiles.values():
