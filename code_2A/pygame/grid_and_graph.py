@@ -51,7 +51,7 @@ class Tile():
 
 
     def update(self,surfaceVision,surfaceUWB,bots,color_dictionary,graph_status_dictionary):
-        
+
         self.has_changed = False
         oldState = self.state
 
@@ -215,7 +215,6 @@ class Grid():
     def update(self,surfaceUWB,status):
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
         # Une case a été mesurée si le robot a changé d'objectif
-
         #################
         # if self.measuringBot.objective != self.oldObjective and self.oldObjective is not None:
         #     self.tiles[tuple(self.oldObjective)].measured = 1

@@ -172,11 +172,15 @@ def redrawGameWindow(room, background, control):
     #     obstacle.draw()
 
     # mise à jour des murs vus
+    t= time.time()
     room.draw_walls()
+    print("duration of draw_walls : ", time.time() - t)
     background.blit(room.surface1, (0,0))
 
     # on ajoute à l'arrière plan tous les affichages spécifiques à la méthode de contrôle de l'essaim choisie
+    t= time.time()
     control.draw()
+    print("duration of control.draw : ", time.time() - t)
     background.blit(control.surfaceUWB, (0,0))
     background.blit(control.surfaceGrid, (0,0))
     background.blit(control.surfaceReferenceBot,(0,0))
@@ -223,38 +227,31 @@ def load_and_launch_simulation():
                 if event.type == pygame.QUIT:
                     run = False  
 
+            ## Choix du type de déplacement
+            # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
+            #                   SE (exploration d'une salle connue), 
+            #                   SCUWBSLAM, 
+            #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère) <--- seule méthode conservée
             # t = time.time()
             control.move()
+            # print("duration of control.move() : ", time.time() - t)
+            ## Itération sur l'ensemble des robots pour les faire se déplacer
+            for bot in room.bots:
+                bot.move()
+        
 
-            #print("duration of control.move() : ", time.time() - t)
+            ## Prise en compte des nouvelles zones vues par les robots
+            # t = time.time()
+            bots = None
+            movingRefPointBots = control.checkMovingRefPointBots()
+            if movingRefPointBots[0]:
+                bots = [control.refPointBots[movingRefPointBots[1]]]
+            elif control.checkMovingMeasurerBot():
+                bots = [control.measurerBot]
+            room.updateExploration(debug = False, bots=bots)
+            # print("duration of updateExploration : ", time.time() - t)
 
-            run = True 
-            while run:
-                clock.tick(hz)
-                
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        run = False  
-
-                ## Choix du type de déplacement
-                # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
-                #                   SE (exploration d'une salle connue), 
-                #                   SCUWBSLAM, 
-                #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère) <--- seule méthode conservée
-                
-                control.move()
-
-                ## Itération sur l'ensemble des robots pour les faire se déplacer
-                for bot in room.bots:
-                    bot.move()
-            
-
-                ## Prise en compte des nouvelles zones vues par les robots
-                #t = time.time()
-                room.updateExploration(debug = False)
-                #print("duration of updateExploration : ", time.time() - t)
-
-                #t = time.time()
-                redrawGameWindow(room, background, control)      
-                #print("duration of redrawGameWindow : ", time.time() - t)
+            # t = time.time()
+            redrawGameWindow(room, background, control)      
+            # print("duration of redrawGameWindow : ", time.time() - t)
 

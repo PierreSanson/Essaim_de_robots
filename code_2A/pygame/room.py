@@ -173,25 +173,40 @@ class Room():
         return obstacles
 
 
-    def updateExploration(self,debug):
+    def updateExploration(self,debug, bots = None):
         if debug:
             # debugging, pour afficher la vision des robots seulement à l'instant t
             self.surface2.fill((0,0,0,200))
-            
-        for bot in self.bots:
-            # détection des murs et des zones visibles
-            wallsInView, obstaclesInView, visibleSurface = bot.vision(debug)
+        if bots is not None:
+            for bot in bots:
+                # détection des murs et des zones visibles
+                wallsInView, obstaclesInView, visibleSurface = bot.vision(debug)
 
-            # affichage de la vision
-            if debug:    
-                self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MAX)
-            else:
-                self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MIN)
+                # affichage de la vision
+                if debug:    
+                    self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MAX)
+                else:
+                    self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MIN)
 
-            for wall in wallsInView:
-                for obstacle in obstaclesInView[wall]:
-                    if obstacle not in wall.obstacles_seen :
-                        wall.obstacles_seen.append(obstacle)
+                for wall in wallsInView:
+                    for obstacle in obstaclesInView[wall]:
+                        if obstacle not in wall.obstacles_seen :
+                            wall.obstacles_seen.append(obstacle)  
+        else :
+            for bot in self.bots:
+                # détection des murs et des zones visibles
+                wallsInView, obstaclesInView, visibleSurface = bot.vision(debug)
+
+                # affichage de la vision
+                if debug:    
+                    self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MAX)
+                else:
+                    self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MIN)
+
+                for wall in wallsInView:
+                    for obstacle in obstaclesInView[wall]:
+                        if obstacle not in wall.obstacles_seen :
+                            wall.obstacles_seen.append(obstacle)
     
 
     def updateUWBcoverArea(self):
