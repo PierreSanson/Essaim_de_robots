@@ -21,7 +21,7 @@ class Tile():
         self.corners = [[x-self.width//2,y-self.height//2],[x+self.width//2,y-self.height//2],[x+self.width//2,y+self.height//2],[x-self.width//2,y+self.height//2]]
         self.polygon = Polygon([[x-self.width//2,y-self.height//2],[x+self.width//2,y-self.height//2],[x+self.width//2,y+self.height//2],[x-self.width//2,y+self.height//2]])
         
-        self.seen = 0
+        self.seen = 1
         self.covered = 0
         self.obstacle = 0
         self.measured = 0
@@ -32,6 +32,13 @@ class Tile():
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured]) # on stocke l'état sous la forme d'une châine de caractères
         self.color = (0,0,0,0) # transparent
         self.graph_status = 0
+
+        # Metriques
+        self.history = [(self.seen,self.covered,self.obstacle,self.measured)]
+        self.nbVisits = 0
+
+
+
 
         #################################################################################################################
         # CATALOGUE DES ETATS #                                                                                         #
@@ -57,7 +64,7 @@ class Tile():
 
         # On vérifie si la case a été vue. Si oui, elle restera vue.
         if not self.seen:
-            if surfaceVision.get_at(self.center) == (0,0,0,0):
+            if surfaceVision.get_at(self.center) == (0,0,0,0) : # deuxième condition pour éviter cases jaunes au passage des bots UWB
                 self.seen = 1
             # Cas particulier : cases vues partiellement à cause d'un mur, on ne peut pas se contenter de regarder le centre
             if self.containsWall:
@@ -74,19 +81,12 @@ class Tile():
         # On vérifie si la case contient un obstacle
         # Si la case contient un mur, ça ne vas pas changer.
         if not self.containsWall:
-            obstacleFound = False
-            k = 0    
-            while not obstacleFound and k < len(bots):
-                bot = bots[k]
-                if not isinstance(bot,MeasuringBot):
-                    point = Point(bot.x,bot.y)
-                    if self.polygon.contains(point):
-                        self.obstacle = 1
-                        obstacleFound = True
-                    else:
-                        self.obstacle = 0
-                k += 1
+            if self.UWBbotInTile(bots):
+                self.obstacle = 1
+            else:
+                self.obstacle = 0
 
+        self.history.append((self.seen,self.covered,self.obstacle,self.measured))
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured])
         if self.state != oldState:
             self.has_changed = True
@@ -94,6 +94,16 @@ class Tile():
         # mise à jour de la couleur
         self.color = color_dictionary[self.state]
         self.graph_status = graph_status_dictionary[self.state]
+
+    
+    def UWBbotInTile(self,bots):
+        for bot in bots:
+            if not isinstance(bot,MeasuringBot):
+                point = Point(bot.x,bot.y)
+                if self.polygon.contains(point):
+                    return True
+        return False
+
 
 
 
@@ -120,18 +130,15 @@ class Grid():
         i = 0
         while xMeasurer - i*tileWidth > 0:
             self.tiles[(xMeasurer - i*tileWidth,yMeasurer)] = Tile(xMeasurer - i*tileWidth,yMeasurer,self.tileWidth)
-            self.graph[(xMeasurer - i*tileWidth,yMeasurer)] = 0
 
             j = 0
             while yMeasurer - j*tileWidth > 0:
                 self.tiles[(xMeasurer - i*tileWidth,yMeasurer - j*tileWidth)] = Tile(xMeasurer - i*tileWidth,yMeasurer - j*tileWidth,self.tileWidth)
-                self.graph[(xMeasurer - i*tileWidth,yMeasurer - j*tileWidth)] = 0
                 j += 1
 
             j = 1
             while yMeasurer + j*tileWidth < room.height:
                 self.tiles[(xMeasurer - i*tileWidth,yMeasurer + j*tileWidth)] = Tile(xMeasurer - i*tileWidth,yMeasurer + j*tileWidth,self.tileWidth)
-                self.graph[(xMeasurer - i*tileWidth,yMeasurer + j*tileWidth)] = 0
                 j += 1
 
             i += 1
@@ -139,18 +146,15 @@ class Grid():
         i = 1
         while xMeasurer + i*tileWidth < room.width:
             self.tiles[(xMeasurer + i*tileWidth,yMeasurer)] = Tile(xMeasurer + i*tileWidth,yMeasurer,self.tileWidth)
-            self.graph[(xMeasurer + i*tileWidth,yMeasurer)] = 0
 
             j = 1
             while yMeasurer - j*tileWidth > 0:
                 self.tiles[(xMeasurer + i*tileWidth,yMeasurer - j*tileWidth)] = Tile(xMeasurer + i*tileWidth,yMeasurer - j*tileWidth,self.tileWidth)
-                self.graph[(xMeasurer + i*tileWidth,yMeasurer - j*tileWidth)] = 0
                 j += 1
 
             j = 1
             while yMeasurer + j*tileWidth < room.height:
                 self.tiles[(xMeasurer + i*tileWidth,yMeasurer + j*tileWidth)] = Tile(xMeasurer + i*tileWidth,yMeasurer + j*tileWidth,self.tileWidth)
-                self.graph[(xMeasurer + i*tileWidth,yMeasurer + j*tileWidth)] = 0
                 j += 1
 
             i += 1
@@ -166,8 +170,72 @@ class Grid():
                 if self.tiles[coord].polygon.contains(point):
                     self.tiles[coord].containsWall = 1
                     self.tiles[coord].obstacle = 1
-                    self.removeNodeFromGraph(coord)
                 k += 1
+
+
+        # On définit l'intérieur de la salle
+
+        #############################################################################################################
+        # Méthode : on part du coin premier coin supérieur gauche de la pièce, et on parcourt de voisin en voisin,  #
+        # en s'arrêtant quand on rencontre un mur --> on a l'intérieur de la salle                                  #
+        #############################################################################################################
+
+        # On récupère les coins :
+        Xmin = self.origin[0]
+        Xmax = self.origin[0]
+        Ymin = self.origin[1]
+        Ymax = self.origin[1]
+        for (x,y) in self.tiles:
+            if x < Xmin:
+                Xmin = x
+            elif x > Xmax:
+                Xmax = x
+            if y < Ymin:
+                Ymin = y
+            elif y > Ymax:
+                Ymax = y
+
+        top_left = (Xmin,Ymin)
+        top_right = (Xmax,Ymin)
+        bot_left = (Xmin,Ymax)
+        bot_right = (Xmax,Ymax)
+
+        if self.tiles[top_left].containsWall == 0:
+            start = top_left
+        elif self.tiles[top_right].containsWall == 0:
+            start = top_right 
+            start = bot_left
+        elif self.tiles[bot_right].containsWall == 0:
+            start = bot_right
+        else:
+            print("Room is drawn to close to the edge of the screen")
+
+        # on trouve toutes les cases extérieures
+        ext = self.findCluster(start)
+
+        # on trouve la première case d'intérieur
+        coordinates = list(self.tiles.keys())
+        k = 0
+        startFound = False
+        while not startFound:
+            start = coordinates[k]
+            if self.tiles[coordinates[k]].containsWall == 0 and not coordinates[k] in ext:
+                startFound = True
+            k += 1
+
+        # on trouve toutes les cases d'intérieur
+        inside = self.findCluster(start)        
+
+
+        # On nettoie les objets Tile, pour ne pas conserver de cases inutiles (ie on supprime toutes les cases extérieures, mais on garde les murs pour affichage)
+        # On crée un noeud dans le graphe pour toutes les cases de mur ou d'intérieur
+        for coord in coordinates:
+            if coord in inside or self.tiles[coord].containsWall == 1:
+                self.graph[coord] = 0
+            else :
+                del self.tiles[coord]
+
+        
 
         # Dictionnaire des couleurs des cases en fonction des états
         self.color_dictionary = {
@@ -209,6 +277,30 @@ class Grid():
             '1101' : 1
         }
 
+    # Méthode utilisée pour détecter un ensemble de cases connectées (non interrompues par un mur)
+    def findCluster(self,start):
+        cluster = []
+        neighbours = []
+
+        straight,diag = self.getNeighbours(start)
+        tmp = straight + diag
+        for coord in tmp:
+            if 0 <= coord[0] <= self.room.width and 0 <= coord[1] <= self.room.height and self.tiles[coord].containsWall == 0:
+                neighbours.append(coord)
+        
+        while neighbours != []:
+            current = neighbours.pop()
+            cluster.append(current)
+            straight,diag = self.getNeighbours(coord)
+            tmp = straight + diag
+            for coord in tmp:
+                if not coord in neighbours and not coord in cluster: 
+                    if 0 <= coord[0] <= self.room.width and 0 <= coord[1] <= self.room.height and self.tiles[coord].containsWall == 0:
+                        neighbours.append(coord)
+        
+        return cluster
+
+
 
         
     ### Méthodes pour la grille
@@ -220,6 +312,7 @@ class Grid():
         #     self.tiles[tuple(self.oldObjective)].measured = 1
         if self.measuringBot.objective != None:
             self.tiles[tuple(self.measuringBot.objective)].measured = 1
+            self.tiles[tuple(self.measuringBot.objective)].nbVisits += 1
 
         for coord in self.tiles:
             self.tiles[coord].update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary)
