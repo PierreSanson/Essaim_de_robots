@@ -21,7 +21,7 @@ class Tile():
         self.corners = [[x-self.width//2,y-self.height//2],[x+self.width//2,y-self.height//2],[x+self.width//2,y+self.height//2],[x-self.width//2,y+self.height//2]]
         self.polygon = Polygon([[x-self.width//2,y-self.height//2],[x+self.width//2,y-self.height//2],[x+self.width//2,y+self.height//2],[x-self.width//2,y+self.height//2]])
         
-        self.seen = 1
+        self.seen = 0
         self.covered = 0
         self.obstacle = 0
         self.measured = 0
@@ -64,7 +64,7 @@ class Tile():
 
         # On vérifie si la case a été vue. Si oui, elle restera vue.
         if not self.seen:
-            if surfaceVision.get_at(self.center) == (0,0,0,0) : # deuxième condition pour éviter cases jaunes au passage des bots UWB
+            if surfaceVision.get_at(self.center) == (0,0,0,0): # deuxième condition pour éviter cases jaunes au passage des bots UWB
                 self.seen = 1
             # Cas particulier : cases vues partiellement à cause d'un mur, on ne peut pas se contenter de regarder le centre
             if self.containsWall:
@@ -81,7 +81,7 @@ class Tile():
         # On vérifie si la case contient un obstacle
         # Si la case contient un mur, ça ne vas pas changer.
         if not self.containsWall:
-            if self.UWBbotInTile(bots):
+            if self.UWBbotInTile(bots): # coûteux ?
                 self.obstacle = 1
             else:
                 self.obstacle = 0
@@ -174,66 +174,18 @@ class Grid():
 
 
         # On définit l'intérieur de la salle
-
-        #############################################################################################################
-        # Méthode : on part du coin premier coin supérieur gauche de la pièce, et on parcourt de voisin en voisin,  #
-        # en s'arrêtant quand on rencontre un mur --> on a l'intérieur de la salle                                  #
-        #############################################################################################################
-
-        # On récupère les coins :
-        Xmin = self.origin[0]
-        Xmax = self.origin[0]
-        Ymin = self.origin[1]
-        Ymax = self.origin[1]
-        for (x,y) in self.tiles:
-            if x < Xmin:
-                Xmin = x
-            elif x > Xmax:
-                Xmax = x
-            if y < Ymin:
-                Ymin = y
-            elif y > Ymax:
-                Ymax = y
-
-        top_left = (Xmin,Ymin)
-        top_right = (Xmax,Ymin)
-        bot_left = (Xmin,Ymax)
-        bot_right = (Xmax,Ymax)
-
-        if self.tiles[top_left].containsWall == 0:
-            start = top_left
-        elif self.tiles[top_right].containsWall == 0:
-            start = top_right 
-            start = bot_left
-        elif self.tiles[bot_right].containsWall == 0:
-            start = bot_right
-        else:
-            print("Room is drawn to close to the edge of the screen")
-
-        # on trouve toutes les cases extérieures
-        ext = self.findCluster(start)
-
-        # on trouve la première case d'intérieur
-        coordinates = list(self.tiles.keys())
-        k = 0
-        startFound = False
-        while not startFound:
-            start = coordinates[k]
-            if self.tiles[coordinates[k]].containsWall == 0 and not coordinates[k] in ext:
-                startFound = True
-            k += 1
-
-        # on trouve toutes les cases d'intérieur
-        inside = self.findCluster(start)        
+        inside = self.findCluster(self.origin)        
 
 
         # On nettoie les objets Tile, pour ne pas conserver de cases inutiles (ie on supprime toutes les cases extérieures, mais on garde les murs pour affichage)
-        # On crée un noeud dans le graphe pour toutes les cases de mur ou d'intérieur
+        # On crée un noeud dans le graphe pour toutes les cases d'intérieur
+        coordinates = list(self.tiles.keys())
         for coord in coordinates:
-            if coord in inside or self.tiles[coord].containsWall == 1:
-                self.graph[coord] = 0
+            if coord in inside:
+                self.graph[coord] = 0 # création des noeuds
             else :
-                del self.tiles[coord]
+                if self.tiles[coord].containsWall == 0: # toute case qui ne sera pas un noeud du graphe et ne contient pas de mur est inutile
+                    del self.tiles[coord]
 
         
 
@@ -282,7 +234,7 @@ class Grid():
         cluster = []
         neighbours = []
 
-        straight,diag = self.getNeighbours(start)
+        straight, diag = self.getNeighbours(start)
         tmp = straight + diag
         for coord in tmp:
             if 0 <= coord[0] <= self.room.width and 0 <= coord[1] <= self.room.height and self.tiles[coord].containsWall == 0:
@@ -291,7 +243,7 @@ class Grid():
         while neighbours != []:
             current = neighbours.pop()
             cluster.append(current)
-            straight,diag = self.getNeighbours(coord)
+            straight, diag = self.getNeighbours(current)
             tmp = straight + diag
             for coord in tmp:
                 if not coord in neighbours and not coord in cluster: 
@@ -301,15 +253,10 @@ class Grid():
         return cluster
 
 
-
-        
     ### Méthodes pour la grille
     def update(self,surfaceUWB,status):
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
         # Une case a été mesurée si le robot a changé d'objectif
-        #################
-        # if self.measuringBot.objective != self.oldObjective and self.oldObjective is not None:
-        #     self.tiles[tuple(self.oldObjective)].measured = 1
         if self.measuringBot.objective != None:
             self.tiles[tuple(self.measuringBot.objective)].measured = 1
             self.tiles[tuple(self.measuringBot.objective)].nbVisits += 1

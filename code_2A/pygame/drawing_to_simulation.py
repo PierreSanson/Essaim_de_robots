@@ -244,6 +244,8 @@ def load_and_launch_simulation():
             # t = time.time()
             bots = None
             movingRefPointBots = control.checkMovingRefPointBots()
+            if control.status == "movingMeasuring":
+                bots = [control.measurerBot]
             if movingRefPointBots[0]:
                 bots = [control.refPointBots[movingRefPointBots[1]]]
             elif control.checkMovingMeasurerBot():
