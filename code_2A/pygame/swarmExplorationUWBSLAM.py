@@ -61,6 +61,7 @@ class SwarmExploratorUWBSLAM():
         self.moveRefPointBot = 0
         self.instantMoving = True
         self.time = 0
+        self.updateUWBcoverArea = self.room.updateUWBcoverArea()
 
         initObjectives = []
         for i in range(self.nbRefPointBots):
@@ -101,6 +102,7 @@ class SwarmExploratorUWBSLAM():
     def initMove(self):
         refPointBotsStatus = self.checkMovingRefPointBots()
         if not refPointBotsStatus[0]:
+            self.updateUWBcoverArea = self.room.updateUWBcoverArea()
             #self.defineConvexHulls()
             self.refPointBots[self.initCount].defineObjective((self.measurerBot.x + 2000*np.cos(self.theta*self.initCount), self.measurerBot.y +2000*np.sin(self.theta*self.initCount)))
             self.initCount += 1
@@ -177,7 +179,7 @@ class SwarmExploratorUWBSLAM():
 
 
         if self.status == "movingMeasuringBot":
-            self.grid.updateGraph()
+            # self.grid.updateGraph()
 
             #tTot = time.time()
             if self.hasObj:
@@ -189,6 +191,8 @@ class SwarmExploratorUWBSLAM():
                     if target is not None: 
                         self.mainPathIndex = 0
                         source = self.lastObj
+                        # temporary solution!
+                        # self.grid.updateNeighOneNode(target)
                         weight, self.mainPath = (self.djikstra(source, target))
                         self.addWeigthToPath()
                     else : 
@@ -220,17 +224,18 @@ class SwarmExploratorUWBSLAM():
                 # print("duration of tTot : ", time.time() - tTot)
 
         if self.status == "FirsttransferRefPointBotToMeasuringBot":
-            self.grid.updateGraph()
+            # self.grid.updateGraph()
 
             if not self.checkMovingRefPointBots()[0]:
 
                 #self.updatePolygon()
                 #self.defineConvexHulls()
+                self.updateUWBcoverArea = self.room.updateUWBcoverArea()
                 
                 self.grid.graph[self.grid.origin] = [1]
 
                 # self.drawGraph() # à commenter ou non pour afficher le graphe
-
+                self.grid.updateNeighOneNode(self.grid.origin)
                 target = self.findClosestCell()
                 if target is not None:
                     source = (self.grid.origin[0], self.grid.origin[1])
@@ -244,9 +249,13 @@ class SwarmExploratorUWBSLAM():
                     self.status = "movingRefPointBots"
 
         if self.status == "transferRefPointBotToMeasuringBot":
-            self.grid.updateGraph()
+            
 
             if not self.checkMovingRefPointBots()[0]:
+                
+                # self.draw()
+                # self.grid.updateGraph()
+                self.updateUWBcoverArea = self.room.updateUWBcoverArea()
                 #self.updatePolygon()
                 #self.defineConvexHulls()
                 
@@ -254,6 +263,8 @@ class SwarmExploratorUWBSLAM():
                 if target is not None:
                     self.mainPathIndex = 0
                     source = self.lastObj
+                    # temporary solution!
+                    # self.grid.updateNeighOneNode(target)
                     weight, self.mainPath = (self.djikstra(source, target))
                     self.addWeigthToPath()
                     self.hasObj = True
@@ -550,7 +561,9 @@ class SwarmExploratorUWBSLAM():
         self.surfaceReferenceBot.fill((0,0,0,0))
 
         # on affiche la zone UWB et la grille
-        self.surfaceUWB.blit(self.room.updateUWBcoverArea(),(0,0), special_flags=pygame.BLEND_RGBA_MAX)
+        # t = time.time()
+        self.surfaceUWB.blit(self.updateUWBcoverArea,(0,0), special_flags=pygame.BLEND_RGBA_MAX)
+        # print("duration of self.room.updateUWBcoverArea() : ", time.time() - t)
         self.grid.draw(self.surfaceGrid)      
 
                 
@@ -568,4 +581,5 @@ class SwarmExploratorUWBSLAM():
             a = (p1[1]-p2[1])/(p1[0]-p2[0])
             b = p1[1]-a*p1[0]
             pygame.draw.line(self.surfaceReferenceBot, (200, 0, 200, 200),(0,int(b)), (1600,int(a*1600+b)) , 1)
+        # print(self.grid.adjacencyList)
 
