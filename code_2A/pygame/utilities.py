@@ -191,8 +191,8 @@ def pointInPolygon(lineEmitter, polygon):
 
 
 def lineSegmentInter(line, segment):
-    a = line[0][1]
-    b = -line[0][0]
+    a = round(line[0][1],8)
+    b = round(-line[0][0], 8)
     c = -b*line[1][1] -a*line[1][0]
     
     sols = []

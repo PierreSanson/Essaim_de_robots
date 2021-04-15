@@ -80,11 +80,13 @@ class Tile():
 
         # On vérifie si la case contient un obstacle
         # Si la case contient un mur, ça ne vas pas changer.
-        if not self.containsWall:
-            if self.UWBbotInTile(bots): # coûteux ?
+
+        if not self.containsWall and False: # on ne vérifie pas pour l'instant
+            if self.UWBbotInTile(bots):
                 self.obstacle = 1
             else:
                 self.obstacle = 0
+
 
         self.history.append((self.seen,self.covered,self.obstacle,self.measured))
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured])
