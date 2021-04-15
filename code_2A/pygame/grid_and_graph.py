@@ -125,6 +125,10 @@ class Grid():
         self.graphLinks = []
         self.adjacencyList = {}
 
+        # Metriques
+        self.surface = 0
+        self.pathLength = 0
+
         
         # Construction de toute la grille une bonne fois pour toutes
         i = 0
@@ -183,6 +187,7 @@ class Grid():
         for coord in coordinates:
             if coord in inside:
                 self.graph[coord] = 0 # création des noeuds
+                self.surface += 1
             else :
                 if self.tiles[coord].containsWall == 0: # toute case qui ne sera pas un noeud du graphe et ne contient pas de mur est inutile
                     del self.tiles[coord]
@@ -229,6 +234,35 @@ class Grid():
             '1101' : 1
         }
 
+
+    # Méthode pour récupérer les métriques à la fin
+    def get_metrics(self):
+        # Nombre de cases mesurées
+        measuredTiles = 0
+
+        # Longueur (en cases du parcours):
+        pathLength = 0
+
+        # Historique des états de chacune des cases :
+        history = {}
+
+        # Nombre de passages par case :
+        visitsPerTile = {}
+
+        # Calcul 
+        for coord in self.tiles:
+            if self.tiles[coord].measured == 1:
+                measuredTiles += 1
+
+            history[coord] = self.tiles[coord].history
+
+            tmp = self.tiles[coord].nbVisits
+            visitsPerTile[coord] = tmp
+            pathLength += tmp
+
+        return measuredTiles, self.surface, pathLength, history, visitsPerTile
+
+
     # Méthode utilisée pour détecter un ensemble de cases connectées (non interrompues par un mur)
     def findCluster(self,start):
         cluster = []
@@ -257,9 +291,12 @@ class Grid():
     def update(self,surfaceUWB,status):
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
         # Une case a été mesurée si le robot a changé d'objectif
-        if self.measuringBot.objective != None:
-            self.tiles[tuple(self.measuringBot.objective)].measured = 1
-            self.tiles[tuple(self.measuringBot.objective)].nbVisits += 1
+        if status == "movingMeasuringBot" and self.measuringBot.objective != None:
+            if self.measuringBot.objective != self.oldObjective:
+                self.tiles[tuple(self.measuringBot.objective)].measured = 1
+                self.tiles[tuple(self.measuringBot.objective)].nbVisits += 1 ###### à vérifier, pathLength n'a pas la bonne valeur 
+
+        self.oldObjective = self.measuringBot.objective        
 
         for coord in self.tiles:
             self.tiles[coord].update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary)

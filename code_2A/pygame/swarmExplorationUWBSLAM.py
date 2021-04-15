@@ -60,8 +60,9 @@ class SwarmExploratorUWBSLAM():
         self.moveMeasuringBotCount = 0
         self.moveRefPointBot = 0
         self.instantMoving = True
-        self.time = 0
+        self.time = time.time()
         self.updateUWBcoverArea = self.room.updateUWBcoverArea()
+
 
         initObjectives = []
         for i in range(self.nbRefPointBots):
@@ -93,11 +94,46 @@ class SwarmExploratorUWBSLAM():
 
         self.refPointBotsVisible = self.refPointBots.copy()
 
-
         self.grid = Grid(self.room,self.measurerBot)
 
+        ############ Détection de la fin de la simulation
+        self.end_simulation = False
 
-    
+
+    # Sortie du simulateur
+    def print_metrics(self):
+
+        print('\r\n')
+
+        ### Résumé des entrées du simulateur
+        print('Nombre de robots points de repère : %s' %self.nbRefPointBots)
+        print('Nombre de robots mesureurs : %s' %(len(self.room.bots)-self.nbRefPointBots))
+        print('Algorithme : déplacement vers la case la plus proche non explorée')  # intégrer le nom de l'algo dans le code, et pouvoir sélectionner
+                                                                                    # spéarer algo UWB et algo mesureur
+        # autres entrées, pas top à afficher : positions de départ, directions de départ pour les points de repère
+        
+        print('\r\n')
+
+        measuredTiles, surface, pathLength, history, visitsPerTile = self.grid.get_metrics()
+        simulationDuration =  time.time() - self.time      
+        ### Sorties du simulateur
+        print('Durée de la simulation : %s' %simulationDuration)
+        print('Nombre de cases mesurées : %s/%s' %(measuredTiles, surface))
+        print('Longueur du parcours : %s cases' %pathLength)
+        # autres sorties, pas pratiques à print : historique des états des différentes cases, nombre de passages par case, ce qui permettra d'extraire un peu tout ce qu'on veut
+
+        metrics = { 'measuredTiles' : measuredTiles,
+                    'surface'       : surface,
+                    'pathLength'    : pathLength,
+                    'history'       : history,
+                    'visitsPerTile' : visitsPerTile,
+                    'simulationDuration' : simulationDuration }
+
+        print('\r\n')
+
+        return metrics # ici on renvoie tout, affichable ou pas
+
+
     # Initial move of the refPointBots
     def initMove(self):
         refPointBotsStatus = self.checkMovingRefPointBots()
@@ -111,6 +147,7 @@ class SwarmExploratorUWBSLAM():
             if not self.check3RefPointBotsAvailable(refPointBotsStatus[1]):
                 self.refPointBots[refPointBotsStatus[1]].wallDetectionAction()
 
+
     # check if refPointBots are moving
     def checkMovingRefPointBots(self):
         for key in self.refPointBots:
@@ -118,12 +155,14 @@ class SwarmExploratorUWBSLAM():
                 return True, key
         return False, None
 
+
     # check if MeasurerBot is still moving
     def checkMovingMeasurerBot(self):
         if self.measurerBot.haveObjective:
             return True
         return False
-    
+
+
     # check to see if the refPointBot "key" can see at least 3 other refpointBots
     def check3RefPointBotsAvailable(self, key):
         refPointBotMoving = self.refPointBots[key]
@@ -198,6 +237,7 @@ class SwarmExploratorUWBSLAM():
                         self.hasObj = False
                         self.moveRefPointBotsStep()
                         self.status = "movingRefPointBots"
+
                 elif step == "changedObj":
                     
                     target = self.findClosestCell()
@@ -230,7 +270,7 @@ class SwarmExploratorUWBSLAM():
                 #self.defineConvexHulls()
                 self.updateUWBcoverArea = self.room.updateUWBcoverArea()
                 
-                self.grid.graph[self.grid.origin] = [1]
+                self.grid.graph[self.grid.origin] = 1
 
                 # self.drawGraph() # à commenter ou non pour afficher le graphe
                 self.grid.updateNeighOneNode(self.grid.origin)
@@ -274,6 +314,7 @@ class SwarmExploratorUWBSLAM():
                     self.initCount = len(self.refPointBots) + 2   
 
         #print("########### duration of move : ", time.time()- tMove)
+        
 
     # find closest cell to define as objective for Djikstra    
     def findClosestCell(self):
@@ -460,6 +501,10 @@ class SwarmExploratorUWBSLAM():
                             neighInCluster = True
                 if not neighInCluster:
                     self.explorableClusters.append({coord})
+
+        # Fin de simulation si les robots UWB n'ont nulle part où aller
+        if self.explorableClusters == []:
+            self.end_simulation = True            
         
         # allInterNull = True
         index = 0
