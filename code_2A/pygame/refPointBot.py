@@ -13,7 +13,6 @@ class RefPointBot(Bot):
         super(self.__class__, self).__init__(x, y, radius, room, objective, randomObjective = randomObjective, randomInterval = randomInterval, color = color, haveObjective = haveObjective, radiusDetection = radiusDetection, showDetails = showDetails)
         self.message = message
         self.wallDetectionRadius = 30
-
         self.UWBradius = 1000
 
     def show_self(self):
@@ -70,8 +69,6 @@ class RefPointBot(Bot):
                 self.detectedObj.remove(obj)
 
         return collision
-
-
 
     def cleanVisionUWB(self,obstaclesInView):
 
@@ -345,7 +342,6 @@ class RefPointBot(Bot):
 
         return forbiddenAreas
 
-
     def visibleObstaclesUWB(self,wall):
         visibleObs = []
         visibleSides = []
@@ -372,8 +368,7 @@ class RefPointBot(Bot):
                 visibleObs.append(obstacle)
         
         return visibleObs
-    
-    
+        
     def UWBcover(self):
         # on identifie les murs qui sont à portée du robot
         wallsInView = []
@@ -396,3 +391,6 @@ class RefPointBot(Bot):
             pygame.draw.polygon(visibleSurface,(0,0,0,0),area)
 
         return visibleSurface
+
+    def instantMovement(self):
+        pass

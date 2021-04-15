@@ -23,8 +23,8 @@ class Bot():
         self.lastVel2D = np.asarray([0.0001,0.0001])
         self.objective = objective
         self.radiusDetection = radiusDetection
-        self.rotationSpeed = 12
-        self.speed = 4
+        self.rotationSpeed = 24
+        self.speed = 8
         self.groupObj = []
         self.detectedObj = []
         self.groupObjPoints = []

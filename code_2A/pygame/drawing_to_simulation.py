@@ -172,15 +172,15 @@ def redrawGameWindow(room, background, control):
     #     obstacle.draw()
 
     # mise à jour des murs vus
-    t= time.time()
+    # t= time.time()
     room.draw_walls()
-    print("duration of draw_walls : ", time.time() - t)
+    # print("duration of draw_walls : ", time.time() - t)
     background.blit(room.surface1, (0,0))
 
     # on ajoute à l'arrière plan tous les affichages spécifiques à la méthode de contrôle de l'essaim choisie
-    t= time.time()
+    # t= time.time()
     control.draw()
-    print("duration of control.draw : ", time.time() - t)
+    # print("duration of control.draw : ", time.time() - t)
     background.blit(control.surfaceUWB, (0,0))
     background.blit(control.surfaceGrid, (0,0))
     background.blit(control.surfaceReferenceBot,(0,0))
@@ -211,7 +211,7 @@ def load_and_launch_simulation():
         room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5)
 
         clock = pygame.time.Clock()
-        hz = 60
+        hz = 144
 
         run = True 
         ## Choix du type de déplacement
@@ -236,14 +236,17 @@ def load_and_launch_simulation():
             control.move()
             # print("duration of control.move() : ", time.time() - t)
             ## Itération sur l'ensemble des robots pour les faire se déplacer
+            # t = time.time()
             for bot in room.bots:
                 bot.move()
-        
+            # print("duration of bot.move() : ", time.time() - t)
 
             ## Prise en compte des nouvelles zones vues par les robots
             # t = time.time()
             bots = None
             movingRefPointBots = control.checkMovingRefPointBots()
+            if control.status == "movingMeasuringBot":
+                bots = [control.measurerBot]
             if movingRefPointBots[0]:
                 bots = [control.refPointBots[movingRefPointBots[1]]]
             elif control.checkMovingMeasurerBot():
