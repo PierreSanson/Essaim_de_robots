@@ -223,9 +223,15 @@ def load_and_launch_simulation():
         while run:
             clock.tick(hz)
             
+            # utilisateur ferme la fenetre
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False  
+
+            # fin de la simulation (les robtos ont arrêté de bouger)
+            if control.end_simulation == True:
+                run = False
+
 
             ## Choix du type de déplacement
             # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
@@ -245,7 +251,9 @@ def load_and_launch_simulation():
             # t = time.time()
             bots = None
             movingRefPointBots = control.checkMovingRefPointBots()
+
             if control.status == "movingMeasuringBot":
+
                 bots = [control.measurerBot]
             if movingRefPointBots[0]:
                 bots = [control.refPointBots[movingRefPointBots[1]]]
@@ -257,4 +265,15 @@ def load_and_launch_simulation():
             # t = time.time()
             redrawGameWindow(room, background, control)      
             # print("duration of redrawGameWindow : ", time.time() - t)
+
+        
+        # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre
+        metrics = control.print_metrics()
+
+        while not run:
+            
+            # utilisateur ferme la fenetre
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = True 
 

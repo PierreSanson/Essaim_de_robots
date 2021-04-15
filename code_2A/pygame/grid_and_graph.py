@@ -33,6 +33,13 @@ class Tile():
         self.color = (0,0,0,0) # transparent
         self.graph_status = 0
 
+        # Metriques
+        self.history = [(self.seen,self.covered,self.obstacle,self.measured)]
+        self.nbVisits = 0
+
+
+
+
         #################################################################################################################
         # CATALOGUE DES ETATS #                                                                                         #
         #######################                                                                                         #
@@ -57,7 +64,7 @@ class Tile():
 
         # On vérifie si la case a été vue. Si oui, elle restera vue.
         if not self.seen:
-            if surfaceVision.get_at(self.center) == (0,0,0,0):
+            if surfaceVision.get_at(self.center) == (0,0,0,0): # deuxième condition pour éviter cases jaunes au passage des bots UWB
                 self.seen = 1
             # Cas particulier : cases vues partiellement à cause d'un mur, on ne peut pas se contenter de regarder le centre
             if self.containsWall:
@@ -73,20 +80,15 @@ class Tile():
 
         # On vérifie si la case contient un obstacle
         # Si la case contient un mur, ça ne vas pas changer.
-        if not self.containsWall and False:
-            obstacleFound = False
-            k = 0    
-            while not obstacleFound and k < len(bots):
-                bot = bots[k]
-                if not isinstance(bot,MeasuringBot):
-                    point = Point(bot.x,bot.y)
-                    if self.polygon.contains(point):
-                        self.obstacle = 1
-                        obstacleFound = True
-                    else:
-                        self.obstacle = 0
-                k += 1
 
+        if not self.containsWall and False: # on ne vérifie pas pour l'instant
+            if self.UWBbotInTile(bots):
+                self.obstacle = 1
+            else:
+                self.obstacle = 0
+
+
+        self.history.append((self.seen,self.covered,self.obstacle,self.measured))
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured])
         if self.state != oldState:
             self.has_changed = True
@@ -94,6 +96,16 @@ class Tile():
         # mise à jour de la couleur
         self.color = color_dictionary[self.state]
         self.graph_status = graph_status_dictionary[self.state]
+
+    
+    def UWBbotInTile(self,bots):
+        for bot in bots:
+            if not isinstance(bot,MeasuringBot):
+                point = Point(bot.x,bot.y)
+                if self.polygon.contains(point):
+                    return True
+        return False
+
 
 
 
@@ -115,23 +127,24 @@ class Grid():
         self.graphLinks = []
         self.adjacencyList = {}
 
+        # Metriques
+        self.surface = 0
+        self.pathLength = 0
+
         
         # Construction de toute la grille une bonne fois pour toutes
         i = 0
         while xMeasurer - i*tileWidth > 0:
             self.tiles[(xMeasurer - i*tileWidth,yMeasurer)] = Tile(xMeasurer - i*tileWidth,yMeasurer,self.tileWidth)
-            self.graph[(xMeasurer - i*tileWidth,yMeasurer)] = 0
 
             j = 0
             while yMeasurer - j*tileWidth > 0:
                 self.tiles[(xMeasurer - i*tileWidth,yMeasurer - j*tileWidth)] = Tile(xMeasurer - i*tileWidth,yMeasurer - j*tileWidth,self.tileWidth)
-                self.graph[(xMeasurer - i*tileWidth,yMeasurer - j*tileWidth)] = 0
                 j += 1
 
             j = 1
             while yMeasurer + j*tileWidth < room.height:
                 self.tiles[(xMeasurer - i*tileWidth,yMeasurer + j*tileWidth)] = Tile(xMeasurer - i*tileWidth,yMeasurer + j*tileWidth,self.tileWidth)
-                self.graph[(xMeasurer - i*tileWidth,yMeasurer + j*tileWidth)] = 0
                 j += 1
 
             i += 1
@@ -139,18 +152,15 @@ class Grid():
         i = 1
         while xMeasurer + i*tileWidth < room.width:
             self.tiles[(xMeasurer + i*tileWidth,yMeasurer)] = Tile(xMeasurer + i*tileWidth,yMeasurer,self.tileWidth)
-            self.graph[(xMeasurer + i*tileWidth,yMeasurer)] = 0
 
             j = 1
             while yMeasurer - j*tileWidth > 0:
                 self.tiles[(xMeasurer + i*tileWidth,yMeasurer - j*tileWidth)] = Tile(xMeasurer + i*tileWidth,yMeasurer - j*tileWidth,self.tileWidth)
-                self.graph[(xMeasurer + i*tileWidth,yMeasurer - j*tileWidth)] = 0
                 j += 1
 
             j = 1
             while yMeasurer + j*tileWidth < room.height:
                 self.tiles[(xMeasurer + i*tileWidth,yMeasurer + j*tileWidth)] = Tile(xMeasurer + i*tileWidth,yMeasurer + j*tileWidth,self.tileWidth)
-                self.graph[(xMeasurer + i*tileWidth,yMeasurer + j*tileWidth)] = 0
                 j += 1
 
             i += 1
@@ -166,8 +176,25 @@ class Grid():
                 if self.tiles[coord].polygon.contains(point):
                     self.tiles[coord].containsWall = 1
                     self.tiles[coord].obstacle = 1
-                    self.removeNodeFromGraph(coord)
                 k += 1
+
+
+        # On définit l'intérieur de la salle
+        inside = self.findCluster(self.origin)        
+
+
+        # On nettoie les objets Tile, pour ne pas conserver de cases inutiles (ie on supprime toutes les cases extérieures, mais on garde les murs pour affichage)
+        # On crée un noeud dans le graphe pour toutes les cases d'intérieur
+        coordinates = list(self.tiles.keys())
+        for coord in coordinates:
+            if coord in inside:
+                self.graph[coord] = 0 # création des noeuds
+                self.surface += 1
+            else :
+                if self.tiles[coord].containsWall == 0: # toute case qui ne sera pas un noeud du graphe et ne contient pas de mur est inutile
+                    del self.tiles[coord]
+
+        
 
         # Dictionnaire des couleurs des cases en fonction des états
         self.color_dictionary = {
@@ -210,16 +237,68 @@ class Grid():
         }
 
 
+    # Méthode pour récupérer les métriques à la fin
+    def get_metrics(self):
+        # Nombre de cases mesurées
+        measuredTiles = 0
+
+        # Longueur (en cases du parcours):
+        pathLength = 0
+
+        # Historique des états de chacune des cases :
+        history = {}
+
+        # Nombre de passages par case :
+        visitsPerTile = {}
+
+        # Calcul 
+        for coord in self.tiles:
+            if self.tiles[coord].measured == 1:
+                measuredTiles += 1
+
+            history[coord] = self.tiles[coord].history
+
+            tmp = self.tiles[coord].nbVisits
+            visitsPerTile[coord] = tmp
+            pathLength += tmp
+
+        return measuredTiles, self.surface, pathLength, history, visitsPerTile
+
+
+    # Méthode utilisée pour détecter un ensemble de cases connectées (non interrompues par un mur)
+    def findCluster(self,start):
+        cluster = []
+        neighbours = []
+
+        straight, diag = self.getNeighbours(start)
+        tmp = straight + diag
+        for coord in tmp:
+            if 0 <= coord[0] <= self.room.width and 0 <= coord[1] <= self.room.height and self.tiles[coord].containsWall == 0:
+                neighbours.append(coord)
         
+        while neighbours != []:
+            current = neighbours.pop()
+            cluster.append(current)
+            straight, diag = self.getNeighbours(current)
+            tmp = straight + diag
+            for coord in tmp:
+                if not coord in neighbours and not coord in cluster: 
+                    if 0 <= coord[0] <= self.room.width and 0 <= coord[1] <= self.room.height and self.tiles[coord].containsWall == 0:
+                        neighbours.append(coord)
+        
+        return cluster
+
+
     ### Méthodes pour la grille
     def update(self,surfaceUWB,status):
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
         # Une case a été mesurée si le robot a changé d'objectif
-        #################
-        # if self.measuringBot.objective != self.oldObjective and self.oldObjective is not None:
-        #     self.tiles[tuple(self.oldObjective)].measured = 1
-        if self.measuringBot.objective != None:
-            self.tiles[tuple(self.measuringBot.objective)].measured = 1
+        if status == "movingMeasuringBot" and self.measuringBot.objective != None:
+            if self.measuringBot.objective != self.oldObjective:
+                self.tiles[tuple(self.measuringBot.objective)].measured = 1
+                self.tiles[tuple(self.measuringBot.objective)].nbVisits += 1 ###### à vérifier, pathLength n'a pas la bonne valeur 
+
+        self.oldObjective = self.measuringBot.objective        
 
         for coord in self.tiles:
             self.tiles[coord].update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary)
