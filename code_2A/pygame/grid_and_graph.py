@@ -73,7 +73,7 @@ class Tile():
 
         # On vérifie si la case contient un obstacle
         # Si la case contient un mur, ça ne vas pas changer.
-        if not self.containsWall:
+        if not self.containsWall and False:
             obstacleFound = False
             k = 0    
             while not obstacleFound and k < len(bots):

@@ -60,6 +60,7 @@ class SwarmExploratorUWBSLAM():
         self.moveMeasuringBotCount = 0
         self.moveRefPointBot = 0
         self.instantMoving = True
+        self.instantMovingRPB = True
         self.time = 0
         self.updateUWBcoverArea = self.room.updateUWBcoverArea()
 
@@ -104,12 +105,43 @@ class SwarmExploratorUWBSLAM():
         if not refPointBotsStatus[0]:
             self.updateUWBcoverArea = self.room.updateUWBcoverArea()
             #self.defineConvexHulls()
-            self.refPointBots[self.initCount].defineObjective((self.measurerBot.x + 2000*np.cos(self.theta*self.initCount), self.measurerBot.y +2000*np.sin(self.theta*self.initCount)))
+            if self.instantMovingRefPointBot:
+                print((np.cos(self.theta*self.initCount), np.sin(self.theta*self.initCount)))
+                # if self.initCount == 2:
+                #     target = self.instantMovingRefPointBot(self.initCount, (0, 1))
+                # elif self.initCount == 6:
+                #     target = self.instantMovingRefPointBot(self.initCount, (0, -1))
+                # else :
+                target = self.instantMovingRefPointBot(self.initCount, (np.cos(self.theta*self.initCount), np.sin(self.theta*self.initCount)))
+                self.refPointBots[self.initCount].defineObjective(target)
+                self.refPointBots[self.initCount].x, self.refPointBots[self.initCount].y = target
+                self.refPointBots[self.initCount].wallDetectionAction()
+
+            else:
+                self.refPointBots[self.initCount].defineObjective((self.measurerBot.x + 2000*np.cos(self.theta*self.initCount), self.measurerBot.y +2000*np.sin(self.theta*self.initCount)))
             self.initCount += 1
 
         else : # Si un point de repère ne voit plus trois autres points de repère, il s'arrête comme s'il avait rencontré un mur
             if not self.check3RefPointBotsAvailable(refPointBotsStatus[1]):
                 self.refPointBots[refPointBotsStatus[1]].wallDetectionAction()
+
+    def instantMovingRefPointBot(self, key, vectorDir):
+        bot = self.refPointBots[key]
+        closest = 100000
+        closestInter = None
+        print(key)
+        for wall in self.walls:
+            inter = lineSegmentInter([vectorDir, [bot.x , bot.y]], wall)
+            if inter != None:
+                vectorCol = np.array([inter[0] - bot.x, inter[1] - bot.y])
+                if np.dot(vectorDir, vectorCol)>=0:
+                    print("inter")
+                    dist = np.linalg.norm(vectorCol)
+                    if dist < closest:
+                        closest = dist
+                        adjustment = (vectorCol*1/dist)*10
+                        closestInter = (int(inter[0] - adjustment[0]), int(inter[1] - adjustment[1]))
+        return closestInter
 
     # check if refPointBots are moving
     def checkMovingRefPointBots(self):
@@ -161,12 +193,13 @@ class SwarmExploratorUWBSLAM():
 
     # principal move function
     def move(self):
-
+        tMove = time.time()
+        # print("########### duration of step : ", tMove - self.time)
+        self.time = tMove
+        t = time.time()
         self.grid.update(self.surfaceUWB,self.status)
-
-        #tMove = time.time()
-        #print("########### duration of step : ", tMove - self.time)
-        #self.time = tMove
+        # print("duration of grid.update : ", time.time() - t)
+        
 
         if self.status == "init":
             if self.initCount < self.nbRefPointBots:
@@ -174,30 +207,42 @@ class SwarmExploratorUWBSLAM():
                 if self.initCount == self.nbRefPointBots:
                     self.status = "FirsttransferRefPointBotToMeasuringBot"
         
-        if self.status == "movingRefPointBots":
-            self.moveRefPointBotsStep()
+        
 
+        if self.status == "movingRefPointBot":
+            if self.hasObj:
+                step = self.goToObj(self.refPointBots[self.nextRefStepGoal[0]])
+                if step == "end":
+                    self.hasObj = False
+                    self.status = "moveRefPointBot2ndStep"
 
         if self.status == "movingMeasuringBot":
 
-            #tTot = time.time()
+            tTot = time.time()
             if self.hasObj:
                 step = self.goToObj()
                 if step == "end":
-
+                    t = time.time()
                     target = self.findClosestCell()
 
                     if target is not None: 
                         self.mainPathIndex = 0
                         source = self.lastObj
                         # temporary solution!
-                        # self.grid.updateNeighOneNode(target)
+                        self.grid.updateNeighOneNode(target)
+                        # t = time.time()
                         weight, self.mainPath = (self.djikstra(source, target))
-                        self.addWeigthToPath()
+                        # print("duration of djikstra : ", time.time() - t)
+                        if self.mainPath is None:
+                            self.hasObj = False
+                            # self.moveRefPointBotsStep()
+                            self.status = "moveRefPointBot1stStep"
+                        else:
+                            self.addWeigthToPath()
                     else : 
                         self.hasObj = False
-                        self.moveRefPointBotsStep()
-                        self.status = "movingRefPointBots"
+                        # self.moveRefPointBotsStep()
+                        self.status = "moveRefPointBot1stStep"
                 elif step == "changedObj":
                     
                     target = self.findClosestCell()
@@ -209,8 +254,8 @@ class SwarmExploratorUWBSLAM():
                         self.addWeigthToPath()
                     else : 
                         self.hasObj = False
-                        self.moveRefPointBotsStep()
-                        self.status = "movingRefPointBots"
+                        # self.moveRefPointBotsStep()
+                        self.status = "moveRefPointBot1stStep"
 
                 elif step == "changed":
 
@@ -220,7 +265,7 @@ class SwarmExploratorUWBSLAM():
                     weight, self.mainPath = (self.djikstra(source, target))
                     self.addWeigthToPath()
 
-                # print("duration of tTot : ", time.time() - tTot)
+                # print("duration of movingMeasuringBot : ", time.time() - tTot)
 
         if self.status == "FirsttransferRefPointBotToMeasuringBot":
 
@@ -243,11 +288,10 @@ class SwarmExploratorUWBSLAM():
                     self.status = "movingMeasuringBot"
                 else:
                     self.hasObj = False
-                    self.moveRefPointBotsStep()
-                    self.status = "movingRefPointBots"
+                    # self.moveRefPointBotsStep()
+                    self.status = "moveRefPointBot1stStep"
 
         if self.status == "transferRefPointBotToMeasuringBot":
-
             if not self.checkMovingRefPointBots()[0]:
                 
                 # self.draw()
@@ -263,15 +307,23 @@ class SwarmExploratorUWBSLAM():
                     # temporary solution!
                     # self.grid.updateNeighOneNode(target)
                     weight, self.mainPath = (self.djikstra(source, target))
-                    self.addWeigthToPath()
-                    self.hasObj = True
-                    self.status = "movingMeasuringBot"
-                    self.initCount+=1
+                    if self.mainPath is None:
+                        self.hasObj = False
+                        # self.moveRefPointBotsStep()
+                        self.status = "moveRefPointBot1stStep"
+                    else:
+                        self.addWeigthToPath()
+                        self.hasObj = True
+                        self.status = "movingMeasuringBot"
+                        self.initCount+=1
                 else:
                     self.hasObj = False
-                    self.moveRefPointBotsStep()
-                    self.status = "movingRefPointBots"
+                    # self.moveRefPointBotsStep()
+                    self.status = "moveRefPointBot1stStep"
                     self.initCount = len(self.refPointBots) + 2   
+
+        if self.status == "moveRefPointBot1stStep" or self.status == "moveRefPointBot2ndStep" or self.status == "moveRefPointBot3rdStep":
+            self.moveRefPointBotsStep()
 
         #print("########### duration of move : ", time.time()- tMove)
 
@@ -287,31 +339,64 @@ class SwarmExploratorUWBSLAM():
                     minCoord = coord
         return minCoord
 
+    def findClosestVisitedCell(self, point):
+        minDist = 10000
+        minCoord = None
+        for coord in self.grid.graph:
+            if self.grid.graph[coord] == 1:
+                dist = distLists(point, coord)
+                if dist < minDist:
+                    minDist = dist
+                    minCoord = coord
+        return minCoord
+
+    def findClosestVisitedCellSmart(self, point):
+            minDist = 10000
+            minCoord = None
+            for coord in self.grid.graph:
+                if self.grid.graph[coord] == 1:
+                    dist = distLists(point, coord)
+                    if dist < minDist:
+                        visible = True
+                        vectorDir = np.array([coord[0] - point[0],coord[1] - point[1]])
+                        for wall in self.walls:
+                            inter = lineSegmentInter([vectorDir, point], wall)
+                            if inter != None:
+                                vectorCol = np.array([inter[0] - point[0], inter[1] - point[1]])
+                                if np.dot(vectorDir, vectorCol)>0:
+                                    if np.linalg.norm(vectorCol) < np.linalg.norm(vectorDir):
+                                        visible = False
+                                        break
+                        if visible :
+                            minDist = dist
+                            minCoord = coord
+            return minCoord
     # add status of all the cells in the paths as info for dynamic Djikstra
     def addWeigthToPath(self):
         for i in range(len(self.mainPath)):
             self.mainPath[i] = [self.mainPath[i], self.grid.graph[self.mainPath[i]]]
 
-   
-
     # attributes intermediary objectives to the measurerBot
-    def goToObj(self):
+    def goToObj(self, bot = None):
+        if bot is None:
+            bot = self.measurerBot
         if self.mainPathIndex < len(self.mainPath):
             if not self.checkMovingMeasurerBot():
                 status = self.checkPathUpdates(self.mainPathIndex)
                 #print(status)
                 if status == "ok":
                     obj = self.mainPath[self.mainPathIndex][0]
-                    self.lastObj = obj
+                    
                     if self.instantMoving:
-                        self.measurerBot.defineObjective(obj)
+                        bot.defineObjective(obj)
                         x, y = obj
-                        self.measurerBot.x, self.measurerBot.y = obj
+                        bot.x, bot.y = obj
                     else:
-                        self.measurerBot.defineObjective(obj)               
-
-                    if self.grid.graph[obj] != 1:
-                        self.grid.graph[obj] = 1
+                        bot.defineObjective(obj)               
+                    if bot == self.measurerBot:
+                        if self.grid.graph[obj] != 1:
+                            self.grid.graph[obj] = 1
+                        self.lastObj = obj
                     
                     x, y = obj
                     self.mainPathIndex +=1
@@ -409,18 +494,19 @@ class SwarmExploratorUWBSLAM():
 
     def moveRefPointBotsStep(self):
         if not self.checkMovingRefPointBots()[0] and not self.checkMovingMeasurerBot():
-            key = self.findLeastUsefulBots()
-            for bot in self.refPointBots:
-                self.refPointBots[bot].color = (0, 0, 255)
-            self.refPointBots[key].color = (150, 0, 255)
-            if self.nextRefStepIndex == 0:
+            
+            if self.status == "moveRefPointBot1stStep":
+                key = self.findLeastUsefulBots()
+                for bot in self.refPointBots:
+                    self.refPointBots[bot].color = (0, 0, 255)
+                self.refPointBots[key].color = (150, 0, 255)
                 #self.defineConvexHulls()
                 self.explorableClusters = []
                 self.explorableClustersDict = {}
                 self.nearestPoints = []
                 self.nextRefStepGoals = {}
                 self.nextRefStepGoal = None
-                self.nextRefStepIndex = 0
+                # self.nextRefStepIndex = 0
                 self.detectExplorablePart()
                 self.defineGravityCenterExplorableClusters()
                 nextGoal = None
@@ -428,24 +514,26 @@ class SwarmExploratorUWBSLAM():
                     nextGoal = goal
                     break
                 if nextGoal!=None:
-                    mindist = 10000
-                    minBot = None
-                    for bot in self.refPointBots:
-                        dist = distObjList(self.refPointBots[bot], nextGoal)
-                        if dist < mindist : 
-                            mindist = dist
-                            minBot = bot
+                    targetCell = self.findClosestVisitedCellSmart(nextGoal)
+                    sourceCell = self.findClosestVisitedCell((self.refPointBots[key].x, self.refPointBots[key].y))
                     minBot = key
                     self.nextRefStepGoal = [minBot, nextGoal]
-                    self.refPointBots[minBot].defineObjective(nextGoal)
-                    self.nextRefStepIndex += 1
-            elif self.nextRefStepIndex == 1 :
-                if distObjList(self.refPointBots[self.nextRefStepGoal[0]], self.nextRefStepGoal[1]) < 3:
-                    self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoals[self.nextRefStepGoal[1]])
-                    self.nextRefStepIndex = 0
+                    weight, self.mainPath = (self.djikstra(sourceCell, targetCell))
+                    self.mainPathIndex = 0
+                    self.addWeigthToPath()
+                    self.hasObj = True
+                    self.status = "movingRefPointBot"
+            elif self.status == "moveRefPointBot2ndStep":
+                # print("called")
+                self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoals[self.nextRefStepGoal[1]])
+                self.mainPathIndex = 0
+                self.status = "moveRefPointBot3rdStep"
+            elif self.status == "moveRefPointBot3rdStep":
+                # print("called4")
+                if not self.checkMovingRefPointBots()[0]:
+                    # print("called5")
                     self.status = "transferRefPointBotToMeasuringBot"
-                else:
-                    self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoal[1])
+                    self.updateUWBcoverArea = self.room.updateUWBcoverArea()
     
 
     def detectExplorablePart(self):
@@ -574,8 +662,9 @@ class SwarmExploratorUWBSLAM():
         for coord in self.nearestPoints:
             p1 = coord[0]
             p2 = coord[1]
-            a = (p1[1]-p2[1])/(p1[0]-p2[0])
-            b = p1[1]-a*p1[0]
-            pygame.draw.line(self.surfaceReferenceBot, (200, 0, 200, 200),(0,int(b)), (1600,int(a*1600+b)) , 1)
+            if p1[0]!=p2[0]:
+                a = (p1[1]-p2[1])/(p1[0]-p2[0])
+                b = p1[1]-a*p1[0]
+                pygame.draw.line(self.surfaceReferenceBot, (200, 0, 200, 200),(0,int(b)), (1600,int(a*1600+b)) , 1)
         # print(self.grid.adjacencyList)
 
