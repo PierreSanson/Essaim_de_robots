@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pygame
 
@@ -12,6 +14,7 @@ from shapely.geometry.polygon import Polygon
 
 class Tile():
     def __init__(self, x, y, width):
+
         self.x = x # 
         self.y = y # coordonnées du CENTRE
         self.center = (x,y)
@@ -111,6 +114,8 @@ class Tile():
 
 class Grid():
     def __init__(self,room,measuringBot,tileWidth=50):
+        self.time = time.time()
+
         self.room = room
         self.tileWidth = tileWidth
         self.tiles = {}
@@ -129,37 +134,46 @@ class Grid():
 
         # Metriques
         self.surface = 0
-        self.pathLength = 0
 
         
-        # Construction de toute la grille une bonne fois pour toutes
+        ### Construction de toute la grille
+
+        # on trouve la zone de l'écran intéressante (zone contenue entre les murs les plus éloignés)
+        Xs, Ys = [], []
+        for wall in self.room.walls:
+            Xs += wall.Xs
+            Ys += wall.Ys
+
+        Xmin, Xmax, Ymin, Ymax = min(Xs), max(Xs), min(Ys), max(Ys)
+            
+
         i = 0
-        while xMeasurer - i*tileWidth > 0:
+        while xMeasurer - i*tileWidth > Xmin:
             self.tiles[(xMeasurer - i*tileWidth,yMeasurer)] = Tile(xMeasurer - i*tileWidth,yMeasurer,self.tileWidth)
 
             j = 0
-            while yMeasurer - j*tileWidth > 0:
+            while yMeasurer - j*tileWidth > Ymin:
                 self.tiles[(xMeasurer - i*tileWidth,yMeasurer - j*tileWidth)] = Tile(xMeasurer - i*tileWidth,yMeasurer - j*tileWidth,self.tileWidth)
                 j += 1
 
             j = 1
-            while yMeasurer + j*tileWidth < room.height:
+            while yMeasurer + j*tileWidth < Ymax:
                 self.tiles[(xMeasurer - i*tileWidth,yMeasurer + j*tileWidth)] = Tile(xMeasurer - i*tileWidth,yMeasurer + j*tileWidth,self.tileWidth)
                 j += 1
 
             i += 1
 
         i = 1
-        while xMeasurer + i*tileWidth < room.width:
+        while xMeasurer + i*tileWidth < Xmax:
             self.tiles[(xMeasurer + i*tileWidth,yMeasurer)] = Tile(xMeasurer + i*tileWidth,yMeasurer,self.tileWidth)
 
             j = 1
-            while yMeasurer - j*tileWidth > 0:
+            while yMeasurer - j*tileWidth > Ymin:
                 self.tiles[(xMeasurer + i*tileWidth,yMeasurer - j*tileWidth)] = Tile(xMeasurer + i*tileWidth,yMeasurer - j*tileWidth,self.tileWidth)
                 j += 1
 
             j = 1
-            while yMeasurer + j*tileWidth < room.height:
+            while yMeasurer + j*tileWidth < Ymax:
                 self.tiles[(xMeasurer + i*tileWidth,yMeasurer + j*tileWidth)] = Tile(xMeasurer + i*tileWidth,yMeasurer + j*tileWidth,self.tileWidth)
                 j += 1
 
@@ -236,6 +250,8 @@ class Grid():
             '1101' : 1
         }
 
+        self.initDuration = time.time() - self.time
+
 
     # Méthode pour récupérer les métriques à la fin
     def get_metrics(self):
@@ -261,6 +277,7 @@ class Grid():
             tmp = self.tiles[coord].nbVisits
             visitsPerTile[coord] = tmp
             pathLength += tmp
+    
 
         return measuredTiles, self.surface, pathLength, history, visitsPerTile
 
@@ -273,7 +290,7 @@ class Grid():
         straight, diag = self.getNeighbours(start)
         tmp = straight + diag
         for coord in tmp:
-            if 0 <= coord[0] <= self.room.width and 0 <= coord[1] <= self.room.height and self.tiles[coord].containsWall == 0:
+            if coord in self.tiles and self.tiles[coord].containsWall == 0:
                 neighbours.append(coord)
         
         while neighbours != []:
@@ -283,7 +300,7 @@ class Grid():
             tmp = straight + diag
             for coord in tmp:
                 if not coord in neighbours and not coord in cluster: 
-                    if 0 <= coord[0] <= self.room.width and 0 <= coord[1] <= self.room.height and self.tiles[coord].containsWall == 0:
+                    if coord in self.tiles and self.tiles[coord].containsWall == 0:
                         neighbours.append(coord)
         
         return cluster

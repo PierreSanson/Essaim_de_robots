@@ -119,9 +119,7 @@ class SwarmExploratorUWBSLAM():
         print('\r\n')
 
         measuredTiles, surface, pathLength, history, visitsPerTile = self.grid.get_metrics()
-        simulationDuration =  time.time() - self.time      
         ### Sorties du simulateur
-        print('Durée de la simulation : %s' %simulationDuration)
         print('Nombre de cases mesurées : %s/%s' %(measuredTiles, surface))
         print('Longueur du parcours : %s cases' %pathLength)
         # autres sorties, pas pratiques à print : historique des états des différentes cases, nombre de passages par case, ce qui permettra d'extraire un peu tout ce qu'on veut
@@ -130,9 +128,8 @@ class SwarmExploratorUWBSLAM():
                     'surface'       : surface,
                     'pathLength'    : pathLength,
                     'history'       : history,
-                    'visitsPerTile' : visitsPerTile,
-                    'simulationDuration' : simulationDuration }
-
+                    'visitsPerTile' : visitsPerTile}
+        
         print('\r\n')
 
         return metrics # ici on renvoie tout, affichable ou pas

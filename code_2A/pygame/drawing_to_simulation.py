@@ -1,3 +1,5 @@
+import time
+
 from tkinter import *
 from tkinter.filedialog import askopenfilename
 
@@ -193,6 +195,8 @@ def load_and_launch_simulation():
 
     table = LoadFile()
 
+    initStart = time.time()
+
     if table is not None : # évite un crash si on ne sélectionne pas de fichier
 
         sw, sh = 1600, 900
@@ -209,6 +213,8 @@ def load_and_launch_simulation():
         surface5 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
 
         room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5)
+        initDuration = (time.time()-initStart)
+        simulationStart = time.time()
 
         clock = pygame.time.Clock()
         hz = 144
@@ -268,7 +274,12 @@ def load_and_launch_simulation():
 
         
         # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre
+        simulationDuration = time.time() - simulationStart
         metrics = control.print_metrics()
+        print("Durée de l'initialisation : %3.2f s" %initDuration)
+        print('Durée de la simulation : %3.2f s' %simulationDuration)
+        print('Durée totale : %3.2f s' %(initDuration + simulationDuration))
+        
 
         while not run:
             
