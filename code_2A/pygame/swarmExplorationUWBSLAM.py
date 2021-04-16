@@ -60,6 +60,8 @@ class SwarmExploratorUWBSLAM():
         self.moveMeasuringBotCount = 0
         self.moveRefPointBot = 0
         self.instantMoving = True
+        self.targetHistory = []
+        self.targetMethod = self.findTargetV3
 
         self.time = time.time()
 
@@ -263,7 +265,7 @@ class SwarmExploratorUWBSLAM():
                 step = self.goToObj()
                 if step == "end":
                     t = time.time()
-                    target = self.findClosestCell()
+                    target = self.targetMethod()
 
                     if target is not None: 
                         self.mainPathIndex = 0
@@ -287,7 +289,7 @@ class SwarmExploratorUWBSLAM():
 
                 elif step == "changedObj":
                     
-                    target = self.findClosestCell()
+                    target = self.targetMethod()
 
                     if target is not None: 
                         source = self.mainPath[self.mainPathIndex-1][0]
@@ -321,7 +323,7 @@ class SwarmExploratorUWBSLAM():
 
                 # self.drawGraph() # à commenter ou non pour afficher le graphe
                 self.grid.updateNeighOneNode(self.grid.origin)
-                target = self.findClosestCell()
+                target = self.targetMethod()
                 if target is not None:
                     source = (self.grid.origin[0], self.grid.origin[1])
                     weight, self.mainPath = (self.djikstra(source, target))
@@ -342,7 +344,7 @@ class SwarmExploratorUWBSLAM():
                 #self.updatePolygon()
                 #self.defineConvexHulls()
                 
-                target = self.findClosestCell()
+                target = self.targetMethod()
                 if target is not None:
                     self.mainPathIndex = 0
                     source = self.lastObj
@@ -371,7 +373,7 @@ class SwarmExploratorUWBSLAM():
         
 
     # find closest cell to define as objective for Djikstra    
-    def findClosestCell(self):
+    def findTargetV1(self):
         minDist = 10000
         minCoord = None
         for coord in self.grid.graph:
@@ -381,6 +383,59 @@ class SwarmExploratorUWBSLAM():
                     minDist = dist
                     minCoord = coord
         return minCoord
+    
+    def findTargetV2(self):
+        minDist = 10000
+        minCoord = []
+        for coord in self.grid.graph:
+            if self.grid.graph[coord] == 0.5:
+                dist = distObjList(self.measurerBot, coord)
+                if dist < minDist:
+                    minDist = dist
+                    minCoord = [coord]
+                elif dist == minDist:
+                    minCoord.append(coord)
+        minx = 10000
+        minCoordx = []
+        for coord in minCoord:
+            if coord[0] < minx:
+                minCoordx = [coord]
+            elif coord[0] == minx:
+                    minCoordx.append(coord)
+        miny = 10000
+        minCoordy = []
+        for coord in minCoordx:
+            if coord[0] < miny:
+                minCoordy = [coord]
+            elif coord[0] == miny:
+                    minCoordy.append(coord)
+        if len(minCoordy) == 0:
+            return None
+        return minCoordy[0]
+
+    def findTargetV3(self):
+        minDist = 10000
+        minCoord = None
+        for coord in self.grid.graph:
+            if self.grid.graph[coord] == 0.5:
+                dist = distObjList(self.measurerBot, coord)
+                if dist < minDist:
+                    minDist = dist
+                    minCoord = coord
+        neigh = self.getNeighbours(self.lastObj)
+        for coord in neigh:
+            if coord in self.grid.graph and self.grid.graph[coord] == 0.5:
+                if coord not in self.targetHistory:
+                    self.targetHistory.append(coord)
+        if minCoord is not None and minCoord not in self.targetHistory:
+            self.targetHistory.append(minCoord)
+        if len(self.targetHistory) == 0:
+            return None
+        for coord in self.targetHistory:
+            dist = distObjList(self.measurerBot, coord)
+            if dist == minDist:
+                self.targetHistory.remove(coord)
+                return coord
 
     def findClosestVisitedCell(self, point):
         minDist = 10000
@@ -623,21 +678,30 @@ class SwarmExploratorUWBSLAM():
             avgx=avgx//l
             avgy= avgy//l
             self.explorableClustersDict[(avgx, avgy)]=cluster
-        
-        polygonShapely = Polygon(self.polygons[0])
-        for polygon in self.polygons[1:]:
-            polygonShapely = polygonShapely.union(Polygon(polygon))
-        linestr = polygonShapely.boundary
-        for point in self.explorableClustersDict:
-            pointShapely = Point(point)
-            npoint = nearest_points(pointShapely, linestr)
-            line=[]
-            for p in npoint:
-                line.append(p.coords[:][0])
-            vec = (line[0][0] - line[1][0], line[0][1] - line[1][1])
-            nextGoal = (np.array(vec))*1000
-            self.nearestPoints.append(line)
-            self.nextRefStepGoals[point] = nextGoal
+        if len(self.polygons) == 0 or True:
+            for point in self.explorableClustersDict:
+                npoint = self.findClosestVisitedCellSmart(point)
+                if npoint is not None:
+                    vec = (point[0] - npoint[0], point[1] - npoint[1])
+                    nextGoal = (np.array(vec))*1000
+                    self.nearestPoints.append([point, npoint])
+                    self.nextRefStepGoals[point] = nextGoal
+        else:
+            polygonShapely = Polygon(self.polygons[0])
+            for polygon in self.polygons[1:]:
+                polygonShapely = polygonShapely.union(Polygon(polygon))
+            linestr = polygonShapely.boundary
+            for point in self.explorableClustersDict:
+                pointShapely = Point(point)
+                npoint = nearest_points(pointShapely, linestr)
+                line=[]
+                for p in npoint:
+                    line.append(p.coords[:][0])
+                vec = (line[0][0] - line[1][0], line[0][1] - line[1][1])
+                nextGoal = (np.array(vec))*1000
+                print(line)
+                self.nearestPoints.append(line)
+                self.nextRefStepGoals[point] = nextGoal
 
 
     def getNeighbours(self, coord):
@@ -695,7 +759,9 @@ class SwarmExploratorUWBSLAM():
         # t = time.time()
         self.surfaceUWB.blit(self.updateUWBcoverArea,(0,0), special_flags=pygame.BLEND_RGBA_MAX)
         # print("duration of self.room.updateUWBcoverArea() : ", time.time() - t)
+        # t = time.time()
         self.grid.draw(self.surfaceGrid)      
+        # print("duration of self.grid.draw : ", time.time() - t)
 
                 
         for i in range(len(self.mainPath)-1):
