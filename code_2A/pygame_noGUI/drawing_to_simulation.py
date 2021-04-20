@@ -14,26 +14,12 @@ from room import *
 import swarmExplorationUWBSLAM as seUWBSLAM
 import time
 
-def LoadFile():
-    
-    window = Tk()
-    window.withdraw()
-        
-    availableFormats = [("Pickle dump", "*.pickle")]
-    
-    filename = askopenfilename(title="Open File", filetypes=availableFormats)
-    filePath = filename[:]
+def LoadFile(filePath):
 
     if filePath:
         file = open(filePath, "rb")
         colors = pickle.load(file)
         file.close()
-
-        # convertir tableau numpy en simulateur
-        
-        filePathList = filePath.split("/")
-        fileName = filePathList[-1]
-        pygame.display.set_caption("Simulation - " + fileName)
 
         return colors
     
@@ -191,9 +177,9 @@ def redrawGameWindow(room, background, control):
     pygame.display.flip()
 
 
-def load_and_launch_simulation():
+def load_and_launch_simulation(filePath):
 
-    table = LoadFile()
+    table = LoadFile(filePath)
 
     initStart = time.time()
 
@@ -227,7 +213,6 @@ def load_and_launch_simulation():
             #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère)
         control = SEUWBSLAM
         while run:
-            start_iteration = time.time()
             clock.tick(hz)
             
             # utilisateur ferme la fenetre
@@ -269,13 +254,6 @@ def load_and_launch_simulation():
             room.updateExploration(debug = False, bots=bots)
             # print("duration of updateExploration : ", time.time() - t)
 
-            start_draw = time.time()
-            #redrawGameWindow(room, background, control)      
-            end_draw = time.time()
-
-            end_iteration = time.time()
-
-            print((end_draw-start_draw)/(end_iteration-start_iteration))
 
         
         # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre
