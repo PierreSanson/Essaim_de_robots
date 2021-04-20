@@ -37,6 +37,7 @@ class Tile():
         self.graph_status = 0
 
         # Metriques
+        self.metrics_coord = (0,0)
         self.history = [(self.seen,self.covered,self.obstacle,self.measured)]
         self.nbVisits = 0
 
@@ -144,41 +145,28 @@ class Grid():
             Xs += wall.Xs
             Ys += wall.Ys
 
-        Xmin, Xmax, Ymin, Ymax = min(Xs), max(Xs), min(Ys), max(Ys)
+        Xmin, Xmax, Ymin, Ymax = min(Xs) - tileWidth, max(Xs) + tileWidth, min(Ys) - tileWidth, max(Ys) + tileWidth
             
 
+        ####### faire une boucle qui récupère une liste coordinates, utiliser // pour trouver coordonnées de la case en haut à gauche
+        space_to_left = xMeasurer - Xmin
+        space_to_top = yMeasurer - Ymin
+
+        firstX = xMeasurer - (space_to_left//tileWidth)*tileWidth
+        firstY = yMeasurer - (space_to_top//tileWidth)*tileWidth
+
+        print(Xmin,Xmax,Ymin,Ymax)
+        print(firstX,firstY)
+
         i = 0
-        while xMeasurer - i*tileWidth > Xmin:
-            self.tiles[(xMeasurer - i*tileWidth,yMeasurer)] = Tile(xMeasurer - i*tileWidth,yMeasurer,self.tileWidth)
-
+        while firstX + i*tileWidth <= Xmax:
             j = 0
-            while yMeasurer - j*tileWidth > Ymin:
-                self.tiles[(xMeasurer - i*tileWidth,yMeasurer - j*tileWidth)] = Tile(xMeasurer - i*tileWidth,yMeasurer - j*tileWidth,self.tileWidth)
+            while firstY + j*tileWidth <= Ymax:
+                self.tiles[(firstX + i*tileWidth,firstY + j*tileWidth)] = Tile(firstX + i*tileWidth, firstY + j*tileWidth, self.tileWidth)
+                self.tiles[(firstX + i*tileWidth,firstY + j*tileWidth)].metrics_coord = (i,j)
                 j += 1
-
-            j = 1
-            while yMeasurer + j*tileWidth < Ymax:
-                self.tiles[(xMeasurer - i*tileWidth,yMeasurer + j*tileWidth)] = Tile(xMeasurer - i*tileWidth,yMeasurer + j*tileWidth,self.tileWidth)
-                j += 1
-
             i += 1
-
-        i = 1
-        while xMeasurer + i*tileWidth < Xmax:
-            self.tiles[(xMeasurer + i*tileWidth,yMeasurer)] = Tile(xMeasurer + i*tileWidth,yMeasurer,self.tileWidth)
-
-            j = 1
-            while yMeasurer - j*tileWidth > Ymin:
-                self.tiles[(xMeasurer + i*tileWidth,yMeasurer - j*tileWidth)] = Tile(xMeasurer + i*tileWidth,yMeasurer - j*tileWidth,self.tileWidth)
-                j += 1
-
-            j = 1
-            while yMeasurer + j*tileWidth < Ymax:
-                self.tiles[(xMeasurer + i*tileWidth,yMeasurer + j*tileWidth)] = Tile(xMeasurer + i*tileWidth,yMeasurer + j*tileWidth,self.tileWidth)
-                j += 1
-
-            i += 1
-
+            
         
         # On cherche toutes les cases qui contiennent un mur
         obstacles = self.room.obstacles
@@ -272,7 +260,7 @@ class Grid():
             if self.tiles[coord].measured == 1:
                 measuredTiles += 1
 
-            history[coord] = self.tiles[coord].history
+            history[self.tiles[coord].metrics_coord] = self.tiles[coord].history
 
             tmp = self.tiles[coord].nbVisits
             visitsPerTile[coord] = tmp

@@ -55,6 +55,8 @@ class Wall():
         for corner in self.corners:
             corner.reverse()
 
+        self.saveObstaclesMainCoord()
+
 
     def visibleForBot(self,bot):
         for obstacle in self.obstacles :
@@ -111,9 +113,6 @@ class Room():
         self.obstacles = obstacles
 
         self.objects = self.bots + self.obstacles
-
-        for wall in self.walls:
-            wall.saveObstaclesMainCoord()
 
 
     def addBots(self,bots):

@@ -227,6 +227,7 @@ def load_and_launch_simulation():
             #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère)
         control = SEUWBSLAM
         while run:
+            start_iteration = time.time()
             clock.tick(hz)
             
             # utilisateur ferme la fenetre
@@ -268,9 +269,13 @@ def load_and_launch_simulation():
             room.updateExploration(debug = False, bots=bots)
             # print("duration of updateExploration : ", time.time() - t)
 
-            # t = time.time()
+            start_draw = time.time()
             redrawGameWindow(room, background, control)      
-            # print("duration of redrawGameWindow : ", time.time() - t)
+            end_draw = time.time()
+
+            end_iteration = time.time()
+
+            print((end_draw-start_draw)/(end_iteration-start_iteration))
 
         
         # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre
@@ -279,6 +284,10 @@ def load_and_launch_simulation():
         print("Durée de l'initialisation : %3.2f s" %initDuration)
         print('Durée de la simulation : %3.2f s' %simulationDuration)
         print('Durée totale : %3.2f s' %(initDuration + simulationDuration))
+
+        print('\n')
+        test = list(metrics["history"].keys())
+        print(test[0],test[-1])
         
 
         while not run:
