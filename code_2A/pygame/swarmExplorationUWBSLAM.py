@@ -55,6 +55,7 @@ class SwarmExploratorUWBSLAM():
         self.convexHull = []
         self.convexHulls = []
         self.polygons = []
+        self.clusterExclusionList = []
 
         self.status = "init"
         self.initCount = 0
@@ -611,6 +612,27 @@ class SwarmExploratorUWBSLAM():
     
         return bestBot
 
+    def findClosestClusterToOrigin(self):
+        minDist = 10000
+        closestGoal = None
+        for goal in self.nextRefStepGoals:
+            if goal not in self.clusterExclusionList:
+                dist = distLists(self.initMeasurerPos, goal)
+                if dist < minDist:
+                    minDist = dist
+                    closestGoal = goal
+        return closestGoal
+
+    def findClosestClusterToMeasurerBot(self):
+        minDist = 10000
+        closestGoal = None
+        for goal in self.nextRefStepGoals:
+            if goal not in self.clusterExclusionList:
+                dist = distLists((self.measurerBot.x, self.measurerBot.y), goal)
+                if dist < minDist:
+                    minDist = dist
+                    closestGoal = goal
+        return closestGoal
 
     def moveRefPointBotsStep(self):
         if not self.checkMovingRefPointBots()[0] and not self.checkMovingMeasurerBot():
@@ -634,20 +656,21 @@ class SwarmExploratorUWBSLAM():
                 # self.nextRefStepIndex = 0
                 self.detectExplorablePart()
                 self.defineGravityCenterExplorableClusters()
-                nextGoal = None
-                for goal in self.nextRefStepGoals:
-                    nextGoal = goal
-                    break
-                if nextGoal!=None:
+                nextGoal = self.findClosestClusterToOrigin()
+                if nextGoal is None:
+                    self.end_simulation = True     
+                else :
                     targetCell = self.findClosestVisitedCellSmart(nextGoal)
                     sourceCell = self.findClosestVisitedCellSmart((self.refPointBots[key].x, self.refPointBots[key].y))
                     minBot = key
                     self.nextRefStepGoal = [minBot, nextGoal]
                     weight, self.mainPath = (self.djikstra(sourceCell, targetCell))
                     self.mainPathIndex = 0
-                    self.addWeigthToPath()
-                    self.hasObj = True
-                    self.status = "movingRefPointBot"
+                    if self.mainPath is not None:
+                        self.addWeigthToPath()
+                        self.hasObj = True
+                        self.status = "movingRefPointBot"
+                    self.clusterExclusionList.append(nextGoal)
             elif self.status == "moveRefPointBot2ndStep":
                 if self.instantMovingRefPointBot:
                     bot = self.refPointBots[self.nextRefStepGoal[0]]
@@ -690,6 +713,7 @@ class SwarmExploratorUWBSLAM():
             self.end_simulation = True            
         
         # allInterNull = True
+        # "clusterize" the explorable cells
         index = 0
         i=1
         while index < len(self.explorableClusters):
