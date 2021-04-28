@@ -55,7 +55,7 @@ class Tile():
         # 111- : vu et couvert, obstacle                        couleur : rouge                     (200,0,0,100)       #
         # 1100 : vu et couvert, pas d'obstacle, pas mesuré      couleur : jaune                     (200,200,0,100)     #
         # 1101 : vu et couvert, pas d'obstacle, mesuré          couleur : vert                      (0,200,0,100)       #
-        # 1001 : vu et plus couvert, déjà mesuré                couleur : vert                      (0,200,0,100)       #
+        # 1001 : vu et plus couvert, déjà mesuré                couleur : violet                    (200,0,200,100)     #
         #                                                                                                               #
         #################################################################################################################
 
@@ -70,11 +70,13 @@ class Tile():
         if not self.seen:
             if surfaceVision.get_at(self.center) == (0,0,0,0): # deuxième condition pour éviter cases jaunes au passage des bots UWB
                 self.seen = 1
+
             # Cas particulier : cases vues partiellement à cause d'un mur, on ne peut pas se contenter de regarder le centre
             if self.containsWall:
                 for corner in self.corners:
                     if surfaceVision.get_at(corner) == (0,0,0,0):
                         self.seen = 1
+
 
         # On vérifie si la case est couverte
         if surfaceUWB.get_at(self.center) == (0, 0, 200, 60): # cf fonction updateUWBcoverArea de la classe Room
@@ -209,7 +211,7 @@ class Grid():
             '0110' : (255,255,255,100),
             '0111' : (255,255,255,100),
             '1000' : (200,100,0,200),
-            '1001' : (0,200,0,200),
+            '1001' : (200,0,200,200),
             '1010' : (200,0,0,200),
             '1011' : (200,0,0,200),
             '1110' : (200,0,0,200),
@@ -229,7 +231,7 @@ class Grid():
             '0110' : 0,
             '0111' : 0,
             '1000' : 2,
-            '1001' : 1,
+            '1001' : 2,
             '1010' : -1,
             '1011' : -1,
             '1110' : -1,
@@ -310,7 +312,7 @@ class Grid():
             self.graph[coord] = self.tiles[coord].graph_status
             if self.tiles[coord].has_changed:
                 self.updateNeighOneNode(coord)
-            if self.graph[coord] == -1:
+            if self.graph[coord] == -1 or self.graph[coord] == 2:
                 self.removeNodeFromGraph(coord)
 
     

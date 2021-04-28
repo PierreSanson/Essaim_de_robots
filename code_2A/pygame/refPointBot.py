@@ -14,6 +14,7 @@ class RefPointBot(Bot):
         self.message = message
         self.wallDetectionRadius = 30
         self.UWBradius = 1000
+        self.isMoving = False
 
     def show_self(self):
         print(self.message)

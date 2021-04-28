@@ -176,6 +176,7 @@ class Room():
         if debug:
             # debugging, pour afficher la vision des robots seulement à l'instant t
             self.surface2.fill((0,0,0,200))
+            
         if bots is not None:
             for bot in bots:
                 # détection des murs et des zones visibles
@@ -216,8 +217,9 @@ class Room():
                 # détection des murs et des zones visibles
                 visibleSurface = bot.UWBcover()
 
-                # affichage de la portée de chaque robot
-                temp.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_ADD)
+                # affichage de la portée de chaque robot, seulement si immobile
+                if not bot.isMoving:
+                    temp.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_ADD)
 
         # On ne conserve que les zones de couleur >= à (0,0,60,60)
         UWBcolor = (0,0,200,60)

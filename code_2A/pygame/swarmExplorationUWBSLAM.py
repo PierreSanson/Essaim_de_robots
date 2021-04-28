@@ -12,6 +12,7 @@ import pygame
 from igraph import *
 from igraph.drawing import graph
 
+import refPointBot as refB
 from utilities import *
 from grid_and_graph import Tile, Grid
 
@@ -112,7 +113,7 @@ class SwarmExploratorUWBSLAM():
     def print_metrics(self):
 
         print('\r\n')
-
+ 
         ### Résumé des entrées du simulateur
         print('Nombre de robots points de repère : %s' %self.nbRefPointBots)
         print('Nombre de robots mesureurs : %s' %(len(self.room.bots)-self.nbRefPointBots))
@@ -337,6 +338,10 @@ class SwarmExploratorUWBSLAM():
         if self.status == "transferRefPointBotToMeasuringBot":
             if not self.checkMovingRefPointBots()[0]:
                 
+                for bot in self.refPointBots:
+                    if isinstance(self.refPointBots[bot],refB.RefPointBot):
+                        self.refPointBots[bot].isMoving = False
+
                 # self.draw()
                 # self.grid.updateGraph()
                 self.updateUWB()
@@ -614,6 +619,9 @@ class SwarmExploratorUWBSLAM():
                 key = self.findLeastUsefulBots()
                 if key is None:
                     key = self.findLeastUsefulBotsNoPolygons()
+
+                self.refPointBots[key].isMoving = True
+
                 for bot in self.refPointBots:
                     self.refPointBots[bot].color = (0, 0, 255)
                 self.refPointBots[key].color = (150, 0, 255)

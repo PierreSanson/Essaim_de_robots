@@ -270,7 +270,7 @@ def load_and_launch_simulation():
             # print("duration of updateExploration : ", time.time() - t)
 
             start_draw = time.time()
-            #redrawGameWindow(room, background, control)      
+            redrawGameWindow(room, background, control)      
             end_draw = time.time()
 
             end_iteration = time.time()
