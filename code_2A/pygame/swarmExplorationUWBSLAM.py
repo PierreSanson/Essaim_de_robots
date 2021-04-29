@@ -269,7 +269,7 @@ class SwarmExploratorUWBSLAM():
                     self.status = "moveRefPointBot2ndStep"
 
         if self.status == "movingMeasuringBot":
-
+            print("movingMeasurerBot")
             tTot = time.time()
             if self.hasObj:
                 step = self.goToObj()
@@ -280,6 +280,8 @@ class SwarmExploratorUWBSLAM():
                     exclusionList = []
                     while self.mainPath is None:
                         target = self.targetMethod(exclusionList)
+                        print(target)
+                        print(exclusionList)
                         if target is not None: 
                             self.mainPathIndex = 0
                             source = self.lastObj
@@ -358,28 +360,55 @@ class SwarmExploratorUWBSLAM():
                 self.updateUWB()
                 #self.updatePolygon()
                 #self.defineConvexHulls()
-                
-                target = self.targetMethod()
-                if target is not None:
-                    self.mainPathIndex = 0
-                    source = self.lastObj
-                    # temporary solution!
-                    # self.grid.updateNeighOneNode(target)
-                    weight, self.mainPath = (self.djikstra(source, target))
-                    if self.mainPath is None:
+                self.target = None
+                self.mainPath = None
+                exclusionList = []
+                while self.mainPath is None:
+                    target = self.targetMethod(exclusionList)
+                    print(target)
+                    print(exclusionList)
+                    if target is not None: 
+                        self.mainPathIndex = 0
+                        source = self.lastObj
+                        # temporary solution!
+                        self.grid.updateNeighOneNode(target)
+                        # t = time.time()
+                        weight, self.mainPath = (self.djikstra(source, target))
+                        # print("duration of djikstra : ", time.time() - t)
+                        if self.mainPath is None:
+                            exclusionList.append(target)
+                        else:
+                            self.addWeigthToPath()
+                            self.hasObj = True
+                            self.status = "movingMeasuringBot"
+                            self.initCount+=1
+                            
+                    else : 
                         self.hasObj = False
-                        # self.moveRefPointBotsStep()
                         self.status = "moveRefPointBot1stStep"
-                    else:
-                        self.addWeigthToPath()
-                        self.hasObj = True
-                        self.status = "movingMeasuringBot"
-                        self.initCount+=1
-                else:
-                    self.hasObj = False
-                    # self.moveRefPointBotsStep()
-                    self.status = "moveRefPointBot1stStep"
-                    self.initCount = len(self.refPointBots) + 2   
+                        self.initCount = len(self.refPointBots) + 2 
+                        break
+                # target = self.targetMethod()
+                # if target is not None:
+                #     self.mainPathIndex = 0
+                #     source = self.lastObj
+                #     # temporary solution!
+                #     # self.grid.updateNeighOneNode(target)
+                #     weight, self.mainPath = (self.djikstra(source, target))
+                #     if self.mainPath is None:
+                #         self.hasObj = False
+                #         # self.moveRefPointBotsStep()
+                #         self.status = "moveRefPointBot1stStep"
+                #     else:
+                #         self.addWeigthToPath()
+                #         self.hasObj = True
+                #         self.status = "movingMeasuringBot"
+                #         self.initCount+=1
+                # else:
+                #     self.hasObj = False
+                #     # self.moveRefPointBotsStep()
+                #     self.status = "moveRefPointBot1stStep"
+                #     self.initCount = len(self.refPointBots) + 2   
 
         if self.status == "moveRefPointBot1stStep" or self.status == "moveRefPointBot2ndStep" or self.status == "moveRefPointBot3rdStep":
             self.moveRefPointBotsStep()
