@@ -275,7 +275,7 @@ def load_and_launch_simulation():
 
             end_iteration = time.time()
 
-            print((end_draw-start_draw)/(end_iteration-start_iteration))
+            # print((end_draw-start_draw)/(end_iteration-start_iteration))
 
         
         # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre

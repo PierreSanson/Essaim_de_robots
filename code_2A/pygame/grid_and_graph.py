@@ -231,7 +231,7 @@ class Grid():
             '0110' : 0,
             '0111' : 0,
             '1000' : 2,
-            '1001' : 2,
+            '1001' : 1.5,
             '1010' : -1,
             '1011' : -1,
             '1110' : -1,
@@ -312,7 +312,7 @@ class Grid():
             self.graph[coord] = self.tiles[coord].graph_status
             if self.tiles[coord].has_changed:
                 self.updateNeighOneNode(coord)
-            if self.graph[coord] == -1 or self.graph[coord] == 2:
+            if self.graph[coord] == -1 or self.graph[coord] == 2 or self.graph[coord] == 1.5:
                 self.removeNodeFromGraph(coord)
 
     
