@@ -193,7 +193,10 @@ def pointInPolygon(lineEmitter, polygon):
 def rot2D(vec, theta):
     x = vec[0]*np.cos(theta) + vec[1]*np.sin(theta)
     y = -vec[0]*np.sin(theta) + vec[1]*np.cos(theta)
-    return (x, y)
+    vec = np.array([x,y])
+    vec = vec/np.linalg.norm(vec)
+    vec = list(np.around(vec, 5))
+    return vec
 
 def lineSegmentInter(line, segment):
     a = round(line[0][1],8)
