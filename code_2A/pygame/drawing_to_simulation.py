@@ -101,7 +101,7 @@ def find_walls_corners(table):
     return walls_corners
 
 
-def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5):
+def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode):
 
     robots_centers = []
     for row in range(len(table)):
@@ -149,7 +149,7 @@ def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5):
 
     room.addBots(bots)
 
-    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface3, surface4, surface5, room, measuringBots[0], refPointBots)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface3, surface4, surface5, room, measuringBots[0], refPointBots, mode)
 
     return room, SEUWBSLAM
 
@@ -212,7 +212,11 @@ def load_and_launch_simulation():
         # une surface supplémentaire pour des affichages annexes
         surface5 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
 
-        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5)
+        ################# vision et zone UWB exactes ('exact') ou discrétisées ('discrete')
+        mode = 'discrete'
+        #################
+
+        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode)
         initDuration = (time.time()-initStart)
         simulationStart = time.time()
 
@@ -221,11 +225,8 @@ def load_and_launch_simulation():
 
         run = True 
         ## Choix du type de déplacement
-            # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
-            #                   SE (exploration d'une salle connue), 
-            #                   SCUWBSLAM, 
-            #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère)
         control = SEUWBSLAM
+
         while run:
             start_iteration = time.time()
             clock.tick(hz)
@@ -239,35 +240,30 @@ def load_and_launch_simulation():
             if control.end_simulation == True:
                 run = False
 
-
-            ## Choix du type de déplacement
-            # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
-            #                   SE (exploration d'une salle connue), 
-            #                   SCUWBSLAM, 
-            #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère) <--- seule méthode conservée
             # t = time.time()
             control.move()
             # print("duration of control.move() : ", time.time() - t)
+            
             ## Itération sur l'ensemble des robots pour les faire se déplacer
             # t = time.time()
             for bot in room.bots:
                 bot.move()
             # print("duration of bot.move() : ", time.time() - t)
 
-            ## Prise en compte des nouvelles zones vues par les robots
-            # t = time.time()
-            bots = None
-            movingRefPointBots = control.checkMovingRefPointBots()
+            if mode == "exact": # si mode == 'discrete', alors la vision est inclue dans le control.move()
+                ## Prise en compte des nouvelles zones vues par les robots
+                # t = time.time()
+                bots = None
+                movingRefPointBots = control.checkMovingRefPointBots()
 
-            if control.status == "movingMeasuringBot":
-
-                bots = [control.measurerBot]
-            if movingRefPointBots[0]:
-                bots = [control.refPointBots[movingRefPointBots[1]]]
-            elif control.checkMovingMeasurerBot():
-                bots = [control.measurerBot]
-            room.updateExploration(debug = False, bots=bots)
-            # print("duration of updateExploration : ", time.time() - t)
+                if control.status == "movingMeasuringBot":
+                    bots = [control.measurerBot]
+                if movingRefPointBots[0]:
+                    bots = [control.refPointBots[movingRefPointBots[1]]]
+                elif control.checkMovingMeasurerBot():
+                    bots = [control.measurerBot]
+                room.updateExploration(debug = False, bots=bots)
+                # print("duration of updateExploration : ", time.time() - t)
 
             start_draw = time.time()
             redrawGameWindow(room, background, control)      

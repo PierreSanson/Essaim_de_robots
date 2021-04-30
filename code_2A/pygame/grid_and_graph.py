@@ -8,6 +8,8 @@ from igraph.drawing import graph
 
 from measuringBot import MeasuringBot
 
+from utilities import segmentsIntersect
+
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
@@ -61,7 +63,7 @@ class Tile():
 
 
 
-    def update(self,surfaceVision,surfaceUWB,bots,color_dictionary,graph_status_dictionary):
+    def updateExact(self,surfaceVision,surfaceUWB,bots,color_dictionary,graph_status_dictionary):
 
         self.has_changed = False
         oldState = self.state
@@ -86,7 +88,6 @@ class Tile():
 
         # On vérifie si la case contient un obstacle
         # Si la case contient un mur, ça ne vas pas changer.
-
         if not self.containsWall and False: # on ne vérifie pas pour l'instant
             if self.UWBbotInTile(bots):
                 self.obstacle = 1
@@ -104,6 +105,41 @@ class Tile():
         self.graph_status = graph_status_dictionary[self.state]
 
     
+    def updateDiscrete(self,walls,measuringBot,refPointBots,color_dictionary,graph_status_dictionary):
+
+        self.has_changed = False
+        oldState = self.state
+
+        # On vérifie si la case a été vue. Si oui, elle restera vue.
+        if not self.seen:
+            if self.isSeen(walls,measuringBot): # deuxième condition pour éviter cases jaunes au passage des bots UWB
+                self.seen = 1
+
+        # On vérifie si la case est couverte
+        if self.isCovered(walls, refPointBots):
+            self.covered = 1
+        else:
+            self.covered = 0
+
+        # On vérifie si la case contient un obstacle
+        # Si la case contient un mur, ça ne vas pas changer.
+        if not self.containsWall and False: # on ne vérifie pas pour l'instant
+            if self.UWBbotInTile(refPointBots):
+                self.obstacle = 1
+            else:
+                self.obstacle = 0
+
+        self.history.append((self.seen,self.covered,self.obstacle,self.measured))
+        self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured])
+        if self.state != oldState:
+            self.has_changed = True
+
+        # mise à jour de la couleur
+        self.color = color_dictionary[self.state]
+        self.graph_status = graph_status_dictionary[self.state]
+        
+
+    
     def UWBbotInTile(self,bots):
         for bot in bots:
             if not isinstance(bot,MeasuringBot):
@@ -113,15 +149,50 @@ class Tile():
         return False
 
 
+    def isSeen(self,wallsInView,measuringBot):
+        if self.containsWall:
+            for corner in self.corners:
+                cornerInView = True
+                for wall in wallsInView:
+                    if segmentsIntersect([(corner[0],corner[1]),(measuringBot.x,measuringBot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))]) is not None:
+                        cornerInView = False
+                if cornerInView:
+                    return True
+
+        else:
+            for wall in wallsInView:
+                if segmentsIntersect([(self.x,self.y),(measuringBot.x,measuringBot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))]) is not None:
+                    return False
+            return True
+
+
+    def isCovered(self,walls,refPointBots):
+        UWB_in_range = 0
+        for bot in refPointBots:
+            inView = True
+            for wall in walls:
+                if segmentsIntersect([(self.x,self.y),(bot.x,bot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))]) is not None:
+                    inView = False
+
+            if inView:
+                UWB_in_range += 1
+
+            if UWB_in_range == 3:
+                return True
+
+        return False
+
 
 
 class Grid():
-    def __init__(self,room,measuringBot,tileWidth=50):
+    def __init__(self,room,measuringBot,refPointBots,tileWidth=50):
         self.time = time.time()
 
         self.room = room
         self.tileWidth = tileWidth
         self.tiles = {}
+
+        self.refPointBots = refPointBots
 
         self.measuringBot = measuringBot
         self.oldObjective = measuringBot.objective
@@ -291,7 +362,7 @@ class Grid():
 
 
     ### Méthodes pour la grille
-    def update(self,surfaceUWB,status):
+    def update(self,surfaceUWB,status,mode):
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
         # Une case a été mesurée si le robot a changé d'objectif
         if status == "movingMeasuringBot" and self.measuringBot.objective != None:
@@ -302,7 +373,10 @@ class Grid():
         self.oldObjective = self.measuringBot.objective        
 
         for coord in self.tiles:
-            self.tiles[coord].update(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary)
+            if mode == 'exact':
+                self.tiles[coord].updateExact(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary)
+            elif mode == 'discrete':
+                self.tiles[coord].updateDiscrete(self.room.walls,self.measuringBot,self.refPointBots,self.color_dictionary,self.graph_status_dictionary) 
             self.graph[coord] = self.tiles[coord].graph_status
             if self.tiles[coord].has_changed:
                 self.updateNeighOneNode(coord)

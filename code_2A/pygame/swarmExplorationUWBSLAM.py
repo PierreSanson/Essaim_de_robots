@@ -25,7 +25,7 @@ from shapely.ops import nearest_points
 
 
 class SwarmExploratorUWBSLAM():
-    def __init__(self, surfaceUWB, surfaceGrid, surfaceReferenceBot, room, measurerBot, refPointBots, distRefPointBots = [110, 110], initRadius=50) :
+    def __init__(self, surfaceUWB, surfaceGrid, surfaceReferenceBot, room, measurerBot, refPointBots, mode='exact', distRefPointBots = [110, 110], initRadius=50) :
         self.room = room
         self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
@@ -80,7 +80,9 @@ class SwarmExploratorUWBSLAM():
         self.lastRPBTarget = [None]
         self.lastRPBMoved = None
 
-        self.updateUWBcoverArea = self.updateUWB()
+        self.updateUWBcoverArea = None
+
+        self.mode = mode
 
 
         initObjectives = []
@@ -113,7 +115,7 @@ class SwarmExploratorUWBSLAM():
 
         self.refPointBotsVisible = self.refPointBots.copy()
 
-        self.grid = Grid(self.room,self.measurerBot)
+        self.grid = Grid(self.room,self.measurerBot,refPointBots)
 
         ############ Détection de la fin de la simulation
         self.end_simulation = False
@@ -249,7 +251,7 @@ class SwarmExploratorUWBSLAM():
         # print("########### duration of step : ", tMove - self.time)
         self.time = tMove
         t = time.time()
-        self.grid.update(self.surfaceUWB,self.status)
+        self.grid.update(self.surfaceUWB,self.status,self.mode)
         # print("duration of grid.update : ", time.time() - t)
         
 
@@ -696,7 +698,7 @@ class SwarmExploratorUWBSLAM():
                 if key is None :
                     self.end_simulation = True
                 else:
-                    self.grid.update(self.surfaceUWB,self.status)
+                    self.grid.update(self.surfaceUWB,self.status,self.mode)
                     self.explorableClusters = []
                     self.explorableClustersDict = {}
                     self.nearestPoints = []
