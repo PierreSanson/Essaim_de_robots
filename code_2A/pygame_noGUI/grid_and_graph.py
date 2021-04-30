@@ -1,7 +1,6 @@
 import time
 
 import numpy as np
-import pygame
 
 from igraph import *
 from igraph.drawing import graph
@@ -145,7 +144,7 @@ class Grid():
             Xs += wall.Xs
             Ys += wall.Ys
 
-        Xmin, Xmax, Ymin, Ymax = min(Xs) - tileWidth, max(Xs) + tileWidth, min(Ys) - tileWidth, max(Ys) + tileWidth
+        Xmin, Xmax, Ymin, Ymax = self.room.Xmin - tileWidth, self.room.Xmax + tileWidth, self.room.Ymin - tileWidth, self.room.Xmax + tileWidth
             
 
         ####### faire une boucle qui récupère une liste coordinates, utiliser // pour trouver coordonnées de la case en haut à gauche
@@ -154,9 +153,6 @@ class Grid():
 
         firstX = xMeasurer - (space_to_left//tileWidth)*tileWidth
         firstY = yMeasurer - (space_to_top//tileWidth)*tileWidth
-
-        print(Xmin,Xmax,Ymin,Ymax)
-        print(firstX,firstY)
 
         i = 0
         while firstX + i*tileWidth <= Xmax:
@@ -312,11 +308,6 @@ class Grid():
                 self.updateNeighOneNode(coord)
             if self.graph[coord] == -1:
                 self.removeNodeFromGraph(coord)
-
-    
-    def draw(self,surface):
-        for tile in self.tiles.values():
-            pygame.draw.rect(surface, tile.color, (tile.corners[0][0], tile.corners[0][1], tile.width, tile.height),width = 1)
 
 
     ### Méthodes pour le graphe

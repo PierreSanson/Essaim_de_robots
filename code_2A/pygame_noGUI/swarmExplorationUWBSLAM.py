@@ -142,7 +142,6 @@ class SwarmExploratorUWBSLAM():
             self.updateUWB()
             #self.defineConvexHulls()
             if self.instantMovingRefPointBot:
-                print((np.cos(self.theta*self.initCount), np.sin(self.theta*self.initCount)))
                 # if self.initCount == 2:
                 #     target = self.instantMovingRefPointBot(self.initCount, (0, 1))
                 # elif self.initCount == 6:
@@ -166,13 +165,11 @@ class SwarmExploratorUWBSLAM():
         bot = self.refPointBots[key]
         closest = 100000
         closestInter = None
-        print(key)
         for wall in self.walls:
             inter = lineSegmentInter([vectorDir, [bot.x , bot.y]], wall)
             if inter != None:
                 vectorCol = np.array([inter[0] - bot.x, inter[1] - bot.y])
                 if np.dot(vectorDir, vectorCol)>=0:
-                    print("inter")
                     dist = np.linalg.norm(vectorCol)
                     if dist < closest:
                         closest = dist
@@ -692,36 +689,4 @@ class SwarmExploratorUWBSLAM():
         # application de cette nouvelle surface sur l'ancienne (à modifier dans la version noGUI)
         self.surfaceUWB.fill((0,0,0,0))
         self.surfaceUWB.blit(self.updateUWBcoverArea,(0,0), special_flags=pygame.BLEND_RGBA_MAX)
-
-   
-    def draw(self):
-        # on réinitialise les surfaces
-        self.surfaceUWB.fill((0,0,0,0))
-        self.surfaceGrid.fill((0,0,0,0))
-        self.surfaceReferenceBot.fill((0,0,0,0))
-
-        # on affiche la zone UWB et la grille
-        # t = time.time()
-        self.surfaceUWB.blit(self.updateUWBcoverArea,(0,0), special_flags=pygame.BLEND_RGBA_MAX)
-        # print("duration of self.room.updateUWBcoverArea() : ", time.time() - t)
-        self.grid.draw(self.surfaceGrid)      
- 
-        # self.trajectory est utilisé seulement ici, on peut donc le laisser dans le draw
-        for i in range(len(self.mainPath)-1):
-            line = (self.mainPath[i][0], self.mainPath[i+1][0])
-            if line not in self.trajectory:
-                self.trajectory.append(line)
-
-        for line in self.trajectory:
-            pygame.draw.line(self.surfaceReferenceBot, (0, 0, 100, 200), line[0], line[1], 3)
-        for coord in self.explorableClustersDict:
-            pygame.draw.circle(self.surfaceReferenceBot, (200, 100, 0, 200), coord, 4)
-        for coord in self.nearestPoints:
-            p1 = coord[0]
-            p2 = coord[1]
-            if p1[0]!=p2[0]:
-                a = (p1[1]-p2[1])/(p1[0]-p2[0])
-                b = p1[1]-a*p1[0]
-                pygame.draw.line(self.surfaceReferenceBot, (200, 0, 200, 200),(0,int(b)), (1600,int(a*1600+b)) , 1)
-        # print(self.grid.adjacencyList)
 

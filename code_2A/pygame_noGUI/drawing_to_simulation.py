@@ -14,6 +14,7 @@ from room import *
 import swarmExplorationUWBSLAM as seUWBSLAM
 import time
 
+
 def LoadFile(filePath):
 
     if filePath:
@@ -140,42 +141,6 @@ def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5):
     return room, SEUWBSLAM
 
 
-def redrawGameWindow(room, background, control):
-    
-    ### Composition de la scène
-    # on choisit et on applique la couleur de l'arrière plan de la simulation
-    background.fill((100,100,100))
-
-    # ajout d'une surcouche transparente pour les zones déjà explorées et sombre dans les zones non explorées
-    background.blit(room.surface2, (0,0))
-
-    # ajout des murs et robots au dessus de l'arrière plan
-    room.surface1.fill((0,0,0,0)) # (noir) transparent
-    # mise à jour des robots
-    for bot in room.bots:
-        bot.draw()
-
-    # affichage optionel des obtsacles :
-    # for obstacle in room.obstacles:
-    #     obstacle.draw()
-
-    # mise à jour des murs vus
-    # t= time.time()
-    room.draw_walls()
-    # print("duration of draw_walls : ", time.time() - t)
-    background.blit(room.surface1, (0,0))
-
-    # on ajoute à l'arrière plan tous les affichages spécifiques à la méthode de contrôle de l'essaim choisie
-    # t= time.time()
-    control.draw()
-    # print("duration of control.draw : ", time.time() - t)
-    background.blit(control.surfaceUWB, (0,0))
-    background.blit(control.surfaceGrid, (0,0))
-    background.blit(control.surfaceReferenceBot,(0,0))
-
-    ### mise à jour de l'affichage complet
-    pygame.display.flip()
-
 
 def load_and_launch_simulation(filePath):
 
@@ -185,8 +150,13 @@ def load_and_launch_simulation(filePath):
 
     if table is not None : # évite un crash si on ne sélectionne pas de fichier
 
+        pygame.init()
+        background = pygame.display.set_mode((600, 200))
+        myfont = pygame.font.SysFont('Comic Sans MS', 30)
+        textsurface = myfont.render('Some Text', False, (255, 255, 255))
+        background.blit(textsurface,(0,0))
+
         sw, sh = 1600, 900
-        background = pygame.display.set_mode((sw, sh))
         # les murs et les robots
         surface1 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
         # la vision des robots
@@ -202,18 +172,15 @@ def load_and_launch_simulation(filePath):
         initDuration = (time.time()-initStart)
         simulationStart = time.time()
 
-        clock = pygame.time.Clock()
-        hz = 144
+        
+        duration_control_move = 0
+        duration_bot_move = 0
+        duration_update_exploration = 0
 
         run = True 
         ## Choix du type de déplacement
-            # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
-            #                   SE (exploration d'une salle connue), 
-            #                   SCUWBSLAM, 
-            #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère)
         control = SEUWBSLAM
         while run:
-            clock.tick(hz)
             
             # utilisateur ferme la fenetre
             for event in pygame.event.get():
@@ -224,23 +191,21 @@ def load_and_launch_simulation(filePath):
             if control.end_simulation == True:
                 run = False
 
-
-            ## Choix du type de déplacement
-            # Choisir parmi :   SC (premiere version avec l'essaim qui fait la chenille), 
-            #                   SE (exploration d'une salle connue), 
-            #                   SCUWBSLAM, 
-            #                   SEUWBSLAM (methode de Raul avec dispersion initiale des points de repère) <--- seule méthode conservée
-            # t = time.time()
+            ## Calcul des mvmts à effectuer
+            t = time.time()
             control.move()
             # print("duration of control.move() : ", time.time() - t)
+            duration_control_move += time.time() - t
+
             ## Itération sur l'ensemble des robots pour les faire se déplacer
-            # t = time.time()
+            t = time.time()
             for bot in room.bots:
                 bot.move()
             # print("duration of bot.move() : ", time.time() - t)
+            duration_bot_move += time.time() - t
 
             ## Prise en compte des nouvelles zones vues par les robots
-            # t = time.time()
+            t = time.time()
             bots = None
             movingRefPointBots = control.checkMovingRefPointBots()
 
@@ -251,9 +216,9 @@ def load_and_launch_simulation(filePath):
                 bots = [control.refPointBots[movingRefPointBots[1]]]
             elif control.checkMovingMeasurerBot():
                 bots = [control.measurerBot]
-            room.updateExploration(debug = False, bots=bots)
+            room.updateExploration(bots=bots)
             # print("duration of updateExploration : ", time.time() - t)
-
+            duration_update_exploration += time.time() - t
 
         
         # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre
@@ -262,16 +227,8 @@ def load_and_launch_simulation(filePath):
         print("Durée de l'initialisation : %3.2f s" %initDuration)
         print('Durée de la simulation : %3.2f s' %simulationDuration)
         print('Durée totale : %3.2f s' %(initDuration + simulationDuration))
-
         print('\n')
-        test = list(metrics["history"].keys())
-        print(test[0],test[-1])
-        
-
-        while not run:
-            
-            # utilisateur ferme la fenetre
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    run = True 
-
+        print('Pourcentage contrôle : %3.2f' %(duration_control_move/simulationDuration))
+        print('Pourcentage déplacement : %3.2f' %(duration_bot_move/simulationDuration))
+        print('Pourcentage visison : %3.2f' %(duration_update_exploration/simulationDuration))
+        print('\n')
