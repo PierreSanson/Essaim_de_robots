@@ -59,15 +59,13 @@ class Wall():
 
 
     def visibleForBot(self,bot):
-        for obstacle in self.obstacles :
-            if distObj(obstacle,bot) <= bot.radiusDetection:
-                return True
+        if (min(self.Xs) - bot.radiusDetection <= bot.x <= max(self.Xs) + bot.radiusDetection) and (min(self.Ys) - bot.radiusDetection <= bot.y <= max(self.Ys) + bot.radiusDetection):
+            return True
         return False
 
     def visibleForBotUWB(self,bot):
-        for obstacle in self.obstacles :
-            if distObj(obstacle,bot) <= bot.UWBradius:
-                return True
+        if (min(self.Xs) - bot.UWBradius <= bot.x <= max(self.Xs) + bot.UWBradius) and (min(self.Ys) - bot.UWBradius <= bot.y <= max(self.Ys) + bot.UWBradius):
+            return True
         return False
 
 
@@ -98,6 +96,13 @@ class Room():
     def __init__(self, walls_corners, surface1, surface2):
         self.walls = []
         self.defWalls(walls_corners)
+
+        Xs, Ys = [], []
+        for wall in self.walls:
+            Xs += wall.Xs
+            Ys += wall.Ys
+
+        self.Xmin, self.Xmax, self.Ymin, self.Ymax = min(Xs), max(Xs), min(Ys), max(Ys)
 
         self.bots = []
 

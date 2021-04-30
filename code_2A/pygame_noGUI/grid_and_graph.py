@@ -139,14 +139,8 @@ class Grid():
         ### Construction de toute la grille
 
         # on trouve la zone de l'écran intéressante (zone contenue entre les murs les plus éloignés)
-        Xs, Ys = [], []
-        for wall in self.room.walls:
-            Xs += wall.Xs
-            Ys += wall.Ys
-
         Xmin, Xmax, Ymin, Ymax = self.room.Xmin - tileWidth, self.room.Xmax + tileWidth, self.room.Ymin - tileWidth, self.room.Xmax + tileWidth
             
-
         ####### faire une boucle qui récupère une liste coordinates, utiliser // pour trouver coordonnées de la case en haut à gauche
         space_to_left = xMeasurer - Xmin
         space_to_top = yMeasurer - Ymin

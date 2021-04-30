@@ -31,7 +31,7 @@ class RefPointBot(Bot):
         for obj in self.room.objects:
             if obj != self :
                 distO = distObj(self, obj)
-                if distO <= self.radiusDetection:
+                if distO <= self.UWBradius:
 
                     if distO < self.radius + obj.radius :
                         print("COLLISION")
@@ -91,7 +91,7 @@ class RefPointBot(Bot):
                         # 2: triangles ou trapèzes, on trace la droite qui relie le robot avec le coin et on voit où elle intersecte le bord de la fenêtre
                         
                         cx, cy = max(wall.Xs),min(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius: # si le coin est vu par le robot
                             if cy < self.y: # coin au dessus du robot
                                 res_top = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(self.room.width,0)])
                                 if res_top != None:
@@ -105,7 +105,7 @@ class RefPointBot(Bot):
                                             forbiddenAreas.append([(0,resY),(cx,cy),(0,cy)])
 
                         cx, cy = max(wall.Xs),max(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius: # si le coin est vu par le robot
                             if cy > self.y: # coin en dessous du robot
                                 res_bot = linesIntersect([(self.x,self.y),(cx,cy)],[(0,self.room.height),(self.room.width,self.room.height)])
                                 if res_bot != None:
@@ -121,7 +121,7 @@ class RefPointBot(Bot):
                     # cas supplémentaires avec les coins, quand le robot n'est pas en face du mur                          
                     elif self.y < min(wall.Ys):  # robot au dessus du mur
                         cx, cy = min(wall.Xs),min(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection + wall.width: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius + wall.width: # si le coin est vu par le robot
                             res_left = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(0,self.room.height)])
                             if res_left != None:
                                 resX, resY = res_left[0], res_left[1]
@@ -135,7 +135,7 @@ class RefPointBot(Bot):
 
                     elif self.y > max(wall.Ys): # robot en dessous du mur
                         cx, cy = min(wall.Xs),max(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection + wall.width: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius + wall.width: # si le coin est vu par le robot
                             res_left = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(0,self.room.height)])
                             if res_left != None:
                                 resX, resY = res_left[0], res_left[1]
@@ -155,7 +155,7 @@ class RefPointBot(Bot):
                         forbiddenAreas.append([(min(wall.Xs)+1,min(wall.Ys)), (self.room.width,min(wall.Ys)), (self.room.width,max(wall.Ys)), (min(wall.Xs)+1,max(wall.Ys))])
                         # 2: triangle ou trapèze
                         cx, cy = min(wall.Xs),min(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius: # si le coin est vu par le robot
                             if cy < self.y: # coin au dessus du robot
                                 res_top = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(self.room.width,0)])
                                 if res_top != None: 
@@ -169,7 +169,7 @@ class RefPointBot(Bot):
                                             forbiddenAreas.append([(self.room.width,resY),(cx,cy),(self.room.width,cy)])
 
                         cx, cy = min(wall.Xs),max(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius: # si le coin est vu par le robot
                             if cy > self.y: # coin en dessous du robot
                                 res_bot = linesIntersect([(self.x,self.y),(cx,cy)],[(0,self.room.height),(self.room.width,self.room.height)])
                                 if res_bot != None:
@@ -185,7 +185,7 @@ class RefPointBot(Bot):
                     # cas supplémentaires avec les coins, quand le robot n'est pas en face du mur                          
                     elif self.y < min(wall.Ys): # robot au dessus du mur
                         cx, cy = max(wall.Xs),min(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection + wall.width: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius + wall.width: # si le coin est vu par le robot
                             res_right = linesIntersect([(self.x,self.y),(cx,cy)],[(self.room.width,0),(self.room.width,self.room.height)])
                             if res_right != None:
                                 resX, resY = res_right[0], res_right[1]
@@ -199,7 +199,7 @@ class RefPointBot(Bot):
                         
                     elif self.y > max(wall.Ys):
                         cx, cy = max(wall.Xs),max(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection + wall.width: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius + wall.width: # si le coin est vu par le robot
                             res_right = linesIntersect([(self.x,self.y),(cx,cy)],[(self.room.width,0),(self.room.width,self.room.height)])
                             if res_right != None:
                                 resX, resY = res_right[0], res_right[1]
@@ -220,7 +220,7 @@ class RefPointBot(Bot):
                         forbiddenAreas.append([(min(wall.Xs),0), (max(wall.Xs),0),  (max(wall.Xs),max(wall.Ys)-1), (min(wall.Xs),max(wall.Ys)-1)])
                         # 2: triangle ou trapèze
                         cx, cy = min(wall.Xs),max(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius: # si le coin est vu par le robot
                             if cx < self.x: # coin à gauche du robot
                                 res_left = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(0,self.room.height)])
                                 if res_left != None:
@@ -234,7 +234,7 @@ class RefPointBot(Bot):
                                             forbiddenAreas.append([(resX,0),(cx,cy),(cx,0)])
 
                         cx, cy = max(wall.Xs),max(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius: # si le coin est vu par le robot
                             if cx > self.x: # coin à droite du robot
                                 res_right = linesIntersect([(self.x,self.y),(cx,cy)],[(self.room.width,0),(self.room.width,self.room.height)])
                                 if res_right != None:
@@ -250,7 +250,7 @@ class RefPointBot(Bot):
                     # cas supplémentaires avec les coins, quand le robot n'est pas en face du mur                          
                     elif self.x < min(wall.Xs): # robot à gauche du mur
                         cx, cy = min(wall.Xs),min(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection + wall.height: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius + wall.height: # si le coin est vu par le robot
                             res_top = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(self.room.width,0)])
                             if res_top != None:
                                 resX, resY = res_top[0], res_top[1]
@@ -264,7 +264,7 @@ class RefPointBot(Bot):
                         
                     elif self.x > max(wall.Xs): # robot à droite du mur
                         cx, cy = max(wall.Xs),min(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection + wall.height: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius + wall.height: # si le coin est vu par le robot
                             res_top = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(self.room.width,0)])
                             if res_top != None:
                                 resX, resY = res_top[0], res_top[1]
@@ -284,7 +284,7 @@ class RefPointBot(Bot):
                         forbiddenAreas.append([(min(wall.Xs),min(wall.Ys)+1), (max(wall.Xs),min(wall.Ys)+1), (max(wall.Xs),self.room.height), (min(wall.Xs),self.room.height)])
                         # 2: triangle ou trapèze
                         cx, cy = min(wall.Xs),min(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius: # si le coin est vu par le robot
                             if cx < self.x: # coin à gauche du robot                          
                                 res_left = linesIntersect([(self.x,self.y),(cx,cy)],[(0,0),(0,self.room.height)])
                                 if res_left != None:
@@ -298,7 +298,7 @@ class RefPointBot(Bot):
                                             forbiddenAreas.append([(resX,self.room.height),(cx,cy),(cx,self.room.height)])
 
                         cx, cy = max(wall.Xs),min(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection: # si le coin est vu par le robot           
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius: # si le coin est vu par le robot           
                             if cx > self.x: # coin à droite du robot
                                 res_right = linesIntersect([(self.x,self.y),(cx,cy)],[(self.room.width,0),(self.room.width,self.room.height)])
                                 if res_right != None:
@@ -314,7 +314,7 @@ class RefPointBot(Bot):
                     # cas supplémentaires avec les coins, quand le robot n'est pas en face du mur                          
                     elif self.x < min(wall.Xs): # robot à gauche du mur
                         cx, cy = min(wall.Xs),max(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection + wall.height: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius + wall.height: # si le coin est vu par le robot
                             res_bot = linesIntersect([(self.x,self.y),(cx,cy)],[(0,self.room.height),(self.room.width,self.room.height)])
                             if res_bot != None:
                                 resX, resY = res_bot[0], res_bot[1]
@@ -328,7 +328,7 @@ class RefPointBot(Bot):
                         
                     elif self.x > max(wall.Xs): # robot à droite du mur
                         cx, cy = max(wall.Xs),max(wall.Ys)
-                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.radiusDetection + wall.height: # si le coin est vu par le robot
+                        if np.sqrt((cx-self.x)**2+(cy-self.y)**2) < self.UWBradius + wall.height: # si le coin est vu par le robot
                             res_bot = linesIntersect([(self.x,self.y),(cx,cy)],[(0,self.room.height),(self.room.width,self.room.height)])
                             if res_bot != None:
                                 resX, resY = res_bot[0], res_bot[1]

@@ -64,10 +64,10 @@ class Wall():
         return False
 
     def visibleForBotUWB(self,bot):
-        if (min(self.Xs) - bot.radiusDetection <= bot.x <= max(self.Xs) + bot.radiusDetection) and (min(self.Ys) - bot.radiusDetection <= bot.y <= max(self.Ys) + bot.radiusDetection):
+        if (min(self.Xs) - bot.UWBradius <= bot.x <= max(self.Xs) + bot.UWBradius) and (min(self.Ys) - bot.UWBradius <= bot.y <= max(self.Ys) + bot.UWBradius):
             return True
         return False
-
+ 
 
     def saveObstaclesMainCoord(self):
         # on cherche toutes les coordonnées uniques
@@ -88,15 +88,12 @@ class Wall():
         self.Ys = [min(tempYs),max(tempYs)]
         
 
-    
-        
-
 
 class Room():
     def __init__(self, walls_corners, surface1, surface2):
         self.walls = []
         self.defWalls(walls_corners)
-        self.Xs, self.Ys = [], []
+        Xs, Ys = [], []
         for wall in self.walls:
             Xs += wall.Xs
             Ys += wall.Ys
