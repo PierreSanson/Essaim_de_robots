@@ -213,7 +213,7 @@ def load_and_launch_simulation():
         surface5 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
 
         ################# vision et zone UWB exactes ('exact') ou discrétisées ('discrete')
-        mode = 'discrete'
+        mode = 'exact'
         #################
 
         room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode)
