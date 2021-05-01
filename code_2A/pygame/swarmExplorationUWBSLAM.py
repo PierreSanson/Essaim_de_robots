@@ -25,7 +25,7 @@ from shapely.ops import nearest_points
 
 
 class SwarmExploratorUWBSLAM():
-    def __init__(self, surfaceUWB, surfaceGrid, surfaceReferenceBot, room, measurerBot, refPointBots, mode, background, distRefPointBots = [110, 110], initRadius=50) :
+    def __init__(self, surfaceUWB, surfaceGrid, surfaceReferenceBot, room, measurerBot, refPointBots, mode, distRefPointBots = [110, 110], initRadius=50) :
         self.room = room
         self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
@@ -83,8 +83,6 @@ class SwarmExploratorUWBSLAM():
         self.updateUWBcoverArea = None
 
         self.mode = mode
-        self.background = background
-
 
         initObjectives = []
         for i in range(self.nbRefPointBots):
@@ -157,7 +155,8 @@ class SwarmExploratorUWBSLAM():
     def initMove(self):
         refPointBotsStatus = self.checkMovingRefPointBots()
         if not refPointBotsStatus[0]:
-            self.updateUWB()
+            if self.mode == 'exact':
+                self.updateUWB()
             #self.defineConvexHulls()
             if self.instantMovingRefPointBot:
                 # if self.initCount == 2:
@@ -252,7 +251,7 @@ class SwarmExploratorUWBSLAM():
         # print("########### duration of step : ", tMove - self.time)
         self.time = tMove
         t = time.time()
-        self.grid.update(self.surfaceUWB,self.status,self.mode,self.background)
+        self.grid.update(self.surfaceUWB,self.status,self.mode)
         # print("duration of grid.update : ", time.time() - t)
         
 
@@ -333,7 +332,8 @@ class SwarmExploratorUWBSLAM():
 
                 #self.updatePolygon()
                 #self.defineConvexHulls()
-                self.updateUWB()
+                if self.mode == 'exact':
+                    self.updateUWB()
                 
                 self.grid.graph[self.grid.origin] = 1
 
@@ -360,7 +360,8 @@ class SwarmExploratorUWBSLAM():
 
                 # self.draw()
                 # self.grid.updateGraph()
-                self.updateUWB()
+                if self.mode == 'exact':
+                    self.updateUWB()
                 #self.updatePolygon()
                 #self.defineConvexHulls()
                 self.target = None
@@ -699,7 +700,7 @@ class SwarmExploratorUWBSLAM():
                 if key is None :
                     self.end_simulation = True
                 else:
-                    self.grid.update(self.surfaceUWB,self.status,self.mode,self.background)
+                    self.grid.update(self.surfaceUWB,self.status,self.mode)
                     self.explorableClusters = []
                     self.explorableClustersDict = {}
                     self.nearestPoints = []
@@ -802,7 +803,8 @@ class SwarmExploratorUWBSLAM():
                     if self.thirdStepCount == 2:
                         self.thirdStepCount = 0
                         self.status = "transferRefPointBotToMeasuringBot"
-                        self.updateUWB()
+                        if self.mode == 'exact':
+                            self.updateUWB()
                     else :
                         for bot in self.refPointBots:
                             if isinstance(self.refPointBots[bot],refB.RefPointBot):
@@ -947,17 +949,20 @@ class SwarmExploratorUWBSLAM():
 
    
     def draw(self):
-        # on réinitialise les surfaces
+         # on réinitialise les surfaces
         self.surfaceUWB.fill((0,0,0,0))
         self.surfaceGrid.fill((0,0,0,0))
         self.surfaceReferenceBot.fill((0,0,0,0))
+    
+        if self.mode == 'exact':
+            # on affiche la zone UWB
+            # t = time.time()
+            self.surfaceUWB.blit(self.updateUWBcoverArea,(0,0), special_flags=pygame.BLEND_RGBA_MAX)
+            # print("duration of self.room.updateUWBcoverArea() : ", time.time() - t)
+            # t = time.time()
 
-        # on affiche la zone UWB et la grille
-        # t = time.time()
-        self.surfaceUWB.blit(self.updateUWBcoverArea,(0,0), special_flags=pygame.BLEND_RGBA_MAX)
-        # print("duration of self.room.updateUWBcoverArea() : ", time.time() - t)
-        # t = time.time()
-        self.grid.draw(self.surfaceGrid)      
+        # on affiche la grille    
+        self.grid.draw(self.surfaceGrid,self.room.surface2,self.surfaceUWB,self.mode)      
 
  
         # self.trajectory est utilisé seulement ici, on peut donc le laisser dans le draw

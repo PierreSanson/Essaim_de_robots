@@ -109,7 +109,7 @@ class Room():
         self.surface1 = surface1
         self.surface2 = surface2
         # surface2 va représenter les parties explorées ou non de la carte
-        self.surface2.fill((0,0,0,150))
+        self.surface2.fill((0,0,0,200))
 
         self.width = surface1.get_width()
         self.height = surface1.get_height()
