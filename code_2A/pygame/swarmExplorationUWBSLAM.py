@@ -25,7 +25,7 @@ from shapely.ops import nearest_points
 
 
 class SwarmExploratorUWBSLAM():
-    def __init__(self, surfaceUWB, surfaceGrid, surfaceReferenceBot, room, measurerBot, refPointBots, mode='exact', distRefPointBots = [110, 110], initRadius=50) :
+    def __init__(self, surfaceUWB, surfaceGrid, surfaceReferenceBot, room, measurerBot, refPointBots, mode, background, distRefPointBots = [110, 110], initRadius=50) :
         self.room = room
         self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
@@ -83,6 +83,7 @@ class SwarmExploratorUWBSLAM():
         self.updateUWBcoverArea = None
 
         self.mode = mode
+        self.background = background
 
 
         initObjectives = []
@@ -251,7 +252,7 @@ class SwarmExploratorUWBSLAM():
         # print("########### duration of step : ", tMove - self.time)
         self.time = tMove
         t = time.time()
-        self.grid.update(self.surfaceUWB,self.status,self.mode)
+        self.grid.update(self.surfaceUWB,self.status,self.mode,self.background)
         # print("duration of grid.update : ", time.time() - t)
         
 
@@ -271,7 +272,7 @@ class SwarmExploratorUWBSLAM():
                     self.status = "moveRefPointBot2ndStep"
 
         if self.status == "movingMeasuringBot":
-            print("movingMeasurerBot")
+            # print("movingMeasurerBot")
             tTot = time.time()
             if self.hasObj:
                 step = self.goToObj()
@@ -282,8 +283,8 @@ class SwarmExploratorUWBSLAM():
                     exclusionList = []
                     while self.mainPath is None:
                         target = self.targetMethod(exclusionList)
-                        print(target)
-                        print(exclusionList)
+                        # print(target)
+                        # print(exclusionList)
                         if target is not None: 
                             self.mainPathIndex = 0
                             source = self.lastObj
@@ -367,8 +368,8 @@ class SwarmExploratorUWBSLAM():
                 exclusionList = []
                 while self.mainPath is None:
                     target = self.targetMethod(exclusionList)
-                    print(target)
-                    print(exclusionList)
+                    # print(target)
+                    # print(exclusionList)
                     if target is not None: 
                         self.mainPathIndex = 0
                         source = self.lastObj
@@ -698,7 +699,7 @@ class SwarmExploratorUWBSLAM():
                 if key is None :
                     self.end_simulation = True
                 else:
-                    self.grid.update(self.surfaceUWB,self.status,self.mode)
+                    self.grid.update(self.surfaceUWB,self.status,self.mode,self.background)
                     self.explorableClusters = []
                     self.explorableClustersDict = {}
                     self.nearestPoints = []

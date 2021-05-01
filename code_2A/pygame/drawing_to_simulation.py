@@ -101,7 +101,7 @@ def find_walls_corners(table):
     return walls_corners
 
 
-def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode):
+def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode,background):
 
     robots_centers = []
     for row in range(len(table)):
@@ -149,7 +149,7 @@ def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mod
 
     room.addBots(bots)
 
-    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface3, surface4, surface5, room, measuringBots[0], refPointBots, mode)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface3, surface4, surface5, room, measuringBots[0], refPointBots, mode, background)
 
     return room, SEUWBSLAM
 
@@ -213,10 +213,10 @@ def load_and_launch_simulation():
         surface5 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
 
         ################# vision et zone UWB exactes ('exact') ou discrétisées ('discrete')
-        mode = 'exact'
+        mode = 'discrete'
         #################
 
-        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode)
+        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode,background)
         initDuration = (time.time()-initStart)
         simulationStart = time.time()
 
@@ -280,10 +280,7 @@ def load_and_launch_simulation():
         print("Durée de l'initialisation : %3.2f s" %initDuration)
         print('Durée de la simulation : %3.2f s' %simulationDuration)
         print('Durée totale : %3.2f s' %(initDuration + simulationDuration))
-
         print('\n')
-        test = list(metrics["history"].keys())
-        print(test[0],test[-1])
         
 
         while not run:

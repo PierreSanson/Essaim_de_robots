@@ -105,15 +105,15 @@ class Tile():
         self.graph_status = graph_status_dictionary[self.state]
 
     
-    def updateDiscrete(self,walls,measuringBot,refPointBots,color_dictionary,graph_status_dictionary):
+    def updateDiscrete(self,walls,measuringBot,refPointBots,color_dictionary,graph_status_dictionary,room,background):
 
         self.has_changed = False
         oldState = self.state
 
         # On vérifie si la case a été vue. Si oui, elle restera vue.
-        if not self.seen:
-            if self.isSeen(walls,measuringBot): # deuxième condition pour éviter cases jaunes au passage des bots UWB
-                self.seen = 1
+        #if not self.seen:
+        if self.isSeen(walls,measuringBot,room,background):
+            self.seen = 1
 
         # On vérifie si la case est couverte
         if self.isCovered(walls, refPointBots):
@@ -149,20 +149,34 @@ class Tile():
         return False
 
 
-    def isSeen(self,wallsInView,measuringBot):
+    def isSeen(self,wallsInView,measuringBot,room,background):
+        room.surface2.fill((0,0,0,200))
+
         if self.containsWall:
             for corner in self.corners:
                 cornerInView = True
                 for wall in wallsInView:
-                    if segmentsIntersect([(corner[0],corner[1]),(measuringBot.x,measuringBot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))]) is not None:
+                    intersection = segmentsIntersect([(corner[0],corner[1]),(measuringBot.x,measuringBot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))])
+                    if intersection is not None:
                         cornerInView = False
                 if cornerInView:
                     return True
 
         else:
             for wall in wallsInView:
-                if segmentsIntersect([(self.x,self.y),(measuringBot.x,measuringBot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))]) is not None:
+                pygame.draw.line(room.surface2,(0,255,0),(self.x,self.y),(measuringBot.x,measuringBot.y))
+                pygame.draw.line(room.surface2,(0,255,0),(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys)))
+                intersection = segmentsIntersect([(self.x,self.y),(measuringBot.x,measuringBot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))])
+                if intersection is not None:
+                    print("coucou, ça marche")
+                    pygame.draw.circle(room.surface2,(0,255,0),intersection,5)
+                    background.blit(room.surface2,(0,0))
+                    pygame.display.flip()
+                    input("Press enter to continue")
                     return False
+            background.blit(room.surface2,(0,0))
+            pygame.display.flip()
+            input("Press enter to continue")
             return True
 
 
@@ -171,7 +185,8 @@ class Tile():
         for bot in refPointBots:
             inView = True
             for wall in walls:
-                if segmentsIntersect([(self.x,self.y),(bot.x,bot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))]) is not None:
+                intersection = segmentsIntersect([(self.x,self.y),(bot.x,bot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))])
+                if intersection is not None:
                     inView = False
 
             if inView:
@@ -221,9 +236,6 @@ class Grid():
 
         firstX = xMeasurer - (space_to_left//tileWidth)*tileWidth
         firstY = yMeasurer - (space_to_top//tileWidth)*tileWidth
-
-        print(Xmin,Xmax,Ymin,Ymax)
-        print(firstX,firstY)
 
         i = 0
         while firstX + i*tileWidth <= Xmax:
@@ -362,7 +374,7 @@ class Grid():
 
 
     ### Méthodes pour la grille
-    def update(self,surfaceUWB,status,mode):
+    def update(self,surfaceUWB,status,mode,background):
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
         # Une case a été mesurée si le robot a changé d'objectif
         if status == "movingMeasuringBot" and self.measuringBot.objective != None:
@@ -376,7 +388,7 @@ class Grid():
             if mode == 'exact':
                 self.tiles[coord].updateExact(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary)
             elif mode == 'discrete':
-                self.tiles[coord].updateDiscrete(self.room.walls,self.measuringBot,self.refPointBots,self.color_dictionary,self.graph_status_dictionary) 
+                self.tiles[coord].updateDiscrete(self.room.walls,self.measuringBot,self.refPointBots,self.color_dictionary,self.graph_status_dictionary,self.room,background) 
             self.graph[coord] = self.tiles[coord].graph_status
             if self.tiles[coord].has_changed:
                 self.updateNeighOneNode(coord)
