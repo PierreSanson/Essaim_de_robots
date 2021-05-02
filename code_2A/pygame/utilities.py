@@ -252,6 +252,8 @@ def lineSegmentInter(line, segment):
     if np.linalg.norm(vectCol) <= lenLine and (np.dot(vectLine, vectCol)) >= 0 :
         return(x,y)
     return None
+
+    
 def distMaxXY2Segments(seg1, seg2):
     distMaxX = -1
     distMaxY =  -1
@@ -326,7 +328,12 @@ def segmentsIntersect(seg1,seg2):
         x = intersection[0]
         y = intersection[1]
 
-        if seg1[0][0] <= x <= seg1[1][0] and seg2[0][0] <= x <= seg2[1][0]: # si c'est le cas, on vérifie qu'il appartient aux segments
+        X1 = [seg1[0][0],seg1[1][0]]
+        X2 = [seg2[0][0],seg2[1][0]]
+        Y1 = [seg1[0][1],seg1[1][1]]
+        Y2 = [seg2[0][1],seg2[1][1]]
+
+        if min(X1) <= x <= max(X1) and min(X2) <= x <= max(X2) and min(Y1) <= y <= max(Y1) and min(Y2) <= y <= max(Y2): # si c'est le cas, on vérifie qu'il appartient aux segments
             return (x,y)
         else:
             return None

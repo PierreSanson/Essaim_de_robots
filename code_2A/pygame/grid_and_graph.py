@@ -8,7 +8,7 @@ from igraph.drawing import graph
 
 from measuringBot import MeasuringBot
 
-from utilities import segmentsIntersect
+from utilities import segmentsIntersect, distObj
 
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
@@ -17,7 +17,7 @@ from shapely.geometry.polygon import Polygon
 class Tile():
     def __init__(self, x, y, width):
 
-        self.x = x # 
+        self.x = x #
         self.y = y # coordonnées du CENTRE
         self.center = (x,y)
         self.width = width
@@ -42,8 +42,6 @@ class Tile():
         self.metrics_coord = (0,0)
         self.history = [(self.seen,self.covered,self.obstacle,self.measured)]
         self.nbVisits = 0
-
-
 
 
         #################################################################################################################
@@ -79,7 +77,7 @@ class Tile():
                     if surfaceVision.get_at(corner) == (0,0,0,0):
                         self.seen = 1
 
-
+       
         # On vérifie si la case est couverte
         if surfaceUWB.get_at(self.center) == (0, 0, 200, 60): # cf fonction updateUWBcoverArea de la classe Room
             self.covered = 1
@@ -105,21 +103,22 @@ class Tile():
         self.graph_status = graph_status_dictionary[self.state]
 
     
-    def updateDiscrete(self,walls,measuringBot,refPointBots,color_dictionary,graph_status_dictionary):
+    def updateDiscrete(self,walls,measuringBot,refPointBots,status,color_dictionary,graph_status_dictionary):
 
         self.has_changed = False
         oldState = self.state
 
         # On vérifie si la case a été vue. Si oui, elle restera vue.
-        if not self.seen:
-            if self.isSeen(walls,measuringBot): # deuxième condition pour éviter cases jaunes au passage des bots UWB
+        if not self.seen and distObj(self,measuringBot) <= measuringBot.radiusDetection:
+            if self.isSeen(walls,measuringBot):
                 self.seen = 1
 
-        # On vérifie si la case est couverte
-        if self.isCovered(walls, refPointBots):
-            self.covered = 1
-        else:
-            self.covered = 0
+        if status in ["init","FirsttransferRefPointBotToMeasuringBot","transferRefPointBotToMeasuringBot"]:
+            # On vérifie si la case est couverte
+            if self.isCovered(walls, refPointBots):
+                self.covered = 1
+            else:
+                self.covered = 0
 
         # On vérifie si la case contient un obstacle
         # Si la case contient un mur, ça ne vas pas changer.
@@ -138,7 +137,6 @@ class Tile():
         self.color = color_dictionary[self.state]
         self.graph_status = graph_status_dictionary[self.state]
         
-
     
     def UWBbotInTile(self,bots):
         for bot in bots:
@@ -149,20 +147,26 @@ class Tile():
         return False
 
 
-    def isSeen(self,wallsInView,measuringBot):
+    def isSeen(self,walls,measuringBot):
+
         if self.containsWall:
             for corner in self.corners:
                 cornerInView = True
-                for wall in wallsInView:
-                    if segmentsIntersect([(corner[0],corner[1]),(measuringBot.x,measuringBot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))]) is not None:
-                        cornerInView = False
+                for wall in walls:
+                    if wall.visibleForBot(measuringBot):
+                        intersection = segmentsIntersect([(corner[0],corner[1]),(measuringBot.x,measuringBot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))])
+                        if intersection is not None:
+                            cornerInView = False
                 if cornerInView:
                     return True
 
         else:
-            for wall in wallsInView:
-                if segmentsIntersect([(self.x,self.y),(measuringBot.x,measuringBot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))]) is not None:
-                    return False
+            for wall in walls:
+                if wall.visibleForBot(measuringBot):
+                    intersection = segmentsIntersect([(self.x,self.y),(measuringBot.x,measuringBot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))])
+                    if intersection is not None:
+                        return False
+
             return True
 
 
@@ -171,10 +175,12 @@ class Tile():
         for bot in refPointBots:
             inView = True
             for wall in walls:
-                if segmentsIntersect([(self.x,self.y),(bot.x,bot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))]) is not None:
-                    inView = False
+                if wall.visibleForBotUWB(bot):
+                    intersection = segmentsIntersect([(self.x,self.y),(bot.x,bot.y)],[(min(wall.Xs),min(wall.Ys)),(max(wall.Xs),max(wall.Ys))])
+                    if intersection is not None:
+                        inView = False
 
-            if inView:
+            if inView and distObj(self,bot) <= bot.UWBradius:
                 UWB_in_range += 1
 
             if UWB_in_range == 3:
@@ -221,9 +227,6 @@ class Grid():
 
         firstX = xMeasurer - (space_to_left//tileWidth)*tileWidth
         firstY = yMeasurer - (space_to_top//tileWidth)*tileWidth
-
-        print(Xmin,Xmax,Ymin,Ymax)
-        print(firstX,firstY)
 
         i = 0
         while firstX + i*tileWidth <= Xmax:
@@ -368,7 +371,7 @@ class Grid():
         if status == "movingMeasuringBot" and self.measuringBot.objective != None:
             if self.measuringBot.objective != self.oldObjective:
                 self.tiles[tuple(self.measuringBot.objective)].measured = 1
-                self.tiles[tuple(self.measuringBot.objective)].nbVisits += 1 ###### à vérifier, pathLength n'a pas la bonne valeur 
+                self.tiles[tuple(self.measuringBot.objective)].nbVisits += 1
 
         self.oldObjective = self.measuringBot.objective        
 
@@ -376,7 +379,7 @@ class Grid():
             if mode == 'exact':
                 self.tiles[coord].updateExact(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary)
             elif mode == 'discrete':
-                self.tiles[coord].updateDiscrete(self.room.walls,self.measuringBot,self.refPointBots,self.color_dictionary,self.graph_status_dictionary) 
+                self.tiles[coord].updateDiscrete(self.room.walls,self.measuringBot,self.refPointBots,status,self.color_dictionary,self.graph_status_dictionary) 
             self.graph[coord] = self.tiles[coord].graph_status
             if self.tiles[coord].has_changed:
                 self.updateNeighOneNode(coord)
@@ -384,13 +387,18 @@ class Grid():
                 self.removeNodeFromGraph(coord)
 
     
-    def draw(self,surface):
+    def draw(self,surfaceGrid,surfaceVision,surfaceUWB,mode):
         for tile in self.tiles.values():
-            pygame.draw.rect(surface, tile.color, (tile.corners[0][0], tile.corners[0][1], tile.width, tile.height),width = 1)
+            pygame.draw.rect(surfaceGrid, tile.color, (tile.corners[0][0], tile.corners[0][1], tile.width, tile.height),width = 1)
+
+            if mode == "discrete":
+                if tile.seen == 1:
+                    pygame.draw.rect(surfaceVision, (0,0,0,0), (tile.corners[0][0], tile.corners[0][1], tile.width, tile.height))
+                if tile.covered == 1 and not tile.containsWall:
+                    pygame.draw.rect(surfaceUWB, (0,0,200,60), (tile.corners[0][0], tile.corners[0][1], tile.width, tile.height))
 
 
     ### Méthodes pour le graphe
-
     def getNeighbours(self, coord):
         x,y = coord
         w = self.tileWidth

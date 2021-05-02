@@ -101,9 +101,6 @@ class Bot():
             ### 1: si on est face à un mur, on ne peut pas voir ce qu'il y à derrière
             ### 2: si on voit un coin de mur, ça cache une partie de la pièce en plus
 
-            ### ON POURRAIT ACCELERER UN PEU EN NE CONSIDERANT QUE LES COINS PERTINENTS, il faut juste faire un petit raisonnement supplémentaire
-            ### IL RESTE POTENTIELLEMENT DES CAS NON TRAITES, QUAND LE ROBOT N'EST PAS EN FACE DU MUR MAIS VOIS LE MUR EN ENTIER, LE CODE CACHE TROP DE CHOSES
-
             # à droite d'un mur vertical
             if wall.orientation == 'v':
                 if self.x > max(wall.Xs):

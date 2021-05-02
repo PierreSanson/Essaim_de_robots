@@ -1,3 +1,4 @@
+import os
 import time
 
 from tkinter import *
@@ -13,6 +14,7 @@ import measuringBot as mb
 from room import *
 import swarmExplorationUWBSLAM as seUWBSLAM
 import time
+
 
 def LoadFile():
     
@@ -35,7 +37,7 @@ def LoadFile():
         fileName = filePathList[-1]
         pygame.display.set_caption("Simulation - " + fileName)
 
-        return colors
+        return colors, fileName[:-7]
     
     return None
 
@@ -191,9 +193,9 @@ def redrawGameWindow(room, background, control):
     pygame.display.flip()
 
 
-def load_and_launch_simulation():
+def load_and_launch_exact_simulation():
 
-    table = LoadFile()
+    table, fileName = LoadFile()
 
     initStart = time.time()
 
@@ -280,10 +282,7 @@ def load_and_launch_simulation():
         print("Durée de l'initialisation : %3.2f s" %initDuration)
         print('Durée de la simulation : %3.2f s' %simulationDuration)
         print('Durée totale : %3.2f s' %(initDuration + simulationDuration))
-
         print('\n')
-        test = list(metrics["history"].keys())
-        print(test[0],test[-1])
         
 
         while not run:
@@ -292,4 +291,114 @@ def load_and_launch_simulation():
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = True 
+
+        dirname = os.path.dirname(__file__)
+        file = open(os.path.join(dirname, "./results/",str(fileName)+"-exact-results.pickle"), "wb")
+        pickle.dump(metrics, file)
+        file.close()
+
+
+def load_and_launch_discrete_simulation():
+
+    table, fileName = LoadFile()
+
+    initStart = time.time()
+
+    if table is not None : # évite un crash si on ne sélectionne pas de fichier
+
+        sw, sh = 1600, 900
+        background = pygame.display.set_mode((sw, sh))
+        # les murs et les robots
+        surface1 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+        # la vision des robots
+        surface2 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+        # la surface couverte par les balises UWB
+        surface3 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+        # la grille qui sert aux déplacements
+        surface4 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+        # une surface supplémentaire pour des affichages annexes
+        surface5 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
+
+        ################# vision et zone UWB exactes ('exact') ou discrétisées ('discrete')
+        mode = 'discrete'
+        #################
+
+        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode)
+        initDuration = (time.time()-initStart)
+        simulationStart = time.time()
+
+        clock = pygame.time.Clock()
+        hz = 144
+
+        run = True 
+        ## Choix du type de déplacement
+        control = SEUWBSLAM
+
+        while run:
+            start_iteration = time.time()
+            clock.tick(hz)
+            
+            # utilisateur ferme la fenetre
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False  
+
+            # fin de la simulation (les robtos ont arrêté de bouger)
+            if control.end_simulation == True:
+                run = False
+
+            # t = time.time()
+            control.move()
+            # print("duration of control.move() : ", time.time() - t)
+            
+            ## Itération sur l'ensemble des robots pour les faire se déplacer
+            # t = time.time()
+            for bot in room.bots:
+                bot.move()
+            # print("duration of bot.move() : ", time.time() - t)
+
+            if mode == "exact": # si mode == 'discrete', alors la vision est inclue dans le control.move()
+                ## Prise en compte des nouvelles zones vues par les robots
+                # t = time.time()
+                bots = None
+                movingRefPointBots = control.checkMovingRefPointBots()
+
+                if control.status == "movingMeasuringBot":
+                    bots = [control.measurerBot]
+                if movingRefPointBots[0]:
+                    bots = [control.refPointBots[movingRefPointBots[1]]]
+                elif control.checkMovingMeasurerBot():
+                    bots = [control.measurerBot]
+                room.updateExploration(debug = False, bots=bots)
+                # print("duration of updateExploration : ", time.time() - t)
+
+            start_draw = time.time()
+            redrawGameWindow(room, background, control)      
+            end_draw = time.time()
+
+            end_iteration = time.time()
+
+            # print((end_draw-start_draw)/(end_iteration-start_iteration))
+
+        
+        # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre
+        simulationDuration = time.time() - simulationStart
+        metrics = control.print_metrics()
+        print("Durée de l'initialisation : %3.2f s" %initDuration)
+        print('Durée de la simulation : %3.2f s' %simulationDuration)
+        print('Durée totale : %3.2f s' %(initDuration + simulationDuration))
+        print('\n')
+        
+
+        while not run:
+            
+            # utilisateur ferme la fenetre
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = True 
+        
+        dirname = os.path.dirname(__file__)
+        file = open(os.path.join(dirname, "./results/",str(fileName)+"-discrete-results.pickle"), "wb")
+        pickle.dump(metrics, file)
+        file.close()
 
