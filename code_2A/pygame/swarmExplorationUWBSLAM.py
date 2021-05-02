@@ -271,7 +271,6 @@ class SwarmExploratorUWBSLAM():
                     self.status = "moveRefPointBot2ndStep"
 
         if self.status == "movingMeasuringBot":
-            print("movingMeasurerBot")
             tTot = time.time()
             if self.hasObj:
                 step = self.goToObj()
@@ -282,8 +281,6 @@ class SwarmExploratorUWBSLAM():
                     exclusionList = []
                     while self.mainPath is None:
                         target = self.targetMethod(exclusionList)
-                        print(target)
-                        print(exclusionList)
                         if target is not None: 
                             self.mainPathIndex = 0
                             source = self.lastObj
@@ -367,8 +364,6 @@ class SwarmExploratorUWBSLAM():
                 exclusionList = []
                 while self.mainPath is None:
                     target = self.targetMethod(exclusionList)
-                    print(target)
-                    print(exclusionList)
                     if target is not None: 
                         self.mainPathIndex = 0
                         source = self.lastObj

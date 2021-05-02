@@ -5,6 +5,7 @@ import random
 import time
 
 from scipy.spatial import ConvexHull
+from scipy.spatial.qhull import QhullError
 import numpy as np
 
 import pygame
@@ -12,6 +13,7 @@ import pygame
 from igraph import *
 from igraph.drawing import graph
 
+import refPointBot as refB
 from utilities import *
 from grid_and_graph import Tile, Grid
 
@@ -23,7 +25,7 @@ from shapely.ops import nearest_points
 
 
 class SwarmExploratorUWBSLAM():
-    def __init__(self, surfaceUWB, surfaceGrid, surfaceReferenceBot, room, measurerBot, refPointBots, distRefPointBots = [110, 110], initRadius=50) :
+    def __init__(self, surfaceUWB, surfaceGrid, surfaceReferenceBot, room, measurerBot, refPointBots, mode='exact', distRefPointBots = [110, 110], initRadius=50) :
         self.room = room
         self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
@@ -54,18 +56,33 @@ class SwarmExploratorUWBSLAM():
         self.convexHull = []
         self.convexHulls = []
         self.polygons = []
+        self.clusterExclusionList = []
+        self.RPBExclusionList = []
+        self.thirdStepCount = 0
 
         self.status = "init"
         self.initCount = 0
         self.moveMeasuringBotCount = 0
         self.moveRefPointBot = 0
         self.instantMoving = True
+        self.targetHistory = []
+        self.targetMethod = self.findTargetV3
+        self.clusterExplorationMethod = self.findClosestClusterToOrigin
+        self.targetClusters = 2
+        self.visitedClusterExplorationMethod = self.findClosestClusterToMeasurerBot
+        self.changeFirst = "cluster"
+        self.lastRPBBaseCell = None
+        self.lastRPBTargetFull = []
 
         self.time = time.time()
 
         self.instantMovingRPB = True
+        self.lastRPBTarget = [None]
+        self.lastRPBMoved = None
 
-        self.updateUWBcoverArea = self.updateUWB()
+        self.updateUWBcoverArea = None
+
+        self.mode = mode
 
 
         initObjectives = []
@@ -108,7 +125,7 @@ class SwarmExploratorUWBSLAM():
     def print_metrics(self):
 
         print('\r\n')
-
+ 
         ### Résumé des entrées du simulateur
         print('Nombre de robots points de repère : %s' %self.nbRefPointBots)
         print('Nombre de robots mesureurs : %s' %(len(self.room.bots)-self.nbRefPointBots))
@@ -254,37 +271,37 @@ class SwarmExploratorUWBSLAM():
                     self.status = "moveRefPointBot2ndStep"
 
         if self.status == "movingMeasuringBot":
-
             tTot = time.time()
             if self.hasObj:
                 step = self.goToObj()
                 if step == "end":
                     t = time.time()
-                    target = self.findClosestCell()
-
-                    if target is not None: 
-                        self.mainPathIndex = 0
-                        source = self.lastObj
-                        # temporary solution!
-                        self.grid.updateNeighOneNode(target)
-                        # t = time.time()
-                        weight, self.mainPath = (self.djikstra(source, target))
-                        # print("duration of djikstra : ", time.time() - t)
-                        if self.mainPath is None:
+                    self.target = None
+                    self.mainPath = None
+                    exclusionList = []
+                    while self.mainPath is None:
+                        target = self.targetMethod(exclusionList)
+                        if target is not None: 
+                            self.mainPathIndex = 0
+                            source = self.lastObj
+                            # temporary solution!
+                            self.grid.updateNeighOneNode(target)
+                            # t = time.time()
+                            weight, self.mainPath = (self.djikstra(source, target))
+                            # print("duration of djikstra : ", time.time() - t)
+                            if self.mainPath is None:
+                                exclusionList.append(target)
+                            else:
+                                self.addWeigthToPath()
+                                
+                        else : 
                             self.hasObj = False
-                            # self.moveRefPointBotsStep()
                             self.status = "moveRefPointBot1stStep"
-                        else:
-                            self.addWeigthToPath()
-                    else : 
-                        self.hasObj = False
-
-                        # self.moveRefPointBotsStep()
-                        self.status = "moveRefPointBot1stStep"
+                            break
 
                 elif step == "changedObj":
                     
-                    target = self.findClosestCell()
+                    target = self.targetMethod()
 
                     if target is not None: 
                         source = self.mainPath[self.mainPathIndex-1][0]
@@ -318,7 +335,7 @@ class SwarmExploratorUWBSLAM():
 
                 # self.drawGraph() # à commenter ou non pour afficher le graphe
                 self.grid.updateNeighOneNode(self.grid.origin)
-                target = self.findClosestCell()
+                target = self.targetMethod()
                 if target is not None:
                     source = (self.grid.origin[0], self.grid.origin[1])
                     weight, self.mainPath = (self.djikstra(source, target))
@@ -333,33 +350,62 @@ class SwarmExploratorUWBSLAM():
         if self.status == "transferRefPointBotToMeasuringBot":
             if not self.checkMovingRefPointBots()[0]:
                 
+                for bot in self.refPointBots:
+                    if isinstance(self.refPointBots[bot],refB.RefPointBot):
+                        self.refPointBots[bot].isMoving = False
+
                 # self.draw()
                 # self.grid.updateGraph()
                 self.updateUWB()
                 #self.updatePolygon()
                 #self.defineConvexHulls()
-                
-                target = self.findClosestCell()
-                if target is not None:
-                    self.mainPathIndex = 0
-                    source = self.lastObj
-                    # temporary solution!
-                    # self.grid.updateNeighOneNode(target)
-                    weight, self.mainPath = (self.djikstra(source, target))
-                    if self.mainPath is None:
+                self.target = None
+                self.mainPath = None
+                exclusionList = []
+                while self.mainPath is None:
+                    target = self.targetMethod(exclusionList)
+                    if target is not None: 
+                        self.mainPathIndex = 0
+                        source = self.lastObj
+                        # temporary solution!
+                        self.grid.updateNeighOneNode(target)
+                        # t = time.time()
+                        weight, self.mainPath = (self.djikstra(source, target))
+                        # print("duration of djikstra : ", time.time() - t)
+                        if self.mainPath is None:
+                            exclusionList.append(target)
+                        else:
+                            self.addWeigthToPath()
+                            self.hasObj = True
+                            self.status = "movingMeasuringBot"
+                            self.initCount+=1
+                            
+                    else : 
                         self.hasObj = False
-                        # self.moveRefPointBotsStep()
                         self.status = "moveRefPointBot1stStep"
-                    else:
-                        self.addWeigthToPath()
-                        self.hasObj = True
-                        self.status = "movingMeasuringBot"
-                        self.initCount+=1
-                else:
-                    self.hasObj = False
-                    # self.moveRefPointBotsStep()
-                    self.status = "moveRefPointBot1stStep"
-                    self.initCount = len(self.refPointBots) + 2   
+                        self.initCount = len(self.refPointBots) + 2 
+                        break
+                # target = self.targetMethod()
+                # if target is not None:
+                #     self.mainPathIndex = 0
+                #     source = self.lastObj
+                #     # temporary solution!
+                #     # self.grid.updateNeighOneNode(target)
+                #     weight, self.mainPath = (self.djikstra(source, target))
+                #     if self.mainPath is None:
+                #         self.hasObj = False
+                #         # self.moveRefPointBotsStep()
+                #         self.status = "moveRefPointBot1stStep"
+                #     else:
+                #         self.addWeigthToPath()
+                #         self.hasObj = True
+                #         self.status = "movingMeasuringBot"
+                #         self.initCount+=1
+                # else:
+                #     self.hasObj = False
+                #     # self.moveRefPointBotsStep()
+                #     self.status = "moveRefPointBot1stStep"
+                #     self.initCount = len(self.refPointBots) + 2   
 
         if self.status == "moveRefPointBot1stStep" or self.status == "moveRefPointBot2ndStep" or self.status == "moveRefPointBot3rdStep":
             self.moveRefPointBotsStep()
@@ -368,16 +414,70 @@ class SwarmExploratorUWBSLAM():
         
 
     # find closest cell to define as objective for Djikstra    
-    def findClosestCell(self):
+    def findTargetV1(self, exclusionList=[]):
         minDist = 10000
         minCoord = None
         for coord in self.grid.graph:
-            if self.grid.graph[coord] == 0.5:
+            if self.grid.graph[coord] == 0.5 and coord not in exclusionList:
                 dist = distObjList(self.measurerBot, coord)
                 if dist < minDist:
                     minDist = dist
                     minCoord = coord
         return minCoord
+    
+    def findTargetV2(self, exclusionList=[]):
+        minDist = 10000
+        minCoord = []
+        for coord in self.grid.graph:
+            if self.grid.graph[coord] == 0.5 and coord not in exclusionList:
+                dist = distObjList(self.measurerBot, coord)
+                if dist < minDist:
+                    minDist = dist
+                    minCoord = [coord]
+                elif dist == minDist:
+                    minCoord.append(coord)
+        minx = 10000
+        minCoordx = []
+        for coord in minCoord:
+            if coord[0] < minx:
+                minCoordx = [coord]
+            elif coord[0] == minx:
+                    minCoordx.append(coord)
+        miny = 10000
+        minCoordy = []
+        for coord in minCoordx:
+            if coord[0] < miny:
+                minCoordy = [coord]
+            elif coord[0] == miny:
+                    minCoordy.append(coord)
+        if len(minCoordy) == 0:
+            return None
+        return minCoordy[0]
+
+    def findTargetV3(self, exclusionList=[]):
+        minDist = 10000
+        minCoord = None
+        for coord in self.grid.graph:
+            if self.grid.graph[coord] == 0.5  and coord not in exclusionList:
+                dist = distObjList(self.measurerBot, coord)
+                if dist < minDist:
+                    minDist = dist
+                    minCoord = coord
+        neigh = self.getNeighbours(self.lastObj)
+        for coord in neigh:
+            if coord in self.grid.graph and self.grid.graph[coord] == 0.5 and coord not in exclusionList:
+                if coord not in self.targetHistory:
+                    self.targetHistory.append(coord)
+        if minCoord is not None and minCoord not in self.targetHistory:
+            self.targetHistory.append(minCoord)
+        if len(self.targetHistory) == 0:
+            return None
+        for coord in self.targetHistory:
+            if coord not in exclusionList:
+                dist = distObjList(self.measurerBot, coord)
+                if dist == minDist:
+                    self.targetHistory.remove(coord)
+                    return coord
 
     def findClosestVisitedCell(self, point):
         minDist = 10000
@@ -390,7 +490,7 @@ class SwarmExploratorUWBSLAM():
                     minCoord = coord
         return minCoord
 
-    def findClosestVisitedCellSmart(self, point):
+    def findClosestVisitedCellSmart(self, point, source=False):
             minDist = 10000
             minCoord = None
             for coord in self.grid.graph:
@@ -410,7 +510,14 @@ class SwarmExploratorUWBSLAM():
                         if visible :
                             minDist = dist
                             minCoord = coord
-            return minCoord
+            if source:
+                if minDist <= 2*np.sqrt(2)*self.grid.tileWidth:
+                    return minCoord
+                else:
+                    return None
+            else :
+                return minCoord
+    
     # add status of all the cells in the paths as info for dynamic Djikstra
     def addWeigthToPath(self):
         for i in range(len(self.mainPath)):
@@ -514,71 +621,196 @@ class SwarmExploratorUWBSLAM():
             if len(hull)>=3:
                 refPointBotsPoints = list(chain.from_iterable([[[self.refPointBots[keyBot].x, self.refPointBots[keyBot].y, keyBot]] for keyBot in hull]))
                 coordList = [refPointBotsPoints[i][:2] for i in range(len(refPointBotsPoints))]
-                convexHullObstacles = ConvexHull(coordList)
+                try:
+                    convexHullObstacles = ConvexHull(coordList)
+                except QhullError:
+                    "polygon shape incorrect, not taken into account"
+                    continue
                 polygon = [(coordList[i],refPointBotsPoints[i][2]) for i in list(convexHullObstacles.vertices)[:]]
                 self.polygons.append(coordList)
-                polygonsBot.append(polygon)
-        leastUseful = (np.pi,0)
+                polygonsBot.append(refPointBotsPoints)
+        leastUseful = (np.pi,None)
         for polygon in polygonsBot:
             for i in range(len(polygon)):
-                selfCoord, selfKey = polygon[i]
-                v1 = polygon[(i-1)%(len(polygon))][0]
-                v2 = polygon[(i+1)%(len(polygon))][0]
-                vect1 = (v1[0]-selfCoord[0], v1[1] - selfCoord[1])
-                vect2 = (v2[0]-selfCoord[0], v2[1] - selfCoord[1])
-                theta = signedAngle2Vects2(vect1, vect2)
-                if abs(abs(theta)-np.pi) < leastUseful[0]:
-                    leastUseful = (abs(abs(theta)-np.pi), selfKey)
+                selfCoord, selfKey = polygon[i][:2], polygon[i][2]
+                if selfKey != self.lastRPBMoved and selfKey not in self.RPBExclusionList:
+                    v1 = polygon[(i-1)%(len(polygon))][:2]
+                    v2 = polygon[(i+1)%(len(polygon))][:2]
+                    vect1 = (v1[0]-selfCoord[0], v1[1] - selfCoord[1])
+                    vect2 = (v2[0]-selfCoord[0], v2[1] - selfCoord[1])
+                    theta = signedAngle2Vects2(vect1, vect2)
+                    if abs(abs(theta)-np.pi) < leastUseful[0]:
+                        leastUseful = (abs(abs(theta)-np.pi), selfKey)
+        self.lastRPBMoved = leastUseful[1]
         return leastUseful[1]
+    
+    def findLeastUsefulBotsNoPolygons(self):
+        # find furthest RPB (available)
+        print("No polygons left!")
+        maxDist = 0
+        bestBot = None
+        for bot in self.refPointBots:
+            if bot not in self.RPBExclusionList:
+                dist = distObj(self.refPointBots[bot], self.measurerBot)
+                if dist > maxDist:
+                    maxDist = dist
+                    bestBot = bot 
 
+        # self.end_simulation = True # à changer avec la vraie méthode!
+    
+        return bestBot
+
+    def findClosestClusterToOrigin(self):
+        minDist = 10000
+        closestGoal = None
+        for goal in self.nextRefStepGoals:
+            if goal not in self.clusterExclusionList:
+                dist = distLists(self.initMeasurerPos, goal)
+                if dist < minDist:
+                    minDist = dist
+                    closestGoal = goal
+        return closestGoal
+
+    def findClosestClusterToMeasurerBot(self):
+        minDist = 10000
+        closestGoal = None
+        for goal in self.nextRefStepGoals:
+            if goal not in self.clusterExclusionList:
+                dist = distLists((self.measurerBot.x, self.measurerBot.y), goal)
+                if dist < minDist:
+                    minDist = dist
+                    closestGoal = goal
+        return closestGoal
 
     def moveRefPointBotsStep(self):
         if not self.checkMovingRefPointBots()[0] and not self.checkMovingMeasurerBot():
             
             if self.status == "moveRefPointBot1stStep":
+                self.checkMeasurerBotCovered()
                 key = self.findLeastUsefulBots()
-                for bot in self.refPointBots:
-                    self.refPointBots[bot].color = (0, 0, 255)
-                self.refPointBots[key].color = (150, 0, 255)
-                #self.defineConvexHulls()
-                self.explorableClusters = []
-                self.explorableClustersDict = {}
-                self.nearestPoints = []
-                self.nextRefStepGoals = {}
-                self.nextRefStepGoal = None
-                # self.nextRefStepIndex = 0
-                self.detectExplorablePart()
-                self.defineGravityCenterExplorableClusters()
-                nextGoal = None
-                for goal in self.nextRefStepGoals:
-                    nextGoal = goal
-                    break
-                if nextGoal!=None:
-                    targetCell = self.findClosestVisitedCellSmart(nextGoal)
-                    sourceCell = self.findClosestVisitedCell((self.refPointBots[key].x, self.refPointBots[key].y))
-                    minBot = key
-                    self.nextRefStepGoal = [minBot, nextGoal]
-                    weight, self.mainPath = (self.djikstra(sourceCell, targetCell))
-                    self.mainPathIndex = 0
-                    self.addWeigthToPath()
-                    self.hasObj = True
-                    self.status = "movingRefPointBot"
+                if key is None:
+                    key = self.findLeastUsefulBotsNoPolygons()
+                if key is None :
+                    self.end_simulation = True
+                else:
+                    self.grid.update(self.surfaceUWB,self.status)
+                    self.explorableClusters = []
+                    self.explorableClustersDict = {}
+                    self.nearestPoints = []
+                    self.nextRefStepGoals = {}
+                    self.nextRefStepGoal = None
+                    self.detectExplorablePart()
+                    self.defineGravityCenterExplorableClusters()
+                    if self.targetClusters == 2:
+                        nextGoal = self.clusterExplorationMethod()
+                    elif self.targetClusters == 1.5:
+                        nextGoal = self.visitedClusterExplorationMethod()
+                    if key is None and nextGoal is not None:
+                        self.clusterExclusionList.append(nextGoal)                        
+                        self.RPBExclusionList = []
+                        print("current cluster not accessible by any RPB, moving to other clusters")
+                        self.moveRefPointBotsStep()
+
+
+                    if nextGoal is None:
+                        if self.targetClusters == 2 and not self.end_simulation:
+                            if key is None:
+                                self.targetClusters = 1.5
+                                self.RPBExclusionList = []
+                                print("existing explorable clusters but none accessible, moving to visited clusters")
+                                self.moveRefPointBotsStep()    
+                            else:
+                                print("current RPB can't access any cluster, moving to other RPBs")
+                                self.RPBExclusionList.append(key)
+                                self.clusterExclusionList = []
+                                self.moveRefPointBotsStep()    
+
+                        else :  
+                            if key is not None and not self.end_simulation:
+                                print("current RPB can't access any cluster, moving to other RPBs")
+                                self.RPBExclusionList.append(key)
+                                self.clusterExclusionList = []
+                                self.moveRefPointBotsStep() 
+                            else:
+                                self.end_simulation = True
+                    if key is not None:
+                        self.refPointBots[key].isMoving = True
+                        for bot in self.refPointBots:
+                            self.refPointBots[bot].color = (0, 0, 255)
+                        self.refPointBots[key].color = (150, 0, 255)
+                        print(key)
+                    
+                    if nextGoal is not None and key is not None:
+                        targetCell = self.findClosestVisitedCellSmart(nextGoal)
+                        sourceCell = self.findClosestVisitedCellSmart((self.refPointBots[key].x, self.refPointBots[key].y), source=True)
+                        minBot = key
+                        self.nextRefStepGoal = [minBot, nextGoal]
+                        if sourceCell is None:
+                            print("RPB in non covered space, trying other RPB")
+                            self.RPBExclusionList.append(key)
+                        else:
+                            weight, self.mainPath = (self.djikstra(sourceCell, targetCell))
+                            self.mainPathIndex = 0
+                            if self.mainPath is not None:
+                                self.lastRPBBaseCell = targetCell
+                                self.targetClusters = 2
+                                self.clusterExclusionList = []
+                                self.RPBExclusionList = []
+                                self.addWeigthToPath()
+                                self.hasObj = True
+                                self.status = "movingRefPointBot"
+                            else:
+                                if self.changeFirst == "RPB":
+                                    print("cluster unreachable by RPB, tryin other RPB")
+                                    self.RPBExclusionList.append(key)
+                                    self.moveRefPointBotsStep()
+                                elif self.changeFirst == "cluster":
+                                    print("cluster unreachable by RPB, tryin other cluster")
+                                    self.clusterExclusionList.append(nextGoal)
+                                    self.moveRefPointBotsStep()
             elif self.status == "moveRefPointBot2ndStep":
-                # print("called")
-                self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoals[self.nextRefStepGoal[1]])
+                if self.instantMovingRefPointBot:
+                    bot = self.refPointBots[self.nextRefStepGoal[0]]
+                    vec = self.nextRefStepGoals[self.nextRefStepGoal[1]]
+                    if vec in self.lastRPBTarget or (vec, self.lastRPBBaseCell) in self.lastRPBTargetFull:
+                        n=len(self.lastRPBTarget)
+                        self.nextRefStepGoals[self.nextRefStepGoal[1]] = rot2D(vec, ((-1)**(n+1))*(1/((n+1)//2))*np.pi/6)
+                        vec = self.nextRefStepGoals[self.nextRefStepGoal[1]]
+                        self.lastRPBTarget.append(vec)
+                        self.lastRPBTargetFull.append((vec, self.lastRPBBaseCell))
+                    else :
+                         self.lastRPBTarget = [vec]
+                         self.lastRPBTargetFull.append((vec, self.lastRPBBaseCell))
+                    target = self.instantMovingRefPointBot(self.nextRefStepGoal[0], self.nextRefStepGoals[self.nextRefStepGoal[1]])
+
+                    bot.defineObjective(target)
+                    bot.x, bot.y = target
+                    bot.wallDetectionAction()
+                else :
+                    self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoals[self.nextRefStepGoal[1]])
                 self.mainPathIndex = 0
                 self.status = "moveRefPointBot3rdStep"
+            # step used to wait for the map to be updated
             elif self.status == "moveRefPointBot3rdStep":
-                # print("called4")
                 if not self.checkMovingRefPointBots()[0]:
-                    # print("called5")
-                    self.status = "transferRefPointBotToMeasuringBot"
-                    self.updateUWB()
+                    if self.thirdStepCount == 2:
+                        self.thirdStepCount = 0
+                        self.status = "transferRefPointBotToMeasuringBot"
+                        self.updateUWB()
+                    else :
+                        for bot in self.refPointBots:
+                            if isinstance(self.refPointBots[bot],refB.RefPointBot):
+                                self.refPointBots[bot].isMoving = False
+                        self.thirdStepCount +=1
     
+    def checkMeasurerBotCovered(self):
+        if self.grid.graph[self.lastObj] == 1.5:
+            print("measurerBot not covered, switching to visited clusters")
+            self.targetClusters = 1.5
 
     def detectExplorablePart(self):
         for coord in self.grid.graph:  
-            if self.grid.graph[coord] == 2:
+            if self.grid.graph[coord] == self.targetClusters:
                 neighbours = self.getNeighbours(coord)
                 neighInCluster = False
                 for neigh in neighbours:
@@ -589,11 +821,17 @@ class SwarmExploratorUWBSLAM():
                 if not neighInCluster:
                     self.explorableClusters.append({coord})
 
-        # Fin de simulation si les robots UWB n'ont nulle part où aller
+        
         if self.explorableClusters == []:
-            self.end_simulation = True            
+            # Fin de simulation , plus de zones oranges, tout a été exploré
+            if self.targetClusters == 2:
+                self.end_simulation = True   
+            # Fin de simulation si les robots UWB n'ont nulle part où aller
+            elif self.targetClusters == 1.5:  
+                self.end_simulation = True            
         
         # allInterNull = True
+        # "clusterize" the explorable cells
         index = 0
         i=1
         while index < len(self.explorableClusters):
@@ -620,21 +858,32 @@ class SwarmExploratorUWBSLAM():
             avgx=avgx//l
             avgy= avgy//l
             self.explorableClustersDict[(avgx, avgy)]=cluster
-        
-        polygonShapely = Polygon(self.polygons[0])
-        for polygon in self.polygons[1:]:
-            polygonShapely = polygonShapely.union(Polygon(polygon))
-        linestr = polygonShapely.boundary
-        for point in self.explorableClustersDict:
-            pointShapely = Point(point)
-            npoint = nearest_points(pointShapely, linestr)
-            line=[]
-            for p in npoint:
-                line.append(p.coords[:][0])
-            vec = (line[0][0] - line[1][0], line[0][1] - line[1][1])
-            nextGoal = (np.array(vec))*1000
-            self.nearestPoints.append(line)
-            self.nextRefStepGoals[point] = nextGoal
+        if len(self.polygons) == 0 or True:
+            for point in self.explorableClustersDict:
+                npoint = self.findClosestVisitedCellSmart(point)
+                if npoint is not None:
+                    vec = (point[0] - npoint[0], point[1] - npoint[1])
+                    vec = np.array(vec)
+                    vec = vec/np.linalg.norm(vec)
+                    vec = list(np.around(vec, 5))
+                    # nextGoal = (np.array(vec))*1000
+                    self.nearestPoints.append([point, npoint])
+                    self.nextRefStepGoals[point] = vec
+        else:
+            polygonShapely = Polygon(self.polygons[0])
+            for polygon in self.polygons[1:]:
+                polygonShapely = polygonShapely.union(Polygon(polygon))
+            linestr = polygonShapely.boundary
+            for point in self.explorableClustersDict:
+                pointShapely = Point(point)
+                npoint = nearest_points(pointShapely, linestr)
+                line=[]
+                for p in npoint:
+                    line.append(p.coords[:][0])
+                vec = (line[0][0] - line[1][0], line[0][1] - line[1][1])
+                nextGoal = (np.array(vec))*1000
+                self.nearestPoints.append(line)
+                self.nextRefStepGoals[point] = nextGoal
 
 
     def getNeighbours(self, coord):
@@ -681,6 +930,51 @@ class SwarmExploratorUWBSLAM():
 
         self.convexHulls = convexHulls
     
+
+    def updateUWB(self):
+        # calcule de la nouvelle surface
+        self.updateUWBcoverArea = self.room.updateUWBcoverArea()
+
+        # application de cette nouvelle surface sur l'ancienne (à modifier dans la version noGUI)
+        self.surfaceUWB.fill((0,0,0,0))
+        self.surfaceUWB.blit(self.updateUWBcoverArea,(0,0), special_flags=pygame.BLEND_RGBA_MAX)
+
+   
+    def draw(self):
+        # on réinitialise les surfaces
+        self.surfaceUWB.fill((0,0,0,0))
+        self.surfaceGrid.fill((0,0,0,0))
+        self.surfaceReferenceBot.fill((0,0,0,0))
+
+        # on affiche la zone UWB et la grille
+        # t = time.time()
+        self.surfaceUWB.blit(self.updateUWBcoverArea,(0,0), special_flags=pygame.BLEND_RGBA_MAX)
+        # print("duration of self.room.updateUWBcoverArea() : ", time.time() - t)
+        # t = time.time()
+        self.grid.draw(self.surfaceGrid)      
+
+ 
+        # self.trajectory est utilisé seulement ici, on peut donc le laisser dans le draw
+        if self.mainPath != None:
+            for i in range(len(self.mainPath)-1):
+                line = (self.mainPath[i][0], self.mainPath[i+1][0])
+                if line not in self.trajectory:
+                    self.trajectory.append(line)
+
+        for line in self.trajectory:
+            pygame.draw.line(self.surfaceReferenceBot, (0, 0, 100, 200), line[0], line[1], 3)
+        for coord in self.explorableClustersDict:
+            pygame.draw.circle(self.surfaceReferenceBot, (200, 100, 0, 200), coord, 4)
+        for coord in self.nearestPoints:
+            p1 = coord[0]
+            p2 = coord[1]
+            if p1[0]!=p2[0]:
+                a = (p1[1]-p2[1])/(p1[0]-p2[0])
+                b = p1[1]-a*p1[0]
+                pygame.draw.line(self.surfaceReferenceBot, (200, 0, 200, 200),(0,int(b)), (1600,int(a*1600+b)) , 1)
+        # print(self.grid.adjacencyList)
+
+
 
     def updateUWB(self):
         # calcule de la nouvelle surface
