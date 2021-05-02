@@ -34,7 +34,6 @@ class Tile():
         self.has_changed = False
 
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured]) # on stocke l'état sous la forme d'une châine de caractères
-        self.color = (0,0,0,0) # transparent
         self.graph_status = 0
 
         # Metriques
@@ -62,7 +61,7 @@ class Tile():
 
 
 
-def updateDiscrete(self,walls,measuringBot,refPointBots,status,color_dictionary,graph_status_dictionary):
+    def updateDiscrete(self,walls,measuringBot,refPointBots,status,graph_status_dictionary):
 
         self.has_changed = False
         oldState = self.state
@@ -92,8 +91,7 @@ def updateDiscrete(self,walls,measuringBot,refPointBots,status,color_dictionary,
         if self.state != oldState:
             self.has_changed = True
 
-        # mise à jour de la couleur
-        self.color = color_dictionary[self.state]
+        # mise à jour du graphe
         self.graph_status = graph_status_dictionary[self.state]
 
 
@@ -225,27 +223,6 @@ class Grid():
                 if self.tiles[coord].containsWall == 0: # toute case qui ne sera pas un noeud du graphe et ne contient pas de mur est inutile
                     del self.tiles[coord]
 
-        
-
-        # Dictionnaire des couleurs des cases en fonction des états
-        self.color_dictionary = {
-            '0000' : (0,0,0,0),
-            '0001' : (0,0,0,0),
-            '0010' : (0,0,0,0),
-            '0011' : (0,0,0,0),
-            '0100' : (255,255,255,100),
-            '0101' : (255,255,255,100),
-            '0110' : (255,255,255,100),
-            '0111' : (255,255,255,100),
-            '1000' : (200,100,0,200),
-            '1001' : (200,0,200,200),
-            '1010' : (200,0,0,200),
-            '1011' : (200,0,0,200),
-            '1110' : (200,0,0,200),
-            '1111' : (200,0,0,200),
-            '1100' : (200,200,0,200),
-            '1101' : (0,200,0,200)
-        }
 
         # Dictionnaire des couleurs des cases en fonction des états
         self.graph_status_dictionary = {
@@ -324,7 +301,7 @@ class Grid():
 
 
     ### Méthodes pour la grille
-    def update(self,surfaceUWB,status,mode):
+    def update(self,status,mode):
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
         # Une case a été mesurée si le robot a changé d'objectif
         if status == "movingMeasuringBot" and self.measuringBot.objective != None:
@@ -335,10 +312,8 @@ class Grid():
         self.oldObjective = self.measuringBot.objective        
 
         for coord in self.tiles:
-            if mode == 'exact':
-                self.tiles[coord].updateExact(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary)
-            elif mode == 'discrete':
-                self.tiles[coord].updateDiscrete(self.room.walls,self.measuringBot,self.refPointBots,status,self.color_dictionary,self.graph_status_dictionary) 
+            if mode == 'discrete':
+                self.tiles[coord].updateDiscrete(self.room.walls,self.measuringBot,self.refPointBots,status,self.graph_status_dictionary) 
             self.graph[coord] = self.tiles[coord].graph_status
             if self.tiles[coord].has_changed:
                 self.updateNeighOneNode(coord)

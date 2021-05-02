@@ -1,3 +1,4 @@
+import os
 import time
 
 from tkinter import *
@@ -24,7 +25,7 @@ def LoadFile(filePath):
         filePathList = filePath.split("/")
         fileName = filePathList[-1]
 
-        return colors, fileName[:-7]
+        return colors, fileName[8:-7]
     
     return None
 
@@ -90,7 +91,7 @@ def find_walls_corners(table):
     return walls_corners
 
 
-def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode):
+def drawing_to_simulation(table,width,height,mode):
 
     robots_centers = []
     for row in range(len(table)):
@@ -118,7 +119,7 @@ def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mod
         robots_centers[i][0][1] = robots_centers[i][0][1]*scale  + offset
 
     # création de la salle
-    room = Room(walls_corners,surface1,surface2)
+    room = Room(walls_corners,width,height)
 
     measuringBots = []
     explorerBots = []
@@ -138,7 +139,7 @@ def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mod
 
     room.addBots(bots)
 
-    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface3, surface4, surface5, room, measuringBots[0], refPointBots, mode)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(room, measuringBots[0], refPointBots, mode)
 
     return room, SEUWBSLAM
 
@@ -153,18 +154,7 @@ def load_and_launch_simulation(filePath):
     if table is not None : # évite un crash si on ne sélectionne pas de fichier
 
         sw, sh = 1600, 900
-        # les murs et les robots
-        surface1 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
-        # la vision des robots
-        surface2 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
-        # la surface couverte par les balises UWB
-        surface3 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
-        # la grille qui sert aux déplacements
-        surface4 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
-        # une surface supplémentaire pour des affichages annexes
-        surface5 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
-
-        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,'discrete')
+        room, SEUWBSLAM = drawing_to_simulation(table, sw, sh,'discrete')
         initDuration = (time.time()-initStart)
         simulationStart = time.time()
 
@@ -175,13 +165,9 @@ def load_and_launch_simulation(filePath):
         run = True 
         ## Choix du type de déplacement
         control = SEUWBSLAM
+
         while run:
             
-            # utilisateur ferme la fenetre
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    run = False  
-
             # fin de la simulation (les robtos ont arrêté de bouger)
             if control.end_simulation == True:
                 run = False

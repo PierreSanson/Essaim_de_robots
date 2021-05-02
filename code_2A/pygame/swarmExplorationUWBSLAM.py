@@ -105,7 +105,6 @@ class SwarmExploratorUWBSLAM():
             #self.refPointBots[i].defineObjective(initObjectives[i])
             self.refPointBots[i].x, self.refPointBots[i].y = initObjectives[i]
 
-
         for wall in self.room.walls:
             self.walls.append([[wall.x_start, wall.y_start],[wall.x_start+wall.width, wall.y_start]])
             self.walls.append([[wall.x_start, wall.y_start],[wall.x_start, wall.y_start + wall.height]])
@@ -827,6 +826,7 @@ class SwarmExploratorUWBSLAM():
                             neighInCluster = True
                 if not neighInCluster:
                     self.explorableClusters.append({coord})
+  
   
         if self.explorableClusters == []:
             # Fin de simulation , plus de zones oranges, tout a été exploré

@@ -253,10 +253,10 @@ def lineSegmentInter(line, segment):
         return(x,y)
     return None
 
-    
+
 def distMaxXY2Segments(seg1, seg2):
     distMaxX = -1
-    distMaxY =  -1
+    distMaxY = -1
     extremePoints = [[-1,-1], [-1, -1]]
     for point1 in seg1:
         for point2 in seg2:
