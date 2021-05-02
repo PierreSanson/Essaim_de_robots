@@ -252,6 +252,8 @@ def lineSegmentInter(line, segment):
     if np.linalg.norm(vectCol) <= lenLine and (np.dot(vectLine, vectCol)) >= 0 :
         return(x,y)
     return None
+
+    
 def distMaxXY2Segments(seg1, seg2):
     distMaxX = -1
     distMaxY =  -1
