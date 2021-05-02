@@ -93,6 +93,7 @@ class Room():
     def __init__(self, walls_corners, surface1, surface2):
         self.walls = []
         self.defWalls(walls_corners)
+
         Xs, Ys = [], []
         for wall in self.walls:
             Xs += wall.Xs
@@ -109,7 +110,6 @@ class Room():
 
         self.width = surface1.get_width()
         self.height = surface1.get_height()
-        self.forbiddenAreas = [[],[],[],[]]
 
         obstacles = self.defineObstaclesFromWalls()
         self.obstacles = obstacles

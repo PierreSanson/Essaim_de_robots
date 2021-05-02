@@ -71,21 +71,19 @@ class RefPointBot(Bot):
 
         return collision
 
-    def cleanVisionUWB(self,obstaclesInView):
+
+    def cleanVisionUWB(self,wallsInView):
 
         forbiddenAreas = []
 
         # on ajoute les obstacles 1 à 1 à la liste, seulement s'ils sont bien visibles
         # on détermine, en regardant tous les obstacles, un ensemble de zones rectangulaires dans lesquelles ne peuvent pas se trouver des obstacles visibles
-        for wall in obstaclesInView.keys():
+        for wall in wallsInView:
            
             ### 1: si on est face à un mur, on ne peut pas voir ce qu'il y à derrière
             ### 2: si on voit un coin de mur, ça cache une partie de la pièce en plus
 
-            ### ON POURRAIT ACCELERER UN PEU EN NE CONSIDERANT QUE LES COINS PERTINENTS, il faut juste faire un petit raisonnement supplémentaire
-            ### IL RESTE POTENTIELLEMENT DES CAS NON TRAITES, QUAND LE ROBOT N'EST PAS EN FACE DU MUR MAIS VOIS LE MUR EN ENTIER, LE CODE CACHE TROP DE CHOSES
-
-                        # à droite d'un mur vertical
+            # à droite d'un mur vertical
             if wall.orientation == 'v':
                 if self.x > max(wall.Xs):
                     if min(wall.Ys) <= self.y <= max(wall.Ys):
@@ -345,33 +343,6 @@ class RefPointBot(Bot):
 
         return forbiddenAreas
 
-
-    def visibleObstaclesUWB(self,wall):
-        visibleObs = []
-        visibleSides = []
-
-        if self.x > max(wall.Xs):
-            if not 'right' in visibleSides:
-                visibleSides.append('right')
-
-        if self.x < min(wall.Xs):
-            if not 'left' in visibleSides:
-                visibleSides.append('left')
-
-        # pour Y ce qui est écrit ici ne semble pas logique, mais en fait il faut se souvenir qu'on indexe depuis le coin en haut à gauche
-        if self.y > max(wall.Ys):
-            if not 'bot' in visibleSides:
-                visibleSides.append('bot')
-
-        if self.y < min(wall.Ys):
-            if not 'top' in visibleSides:
-                visibleSides.append('top')
-
-        for obstacle in wall.obstacles:
-            if obstacle.positionInWall in visibleSides and distObj(obstacle,self) <= self.UWBradius + obstacle.radius:
-                visibleObs.append(obstacle)
-        
-        return visibleObs
         
     def UWBcover(self):
         # on identifie les murs qui sont à portée du robot
@@ -380,13 +351,8 @@ class RefPointBot(Bot):
             if wall.visibleForBotUWB(self):
                 wallsInView.append(wall)
 
-        # on identifie les obstacles (portions de mur) qui sont visibles pour le robot
-        obstaclesInView = {}
-        for wall in wallsInView:
-            obstaclesInView[wall] = self.visibleObstaclesUWB(wall)
-
         # on élimine les incompatibilités, et on récupère au passage les zones non visibles
-        forbiddenAreas = self.cleanVisionUWB(obstaclesInView)
+        forbiddenAreas = self.cleanVisionUWB(wallsInView)
         
         # on compose toutes ces zones non visibles avec le cercle de vision du robot pour obtenir la vraie zone visible
         visibleSurface = pygame.Surface((self.room.width,self.room.height),  pygame.SRCALPHA)
@@ -395,6 +361,7 @@ class RefPointBot(Bot):
             pygame.draw.polygon(visibleSurface,(0,0,0,0),area)
 
         return visibleSurface
+
 
     def instantMovement(self):
         pass

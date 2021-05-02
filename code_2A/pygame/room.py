@@ -89,9 +89,6 @@ class Wall():
         
 
     
-        
-
-
 class Room():
     def __init__(self, walls_corners, surface1, surface2):
         self.walls = []

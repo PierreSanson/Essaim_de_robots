@@ -21,8 +21,10 @@ def LoadFile(filePath):
         file = open(filePath, "rb")
         colors = pickle.load(file)
         file.close()
+        filePathList = filePath.split("/")
+        fileName = filePathList[-1]
 
-        return colors
+        return colors, fileName[:-7]
     
     return None
 
@@ -88,7 +90,7 @@ def find_walls_corners(table):
     return walls_corners
 
 
-def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5):
+def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode):
 
     robots_centers = []
     for row in range(len(table)):
@@ -136,7 +138,7 @@ def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5):
 
     room.addBots(bots)
 
-    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface3, surface4, surface5, room, measuringBots[0], refPointBots)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface3, surface4, surface5, room, measuringBots[0], refPointBots, mode)
 
     return room, SEUWBSLAM
 
@@ -144,17 +146,11 @@ def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5):
 
 def load_and_launch_simulation(filePath):
 
-    table = LoadFile(filePath)
+    table, fileName = LoadFile(filePath)
 
     initStart = time.time()
 
     if table is not None : # évite un crash si on ne sélectionne pas de fichier
-
-        pygame.init()
-        background = pygame.display.set_mode((600, 200))
-        myfont = pygame.font.SysFont('Comic Sans MS', 30)
-        textsurface = myfont.render('Some Text', False, (255, 255, 255))
-        background.blit(textsurface,(0,0))
 
         sw, sh = 1600, 900
         # les murs et les robots
@@ -168,11 +164,10 @@ def load_and_launch_simulation(filePath):
         # une surface supplémentaire pour des affichages annexes
         surface5 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
 
-        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5)
+        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,'discrete')
         initDuration = (time.time()-initStart)
         simulationStart = time.time()
 
-        
         duration_control_move = 0
         duration_bot_move = 0
         duration_update_exploration = 0
@@ -204,23 +199,7 @@ def load_and_launch_simulation(filePath):
             # print("duration of bot.move() : ", time.time() - t)
             duration_bot_move += time.time() - t
 
-            ## Prise en compte des nouvelles zones vues par les robots
-            t = time.time()
-            bots = None
-            movingRefPointBots = control.checkMovingRefPointBots()
 
-            if control.status == "movingMeasuringBot":
-
-                bots = [control.measurerBot]
-            if movingRefPointBots[0]:
-                bots = [control.refPointBots[movingRefPointBots[1]]]
-            elif control.checkMovingMeasurerBot():
-                bots = [control.measurerBot]
-            room.updateExploration(bots=bots)
-            # print("duration of updateExploration : ", time.time() - t)
-            duration_update_exploration += time.time() - t
-
-        
         # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre
         simulationDuration = time.time() - simulationStart
         metrics = control.print_metrics()
@@ -232,3 +211,8 @@ def load_and_launch_simulation(filePath):
         print('Pourcentage déplacement : %3.2f' %(duration_bot_move/simulationDuration))
         print('Pourcentage visison : %3.2f' %(duration_update_exploration/simulationDuration))
         print('\n')
+
+        dirname = os.path.dirname(__file__)
+        file = open(os.path.join(dirname, "./results/",str(fileName)+"-noGUI-results.pickle"), "wb")
+        pickle.dump(metrics, file)
+        file.close()

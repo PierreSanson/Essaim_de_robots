@@ -137,7 +137,6 @@ class Tile():
         self.color = color_dictionary[self.state]
         self.graph_status = graph_status_dictionary[self.state]
         
-
     
     def UWBbotInTile(self,bots):
         for bot in bots:

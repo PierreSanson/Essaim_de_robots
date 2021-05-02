@@ -651,6 +651,7 @@ class SwarmExploratorUWBSLAM():
         self.lastRPBMoved = leastUseful[1]
         return leastUseful[1]
     
+
     def findLeastUsefulBotsNoPolygons(self):
         # find furthest RPB (available)
         print("No polygons left!")
@@ -688,6 +689,7 @@ class SwarmExploratorUWBSLAM():
                     minDist = dist
                     closestGoal = goal
         return closestGoal
+
 
     def moveRefPointBotsStep(self):
         if not self.checkMovingRefPointBots()[0] and not self.checkMovingMeasurerBot():
@@ -811,10 +813,12 @@ class SwarmExploratorUWBSLAM():
                                 self.refPointBots[bot].isMoving = False
                         self.thirdStepCount +=1
     
+
     def checkMeasurerBotCovered(self):
         if self.grid.graph[self.lastObj] == 1.5:
             print("measurerBot not covered, switching to visited clusters")
             self.targetClusters = 1.5
+
 
     def detectExplorablePart(self):
         for coord in self.grid.graph:  
@@ -828,8 +832,7 @@ class SwarmExploratorUWBSLAM():
                             neighInCluster = True
                 if not neighInCluster:
                     self.explorableClusters.append({coord})
-
-        
+  
         if self.explorableClusters == []:
             # Fin de simulation , plus de zones oranges, tout a été exploré
             if self.targetClusters == 2:
@@ -984,4 +987,3 @@ class SwarmExploratorUWBSLAM():
                 b = p1[1]-a*p1[0]
                 pygame.draw.line(self.surfaceReferenceBot, (200, 0, 200, 200),(0,int(b)), (1600,int(a*1600+b)) , 1)
         # print(self.grid.adjacencyList)
-
