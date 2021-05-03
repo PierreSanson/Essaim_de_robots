@@ -68,8 +68,8 @@ class SwarmExploratorUWBSLAM():
         self.instantMoving = True
         self.targetHistory = []
         self.targetMethod = self.findTargetV3
-        self.clusterExplorationMethod = self.findClosestClusterToOrigin
-        # self.clusterExplorationMethod = self.findClosestClusterToMeasurerBot
+        # self.clusterExplorationMethod = self.findClosestClusterToOrigin
+        self.clusterExplorationMethod = self.findClosestClusterToMeasurerBot
         self.targetClusters = 2
         self.visitedClusterExplorationMethod = self.findClosestClusterToMeasurerBot
         self.changeFirst = "cluster"
@@ -714,10 +714,25 @@ class SwarmExploratorUWBSLAM():
                     if self.changeFirst == "cluster":
                         self.end_simulation = True
                     else :
-                        self.clusterExclusionList.append(nextGoal)    
-                        self.RPBExclusionList = []
-                        print("current cluster not accessible by any RPB, moving to other clusters")
-                        self.moveRefPointBotsStep()
+                        self.clusterExclusionList.append(nextGoal)   
+                        if self.targetClusters == 2:
+                            nextGoal = self.clusterExplorationMethod()
+                        elif self.targetClusters == 1.5:
+                            nextGoal = self.visitedClusterExplorationMethod()
+                        print("cluster chose after exclusion : ", nextGoal)
+                        if nextGoal is None:
+                            if self.targetClusters == 2:
+                                self.targetClusters = 1.5
+                                self.RPBExclusionList = []
+                                self.clusterExclusionList = []
+                                print("existing explorable clusters but none accessible, moving to visited clusters")
+                                self.moveRefPointBotsStep()    
+                            elif self.targetClusters == 1.5:
+                                self.end_simulation = True
+                        else:
+                            self.RPBExclusionList = []
+                            print("current cluster not accessible by any RPB, moving to other clusters")
+                            self.moveRefPointBotsStep()    
 
 
                 if nextGoal is None:

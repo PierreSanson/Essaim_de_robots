@@ -1,3 +1,4 @@
+import os
 import time
 
 from tkinter import *
@@ -153,6 +154,7 @@ def load_and_launch_simulation(filePath):
     if table is not None : # évite un crash si on ne sélectionne pas de fichier
 
         sw, sh = 1600, 900
+        background = pygame.display.set_mode((sw, sh))
         # les murs et les robots
         surface1 = pygame.Surface((sw,sh),  pygame.SRCALPHA)
         # la vision des robots
