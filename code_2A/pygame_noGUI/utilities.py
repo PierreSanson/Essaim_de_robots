@@ -263,7 +263,7 @@ def lineSegmentInter(line, segment):
     return None
     
 
-    def distMaxXY2Segments(seg1, seg2):
+def distMaxXY2Segments(seg1, seg2):
     distMaxX = -1
     distMaxY =  -1
     extremePoints = [[-1,-1], [-1, -1]]
@@ -285,6 +285,20 @@ def lineSegmentInter(line, segment):
                     extremePoints[1] = [point2[1], point1[1]]    
     return [distMaxX, distMaxY, extremePoints]
 
+
+def addToListDict(dict, index, element):
+    if index in dict:
+        dict[index].append(element)
+    else:
+        dict[index] = [element]
+
+
+def checkDict(dict, index, element):
+    if index not in dict:
+        return False
+    elif element in dict[index]:
+        return True
+    return False
 
 def GetKey(val, graph):
     for key, value in graph.items():

@@ -62,7 +62,7 @@ class Tile():
 
 
 
-def updateDiscrete(self,walls,measuringBot,refPointBots,status,color_dictionary,graph_status_dictionary):
+    def updateDiscrete(self,walls,measuringBot,refPointBots,status,color_dictionary,graph_status_dictionary):
 
         self.has_changed = False
         oldState = self.state
