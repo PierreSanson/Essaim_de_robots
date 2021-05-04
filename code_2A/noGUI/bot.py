@@ -2,8 +2,6 @@ from copy import deepcopy
 import random
 import numpy as np
 
-import pygame
-
 from numpy.core.fromnumeric import argmin
 from scipy.spatial import ConvexHull
 

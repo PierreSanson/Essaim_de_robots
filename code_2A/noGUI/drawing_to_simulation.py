@@ -6,7 +6,6 @@ from tkinter.filedialog import askopenfilename
 
 import sys
 import pickle
-import pygame
 
 import explorerBot as eb
 import refPointBot as rpb
@@ -91,7 +90,7 @@ def find_walls_corners(table):
     return walls_corners
 
 
-def drawing_to_simulation(table,width,height,mode):
+def drawing_to_simulation(table,width,height):
 
     robots_centers = []
     for row in range(len(table)):
@@ -139,7 +138,7 @@ def drawing_to_simulation(table,width,height,mode):
 
     room.addBots(bots)
 
-    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(room, measuringBots[0], refPointBots, mode)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(room, measuringBots[0], refPointBots)
 
     return room, SEUWBSLAM
 
@@ -154,7 +153,7 @@ def load_and_launch_simulation(filePath):
     if table is not None : # évite un crash si on ne sélectionne pas de fichier
 
         sw, sh = 1600, 900
-        room, SEUWBSLAM = drawing_to_simulation(table, sw, sh,'discrete')
+        room, SEUWBSLAM = drawing_to_simulation(table, sw, sh)
         initDuration = (time.time()-initStart)
         simulationStart = time.time()
 

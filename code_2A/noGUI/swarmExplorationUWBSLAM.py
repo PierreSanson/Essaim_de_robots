@@ -23,7 +23,7 @@ from shapely.ops import nearest_points
 
 
 class SwarmExploratorUWBSLAM():
-    def __init__(self, room, measurerBot, refPointBots, mode, distRefPointBots = [110, 110], initRadius=50) :
+    def __init__(self, room, measurerBot, refPointBots, distRefPointBots = [110, 110], initRadius=50) :
         self.room = room
         self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
@@ -73,10 +73,6 @@ class SwarmExploratorUWBSLAM():
         self.instantMovingRPB = True
         self.lastRPBTarget = [None]
         self.lastRPBMoved = None
-
-        self.updateUWBcoverArea = None
-
-        self.mode = mode
 
         initObjectives = []
         for i in range(self.nbRefPointBots):
@@ -242,7 +238,7 @@ class SwarmExploratorUWBSLAM():
         # print("########### duration of step : ", tMove - self.time)
         self.time = tMove
         t = time.time()
-        self.grid.update(self.status,self.mode)
+        self.grid.update(self.status)
         # print("duration of grid.update : ", time.time() - t)
         
 
@@ -250,8 +246,7 @@ class SwarmExploratorUWBSLAM():
             if self.initCount < self.nbRefPointBots:
                 self.initMove()
                 if self.initCount == self.nbRefPointBots:
-                    self.status = "FirsttransferRefPointBotToMeasuringBot"
-        
+                    self.status = "FirsttransferRefPointBotToMeasuringBot"      
         
 
         if self.status == "movingRefPointBot":
@@ -260,6 +255,7 @@ class SwarmExploratorUWBSLAM():
                 if step == "end":
                     self.hasObj = False
                     self.status = "moveRefPointBot2ndStep"
+
 
         if self.status == "movingMeasuringBot":
             tTot = time.time()
@@ -314,6 +310,7 @@ class SwarmExploratorUWBSLAM():
 
                 # print("duration of movingMeasuringBot : ", time.time() - tTot)
 
+
         if self.status == "FirsttransferRefPointBotToMeasuringBot":
 
             if not self.checkMovingRefPointBots()[0]:
@@ -336,6 +333,7 @@ class SwarmExploratorUWBSLAM():
                     self.hasObj = False
                     # self.moveRefPointBotsStep()
                     self.status = "moveRefPointBot1stStep"
+
 
         if self.status == "transferRefPointBotToMeasuringBot":
             if not self.checkMovingRefPointBots()[0]:
@@ -396,6 +394,7 @@ class SwarmExploratorUWBSLAM():
                 #     self.status = "moveRefPointBot1stStep"
                 #     self.initCount = len(self.refPointBots) + 2   
 
+
         if self.status == "moveRefPointBot1stStep" or self.status == "moveRefPointBot2ndStep" or self.status == "moveRefPointBot3rdStep":
             self.moveRefPointBotsStep()
 
@@ -414,6 +413,7 @@ class SwarmExploratorUWBSLAM():
                     minCoord = coord
         return minCoord
     
+
     def findTargetV2(self, exclusionList=[]):
         minDist = 10000
         minCoord = []
@@ -443,6 +443,7 @@ class SwarmExploratorUWBSLAM():
             return None
         return minCoordy[0]
 
+
     def findTargetV3(self, exclusionList=[]):
         minDist = 10000
         minCoord = None
@@ -468,6 +469,7 @@ class SwarmExploratorUWBSLAM():
                     self.targetHistory.remove(coord)
                     return coord
 
+
     def findClosestVisitedCell(self, point):
         minDist = 10000
         minCoord = None
@@ -478,6 +480,7 @@ class SwarmExploratorUWBSLAM():
                     minDist = dist
                     minCoord = coord
         return minCoord
+
 
     def findClosestVisitedCellSmart(self, point, source=False):
             minDist = 10000
@@ -507,10 +510,12 @@ class SwarmExploratorUWBSLAM():
             else :
                 return minCoord
 
+
     # add status of all the cells in the paths as info for dynamic Djikstra
     def addWeigthToPath(self):
         for i in range(len(self.mainPath)):
             self.mainPath[i] = [self.mainPath[i], self.grid.graph[self.mainPath[i]]]
+
 
     # attributes intermediary objectives to the measurerBot
     def goToObj(self, bot = None):
@@ -684,7 +689,7 @@ class SwarmExploratorUWBSLAM():
                     if key is None :
                         self.end_simulation = True
                     else:
-                        self.grid.update(self.status,self.mode)
+                        self.grid.update(self.status)
                         self.explorableClusters = []
                         self.explorableClustersDict = {}
                         self.nearestPoints = []
@@ -759,6 +764,7 @@ class SwarmExploratorUWBSLAM():
                                         print("cluster unreachable by RPB, tryin other cluster")
                                         self.clusterExclusionList.append(nextGoal)
                                         self.moveRefPointBotsStep()
+
                 elif self.status == "moveRefPointBot2ndStep":
                     if self.instantMovingRefPointBot:
                         bot = self.refPointBots[self.nextRefStepGoal[0]]
@@ -781,14 +787,13 @@ class SwarmExploratorUWBSLAM():
                         self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoals[self.nextRefStepGoal[1]])
                     self.mainPathIndex = 0
                     self.status = "moveRefPointBot3rdStep"
+
                 # step used to wait for the map to be updated
                 elif self.status == "moveRefPointBot3rdStep":
                     if not self.checkMovingRefPointBots()[0]:
                         if self.thirdStepCount == 2:
                             self.thirdStepCount = 0
                             self.status = "transferRefPointBotToMeasuringBot"
-                            if self.mode == 'exact':
-                                self.updateUWB()
                         else :
                             for bot in self.refPointBots:
                                 if isinstance(self.refPointBots[bot],refB.RefPointBot):
@@ -814,7 +819,6 @@ class SwarmExploratorUWBSLAM():
                             neighInCluster = True
                 if not neighInCluster:
                     self.explorableClusters.append({coord})
-
 
         if self.explorableClusters == []:
             # Fin de simulation , plus de zones oranges, tout a été exploré

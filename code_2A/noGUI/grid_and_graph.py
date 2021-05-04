@@ -59,8 +59,6 @@ class Tile():
 
 
 
-
-
     def updateDiscrete(self,walls,measuringBot,refPointBots,status,graph_status_dictionary):
 
         self.has_changed = False
@@ -301,7 +299,7 @@ class Grid():
 
 
     ### Méthodes pour la grille
-    def update(self,status,mode):
+    def update(self,status):
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
         # Une case a été mesurée si le robot a changé d'objectif
         if status == "movingMeasuringBot" and self.measuringBot.objective != None:
@@ -312,8 +310,7 @@ class Grid():
         self.oldObjective = self.measuringBot.objective        
 
         for coord in self.tiles:
-            if mode == 'discrete':
-                self.tiles[coord].updateDiscrete(self.room.walls,self.measuringBot,self.refPointBots,status,self.graph_status_dictionary) 
+            self.tiles[coord].updateDiscrete(self.room.walls,self.measuringBot,self.refPointBots,status,self.graph_status_dictionary) 
             self.graph[coord] = self.tiles[coord].graph_status
             if self.tiles[coord].has_changed:
                 self.updateNeighOneNode(coord)
@@ -384,18 +381,4 @@ class Grid():
             if neigh in self.adjacencyList:
                 if coord in self.adjacencyList[neigh]:
                     self.adjacencyList[neigh].remove(coord)
-
-
-    def drawGraph(self):
-        g = Graph()
-        g.add_vertices(len(self.graph))
-        g.vs["name"] = list(self.graph.keys())
-        for neighbours in self.graphLinks:
-            v1 = g.vs['name'].index(neighbours[0])
-            v2 = g.vs['name'].index(neighbours[1])
-            g.add_edge(v1, v2)
-        g.vs["label"] = g.vs["name"]
-
-        layout = g.layout("fr")
-        plot(g, layout = layout)
         

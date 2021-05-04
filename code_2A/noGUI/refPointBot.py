@@ -1,5 +1,3 @@
-import pygame
-
 from bot import Bot
 from obstacle import Obstacle
 from utilities import *
