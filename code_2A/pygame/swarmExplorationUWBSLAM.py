@@ -25,7 +25,7 @@ from shapely.ops import nearest_points
 
 
 class SwarmExploratorUWBSLAM():
-    def __init__(self, surfaceUWB, surfaceGrid, surfaceReferenceBot, room, measurerBot, refPointBots, mode, distRefPointBots = [110, 110], initRadius=50) :
+    def __init__(self, surfaceUWB, surfaceGrid, surfaceReferenceBot, room, measurerBot, refPointBots, mode, parameters, distRefPointBots = [110, 110], initRadius=50) :
         self.room = room
         self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
@@ -65,14 +65,9 @@ class SwarmExploratorUWBSLAM():
         self.initCount = 0
         self.moveMeasuringBotCount = 0
         self.moveRefPointBot = 0
+        self.targetClusters = 2
         self.instantMoving = True
         self.targetHistory = []
-        self.targetMethod = self.findTargetV3
-        # self.clusterExplorationMethod = self.findClosestClusterToOrigin
-        self.clusterExplorationMethod = self.findClosestClusterToMeasurerBot
-        self.targetClusters = 2
-        self.visitedClusterExplorationMethod = self.findClosestClusterToMeasurerBot
-        self.changeFirst = "cluster"
         self.lastRPBBaseCell = None
         self.lastRPBTargetFull = []
 
@@ -85,6 +80,22 @@ class SwarmExploratorUWBSLAM():
         self.updateUWBcoverArea = None
 
         self.mode = mode
+
+
+        # methods selection : 
+        if parameters is not None:
+            self.targetMethod = eval("self."+parameters[0])
+            self.clusterExplorationMethod = eval("self."+parameters[1])
+            self.visitedClusterExplorationMethod = eval("self."+parameters[2])
+            self.RPBSelectionMethod = eval("self."+parameters[3])
+            self.changeFirst = parameters[4]
+        else :
+            self.targetMethod = self.findTargetV3
+            self.clusterExplorationMethod = self.findClosestClusterToOrigin
+            # self.clusterExplorationMethod = self.findClosestClusterToMeasurerBot
+            self.visitedClusterExplorationMethod = self.findClosestClusterToMeasurerBot
+            self.RPBSelectionMethod = self.findLeastUsefulBots
+            self.changeFirst = "RPB"
 
         initObjectives = []
         for i in range(self.nbRefPointBots):
@@ -645,8 +656,11 @@ class SwarmExploratorUWBSLAM():
                     theta = signedAngle2Vects2(vect1, vect2)
                     if abs(abs(theta)-np.pi) < leastUseful[0]:
                         leastUseful = (abs(abs(theta)-np.pi), selfKey)
-        self.lastRPBMoved = leastUseful[1]
-        return leastUseful[1]
+
+        key = leastUseful[1]
+        if key is None:
+            key = self.findLeastUsefulBotsNoPolygons()
+        return key
     
 
     def findLeastUsefulBotsNoPolygons(self):
@@ -655,15 +669,60 @@ class SwarmExploratorUWBSLAM():
         maxDist = 0
         bestBot = None
         for bot in self.refPointBots:
-            if bot not in self.RPBExclusionList and bot not in self.RPBExclusionListWholeStep :
+            if bot != self.lastRPBMoved and bot not in self.RPBExclusionList and bot not in self.RPBExclusionListWholeStep :
                 dist = distObj(self.refPointBots[bot], self.measurerBot)
                 if dist > maxDist:
                     maxDist = dist
                     bestBot = bot 
 
-        # self.end_simulation = True # à changer avec la vraie méthode!
-    
         return bestBot
+
+    def findLeastUsefulBotsV2(self):
+        self.defineConvexHulls()
+        self.polygons = []
+        polygonsBot = []
+        for hull in self.convexHulls:
+            # doesn't break triangles
+            if len(hull)>=4:
+                refPointBotsPoints = list(chain.from_iterable([[[self.refPointBots[keyBot].x, self.refPointBots[keyBot].y, keyBot]] for keyBot in hull]))
+                coordList = [refPointBotsPoints[i][:2] for i in range(len(refPointBotsPoints))]
+                try:
+                    convexHullObstacles = ConvexHull(coordList)
+                except QhullError:
+                    "polygon shape incorrect, not taken into account"
+                    continue
+                polygon = [(coordList[i],refPointBotsPoints[i][2]) for i in list(convexHullObstacles.vertices)[:]]
+                self.polygons.append(coordList)
+                polygonsBot.append(refPointBotsPoints)
+        leastUseful = (np.pi,None)
+        leastUsefulDict = {}
+        for polygon in polygonsBot:
+            n = len(polygon)
+            for i in range(n):
+                selfCoord, selfKey = polygon[i][:2], polygon[i][2]
+                if selfKey != self.lastRPBMoved and selfKey not in self.RPBExclusionList and selfKey not in self.RPBExclusionListWholeStep:
+                    v1 = polygon[(i-1)%(len(polygon))][:2]
+                    v2 = polygon[(i+1)%(len(polygon))][:2]
+                    vect1 = (v1[0]-selfCoord[0], v1[1] - selfCoord[1])
+                    vect2 = (v2[0]-selfCoord[0], v2[1] - selfCoord[1])
+                    theta = signedAngle2Vects2(vect1, vect2)
+                    if abs(abs(theta)-np.pi) < leastUseful[0]:
+                        leastUseful = (abs(abs(theta)-np.pi), selfKey)
+                    dist = distObjList(self.measurerBot, selfCoord)
+                    leastUsefulDict[selfKey] = (abs(abs(theta)-np.pi), dist)
+        bestBot = leastUseful[1]
+        if bestBot is None:
+            bestBot = self.findLeastUsefulBotsNoPolygons()
+            return bestBot
+        bestAngle = leastUseful[0]
+        maxDist = leastUsefulDict[leastUseful[1]][1]
+        for element in leastUsefulDict:
+            if leastUsefulDict[element][0]  <= bestAngle + np.pi/6 and leastUsefulDict[element][1] > maxDist:
+                maxDist = leastUsefulDict[element][1]
+                bestBot = element
+        print(element)
+        return element
+        
 
     def findClosestClusterToOrigin(self):
         minDist = 10000
@@ -693,9 +752,7 @@ class SwarmExploratorUWBSLAM():
             
             if self.status == "moveRefPointBot1stStep":
                 self.checkMeasurerBotCovered()
-                key = self.findLeastUsefulBots()
-                if key is None:
-                    key = self.findLeastUsefulBotsNoPolygons()
+                key = self.RPBSelectionMethod()
                 print("key chose : ", key)
                 if  self.clusterExclusionList == []:
                     self.explorableClusters = []
@@ -788,6 +845,7 @@ class SwarmExploratorUWBSLAM():
                         weight, self.mainPath = (self.djikstra(sourceCell, targetCell))
                         self.mainPathIndex = 0
                         if self.mainPath is not None:
+                            self.lastRPBMoved = key
                             self.lastRPBBaseCell = targetCell
                             self.targetClusters = 2
                             self.clusterExclusionList = []

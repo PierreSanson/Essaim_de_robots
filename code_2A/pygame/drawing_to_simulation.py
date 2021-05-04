@@ -103,7 +103,7 @@ def find_walls_corners(table):
     return walls_corners
 
 
-def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode):
+def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode, parameters):
 
     robots_centers = []
     for row in range(len(table)):
@@ -151,7 +151,7 @@ def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mod
 
     room.addBots(bots)
 
-    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface3, surface4, surface5, room, measuringBots[0], refPointBots, mode)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(surface3, surface4, surface5, room, measuringBots[0], refPointBots, mode, parameters)
 
     return room, SEUWBSLAM
 
@@ -193,7 +193,7 @@ def redrawGameWindow(room, background, control):
     pygame.display.flip()
 
 
-def load_and_launch_exact_simulation():
+def load_and_launch_exact_simulation(parameters):
 
     table, fileName = LoadFile()
 
@@ -218,7 +218,7 @@ def load_and_launch_exact_simulation():
         mode = 'exact'
         #################
 
-        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode)
+        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode, parameters)
         initDuration = (time.time()-initStart)
         simulationStart = time.time()
 
@@ -298,12 +298,12 @@ def load_and_launch_exact_simulation():
         file.close()
 
 
-def load_and_launch_discrete_simulation():
+def load_and_launch_discrete_simulation(parameters):
 
     table, fileName = LoadFile()
 
     initStart = time.time()
-
+    print("parameters load launch : ", parameters)
     if table is not None : # évite un crash si on ne sélectionne pas de fichier
 
         sw, sh = 1600, 900
@@ -323,7 +323,7 @@ def load_and_launch_discrete_simulation():
         mode = 'discrete'
         #################
 
-        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode)
+        room, SEUWBSLAM = drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mode, parameters)
         initDuration = (time.time()-initStart)
         simulationStart = time.time()
 
