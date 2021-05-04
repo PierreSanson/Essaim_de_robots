@@ -80,8 +80,9 @@ class Bot():
                 distO = distObj(self, obj)
                 if distO <= self.radiusDetection:
 
-                    if distO < self.radius + obj.radius :
-                        print("COLLISION")
+                    # if distO < self.radius + obj.radius :
+                    #     print("COLLISION")
+
 
                     if (obj not in self.detectedObj):
                         self.detectedObj.append(obj)

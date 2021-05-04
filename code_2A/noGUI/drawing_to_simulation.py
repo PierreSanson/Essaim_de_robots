@@ -90,7 +90,7 @@ def find_walls_corners(table):
     return walls_corners
 
 
-def drawing_to_simulation(table,width,height):
+def drawing_to_simulation(table,width,height,tileWidth):
 
     robots_centers = []
     for row in range(len(table)):
@@ -138,29 +138,23 @@ def drawing_to_simulation(table,width,height):
 
     room.addBots(bots)
 
-    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(room, measuringBots[0], refPointBots)
+    SEUWBSLAM = seUWBSLAM.SwarmExploratorUWBSLAM(room, measuringBots[0], refPointBots, tileWidth)
 
     return room, SEUWBSLAM
 
 
 
-def load_and_launch_simulation(filePath):
+def load_and_launch_single_simulation(filePath,tileWidth):
 
     table, fileName = LoadFile(filePath)
 
-    initStart = time.time()
-
     if table is not None : # évite un crash si on ne sélectionne pas de fichier
-
+        initStart = time.time()
         sw, sh = 1600, 900
-        room, SEUWBSLAM = drawing_to_simulation(table, sw, sh)
+        room, SEUWBSLAM = drawing_to_simulation(table, sw, sh, tileWidth)
         initDuration = (time.time()-initStart)
+
         simulationStart = time.time()
-
-        duration_control_move = 0
-        duration_bot_move = 0
-        duration_update_exploration = 0
-
         run = True 
         ## Choix du type de déplacement
         control = SEUWBSLAM
@@ -174,30 +168,63 @@ def load_and_launch_simulation(filePath):
             ## Calcul des mvmts à effectuer
             t = time.time()
             control.move()
-            # print("duration of control.move() : ", time.time() - t)
-            duration_control_move += time.time() - t
 
             ## Itération sur l'ensemble des robots pour les faire se déplacer
-            t = time.time()
             for bot in room.bots:
                 bot.move()
-            # print("duration of bot.move() : ", time.time() - t)
-            duration_bot_move += time.time() - t
+
 
 
         # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre
         simulationDuration = time.time() - simulationStart
-        metrics = control.print_metrics()
-        print("Durée de l'initialisation : %3.2f s" %initDuration)
-        print('Durée de la simulation : %3.2f s' %simulationDuration)
-        print('Durée totale : %3.2f s' %(initDuration + simulationDuration))
-        print('\n')
-        print('Pourcentage contrôle : %3.2f' %(duration_control_move/simulationDuration))
-        print('Pourcentage déplacement : %3.2f' %(duration_bot_move/simulationDuration))
-        print('Pourcentage visison : %3.2f' %(duration_update_exploration/simulationDuration))
-        print('\n')
-
+        metrics = control.get_metrics()
+        metrics["init_duration"] = initDuration
+        metrics["sim_duration"] = simulationDuration
+        
         dirname = os.path.dirname(__file__)
         file = open(os.path.join(dirname, "./results/",str(fileName)+"-noGUI-results.pickle"), "wb")
         pickle.dump(metrics, file)
         file.close()
+
+        return initDuration + simulationDuration
+
+
+def initialize_simulation(filePath,tileWidth):
+    table, fileName = LoadFile(filePath)
+
+    if table is not None : # évite un crash si on ne sélectionne pas de fichier
+        sw, sh = 1600, 900
+        room, SEUWBSLAM = drawing_to_simulation(table, sw, sh, tileWidth)
+        
+        return SEUWBSLAM, SEUWBSLAM.grid.inside
+
+
+def launch_parametered_simulation(control,params):
+
+    ### à coder
+    control.set_params(params)
+
+    simulationStart = time.time()
+    run = True 
+
+    while run:
+        
+        # fin de la simulation (les robtos ont arrêté de bouger)
+        if control.end_simulation == True:
+            run = False
+
+        ## Calcul des mvmts à effectuer
+        t = time.time()
+        control.move()
+
+        ## Itération sur l'ensemble des robots pour les faire se déplacer
+        for bot in control.room.bots:
+            bot.move()
+
+
+    # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre
+    simulationDuration = time.time() - simulationStart
+    metrics = control.get_metrics()
+    metrics["sim_duration"] = simulationDuration
+    
+    return metrics

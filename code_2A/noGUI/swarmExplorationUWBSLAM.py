@@ -23,10 +23,14 @@ from shapely.ops import nearest_points
 
 
 class SwarmExploratorUWBSLAM():
-    def __init__(self, room, measurerBot, refPointBots, distRefPointBots = [110, 110], initRadius=50) :
+    def __init__(self, room, measurerBot, refPointBots, tileWidth, distRefPointBots = [110, 110], initRadius=50) :
         self.room = room
         self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
+
+        self.grid = Grid(self.room,self.measurerBot,refPointBots,tileWidth)
+        self.measurerBot.x, self.measurerBot.y = minDistObjList(self.measurerBot,self.grid.inside)
+
         self.refPointBots = {}
         self.nbRefPointBots = len(refPointBots)
         
@@ -103,41 +107,29 @@ class SwarmExploratorUWBSLAM():
 
         self.refPointBotsVisible = self.refPointBots.copy()
 
-        self.grid = Grid(self.room,self.measurerBot,refPointBots)
-
         ############ Détection de la fin de la simulation
         self.end_simulation = False
 
+    ### à coder
+    def set_params(self,params):
+        pass
 
     # Sortie du simulateur
-    def print_metrics(self):
-
-        print('\r\n')
- 
-        ### Résumé des entrées du simulateur
-        print('Nombre de robots points de repère : %s' %self.nbRefPointBots)
-        print('Nombre de robots mesureurs : %s' %(len(self.room.bots)-self.nbRefPointBots))
-        print('Algorithme : déplacement vers la case la plus proche non explorée')  # intégrer le nom de l'algo dans le code, et pouvoir sélectionner
-                                                                                    # spéarer algo UWB et algo mesureur
-        # autres entrées, pas top à afficher : positions de départ, directions de départ pour les points de repère
-        
-        print('\r\n')
+    def get_metrics(self):
 
         measuredTiles, surface, pathLength, history, visitsPerTile = self.grid.get_metrics()
-        ### Sorties du simulateur
-        print('Nombre de cases mesurées : %s/%s' %(measuredTiles, surface))
-        print('Longueur du parcours : %s cases' %pathLength)
-        # autres sorties, pas pratiques à print : historique des états des différentes cases, nombre de passages par case, ce qui permettra d'extraire un peu tout ce qu'on veut
 
-        metrics = { 'measuredTiles' : measuredTiles,
+        metrics = { 'nbRefPointBots': self.nbRefPointBots,
+                    'nbMeasurerBots': len(self.room.bots)-self.nbRefPointBots,
+                    'algo_Measure'  : self.targetMethod.__name__,
+                    'algo_RefPoint' : self.clusterExplorationMethod.__name__ +" and "+ self.visitedClusterExplorationMethod.__name__,
+                    'measuredTiles' : measuredTiles,
                     'surface'       : surface,
                     'pathLength'    : pathLength,
                     'history'       : history,
                     'visitsPerTile' : visitsPerTile}
-        
-        print('\r\n')
 
-        return metrics # ici on renvoie tout, affichable ou pas
+        return metrics
 
 
     # Initial move of the refPointBots
@@ -234,13 +226,8 @@ class SwarmExploratorUWBSLAM():
 
     # principal move function
     def move(self):
-        tMove = time.time()
-        # print("########### duration of step : ", tMove - self.time)
-        self.time = tMove
-        t = time.time()
-        self.grid.update(self.status)
-        # print("duration of grid.update : ", time.time() - t)
         
+        self.grid.update(self.status)
 
         if self.status == "init":
             if self.initCount < self.nbRefPointBots:
@@ -273,9 +260,7 @@ class SwarmExploratorUWBSLAM():
                             source = self.lastObj
                             # temporary solution!
                             self.grid.updateNeighOneNode(target)
-                            # t = time.time()
                             weight, self.mainPath = (self.djikstra(source, target))
-                            # print("duration of djikstra : ", time.time() - t)
                             if self.mainPath is None:
                                 exclusionList.append(target)
                             else:
@@ -308,8 +293,6 @@ class SwarmExploratorUWBSLAM():
                     weight, self.mainPath = (self.djikstra(source, target))
                     self.addWeigthToPath()
 
-                # print("duration of movingMeasuringBot : ", time.time() - tTot)
-
 
         if self.status == "FirsttransferRefPointBotToMeasuringBot":
 
@@ -320,7 +303,6 @@ class SwarmExploratorUWBSLAM():
                 
                 self.grid.graph[self.grid.origin] = 1
 
-                # self.drawGraph() # à commenter ou non pour afficher le graphe
                 self.grid.updateNeighOneNode(self.grid.origin)
                 target = self.targetMethod()
                 if target is not None:
@@ -342,8 +324,6 @@ class SwarmExploratorUWBSLAM():
                     if isinstance(self.refPointBots[bot],refB.RefPointBot):
                         self.refPointBots[bot].isMoving = False
 
-                # self.draw()
-                # self.grid.updateGraph()
                 #self.updatePolygon()
                 #self.defineConvexHulls()
                 self.target = None
@@ -356,9 +336,9 @@ class SwarmExploratorUWBSLAM():
                         source = self.lastObj
                         # temporary solution!
                         self.grid.updateNeighOneNode(target)
-                        # t = time.time()
+
                         weight, self.mainPath = (self.djikstra(source, target))
-                        # print("duration of djikstra : ", time.time() - t)
+
                         if self.mainPath is None:
                             exclusionList.append(target)
                         else:
@@ -394,11 +374,8 @@ class SwarmExploratorUWBSLAM():
                 #     self.status = "moveRefPointBot1stStep"
                 #     self.initCount = len(self.refPointBots) + 2   
 
-
         if self.status == "moveRefPointBot1stStep" or self.status == "moveRefPointBot2ndStep" or self.status == "moveRefPointBot3rdStep":
             self.moveRefPointBotsStep()
-
-        #print("########### duration of move : ", time.time()- tMove)
         
 
     # find closest cell to define as objective for Djikstra    
@@ -641,7 +618,7 @@ class SwarmExploratorUWBSLAM():
 
     def findLeastUsefulBotsNoPolygons(self):
         # find furthest RPB (available)
-        print("No polygons left!")
+        # print("No polygons left!")
         maxDist = 0
         bestBot = None
         for bot in self.refPointBots:
@@ -704,7 +681,7 @@ class SwarmExploratorUWBSLAM():
                         if key is None and nextGoal is not None:
                             self.clusterExclusionList.append(nextGoal)                        
                             self.RPBExclusionList = []
-                            print("current cluster not accessible by any RPB, moving to other clusters")
+                            # print("current cluster not accessible by any RPB, moving to other clusters")
                             self.moveRefPointBotsStep()
 
 
@@ -723,7 +700,7 @@ class SwarmExploratorUWBSLAM():
 
                             else :  
                                 if key is not None and not self.end_simulation:
-                                    print("current RPB can't access any cluster, moving to other RPBs")
+                                    # print("current RPB can't access any cluster, moving to other RPBs")
                                     self.RPBExclusionList.append(key)
                                     self.clusterExclusionList = []
                                     self.moveRefPointBotsStep() 
@@ -734,7 +711,7 @@ class SwarmExploratorUWBSLAM():
                             for bot in self.refPointBots:
                                 self.refPointBots[bot].color = (0, 0, 255)
                             self.refPointBots[key].color = (150, 0, 255)
-                            print(key)
+
                         
                         if nextGoal is not None and key is not None:
                             targetCell = self.findClosestVisitedCellSmart(nextGoal)
@@ -742,7 +719,7 @@ class SwarmExploratorUWBSLAM():
                             minBot = key
                             self.nextRefStepGoal = [minBot, nextGoal]
                             if sourceCell is None:
-                                print("RPB in non covered space, trying other RPB")
+                                # print("RPB in non covered space, trying other RPB")
                                 self.RPBExclusionList.append(key)
                             else:
                                 weight, self.mainPath = (self.djikstra(sourceCell, targetCell))
@@ -757,11 +734,11 @@ class SwarmExploratorUWBSLAM():
                                     self.status = "movingRefPointBot"
                                 else:
                                     if self.changeFirst == "RPB":
-                                        print("cluster unreachable by RPB, tryin other RPB")
+                                        # print("cluster unreachable by RPB, tryin other RPB")
                                         self.RPBExclusionList.append(key)
                                         self.moveRefPointBotsStep()
                                     elif self.changeFirst == "cluster":
-                                        print("cluster unreachable by RPB, tryin other cluster")
+                                        # print("cluster unreachable by RPB, tryin other cluster")
                                         self.clusterExclusionList.append(nextGoal)
                                         self.moveRefPointBotsStep()
 
@@ -803,7 +780,7 @@ class SwarmExploratorUWBSLAM():
 
     def checkMeasurerBotCovered(self):
         if self.grid.graph[self.lastObj] == 1.5:
-            print("measurerBot not covered, switching to visited clusters")
+            # print("measurerBot not covered, switching to visited clusters")
             self.targetClusters = 1.5
 
 

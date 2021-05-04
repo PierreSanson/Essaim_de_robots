@@ -7,7 +7,7 @@ from igraph.drawing import graph
 
 from measuringBot import MeasuringBot
 
-from utilities import segmentsIntersect, distObj
+from utilities import segmentsIntersect, distObj, minDistObjList
 
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
@@ -158,10 +158,6 @@ class Grid():
         self.measuringBot = measuringBot
         self.oldObjective = measuringBot.objective
 
-        xMeasurer = measuringBot.x
-        yMeasurer = measuringBot.y
-        self.origin = (xMeasurer,yMeasurer)
-
         # Initialisation du graphe 
         self.graph = {}
         self.graphLinks = []
@@ -174,21 +170,14 @@ class Grid():
         ### Construction de toute la grille
 
         # on trouve la zone de l'écran intéressante (zone contenue entre les murs les plus éloignés)
-        Xmin, Xmax, Ymin, Ymax = self.room.Xmin - tileWidth, self.room.Xmax + tileWidth, self.room.Ymin - tileWidth, self.room.Xmax + tileWidth
-            
-        ####### faire une boucle qui récupère une liste coordinates, utiliser // pour trouver coordonnées de la case en haut à gauche
-        space_to_left = xMeasurer - Xmin
-        space_to_top = yMeasurer - Ymin
-
-        firstX = xMeasurer - (space_to_left//tileWidth)*tileWidth
-        firstY = yMeasurer - (space_to_top//tileWidth)*tileWidth
+        Xmin, Xmax, Ymin, Ymax = self.room.Xmin, self.room.Xmax, self.room.Ymin, self.room.Xmax
 
         i = 0
-        while firstX + i*tileWidth <= Xmax:
+        while Xmin + i*tileWidth <= Xmax + tileWidth:
             j = 0
-            while firstY + j*tileWidth <= Ymax:
-                self.tiles[(firstX + i*tileWidth,firstY + j*tileWidth)] = Tile(firstX + i*tileWidth, firstY + j*tileWidth, self.tileWidth)
-                self.tiles[(firstX + i*tileWidth,firstY + j*tileWidth)].metrics_coord = (i,j)
+            while Ymin + j*tileWidth <= Ymax + tileWidth:
+                self.tiles[(Xmin + i*tileWidth,Ymin + j*tileWidth)] = Tile(Xmin + i*tileWidth, Ymin + j*tileWidth, self.tileWidth)
+                self.tiles[(Xmin + i*tileWidth,Ymin + j*tileWidth)].metrics_coord = (i,j)
                 j += 1
             i += 1
             
@@ -207,14 +196,15 @@ class Grid():
 
 
         # On définit l'intérieur de la salle
-        inside = self.findCluster(self.origin)        
+        coordinates = list(self.tiles.keys())
+        self.origin = minDistObjList(self.measuringBot,coordinates)
+        self.inside = self.findCluster(self.origin)     
 
 
         # On nettoie les objets Tile, pour ne pas conserver de cases inutiles (ie on supprime toutes les cases extérieures, mais on garde les murs pour affichage)
         # On crée un noeud dans le graphe pour toutes les cases d'intérieur
-        coordinates = list(self.tiles.keys())
         for coord in coordinates:
-            if coord in inside:
+            if coord in self.inside:
                 self.graph[coord] = 0 # création des noeuds
                 self.surface += 1
             else :
