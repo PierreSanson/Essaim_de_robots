@@ -81,6 +81,12 @@ class SwarmExploratorUWBSLAM():
 
         self.mode = mode
 
+        # infinite loop detection :
+        self.infiniteLoopList = []
+        self.infiniteLoopFirstElement = None
+        self.infiniteLoopCount = 0
+        self.infiniteLoopFirstIndex = None
+
 
         # methods selection : 
         if parameters is not None:
@@ -89,13 +95,15 @@ class SwarmExploratorUWBSLAM():
             self.visitedClusterExplorationMethod = eval("self."+parameters[2])
             self.RPBSelectionMethod = eval("self."+parameters[3])
             self.changeFirst = parameters[4]
+            self.antiLoopMethod = parameters[5]
         else :
             self.targetMethod = self.findTargetV3
             self.clusterExplorationMethod = self.findClosestClusterToOrigin
-            # self.clusterExplorationMethod = self.findClosestClusterToMeasurerBot
             self.visitedClusterExplorationMethod = self.findClosestClusterToMeasurerBot
             self.RPBSelectionMethod = self.findLeastUsefulBots
-            self.changeFirst = "RPB"
+            self.changeFirst = "cluster"
+            self.antiLoopMethod = "aggressive"
+
 
         initObjectives = []
         for i in range(self.nbRefPointBots):
@@ -720,7 +728,6 @@ class SwarmExploratorUWBSLAM():
             if leastUsefulDict[element][0]  <= bestAngle + np.pi/6 and leastUsefulDict[element][1] > maxDist:
                 maxDist = leastUsefulDict[element][1]
                 bestBot = element
-        print(element)
         return element
         
 
@@ -762,6 +769,7 @@ class SwarmExploratorUWBSLAM():
                     self.nextRefStepGoal = None
                     self.detectExplorablePart()
                     self.defineGravityCenterExplorableClusters()
+                if self.end_simulation : return
                 if self.targetClusters == 2:
                     nextGoal = self.clusterExplorationMethod()
                 elif self.targetClusters == 1.5:
@@ -845,6 +853,10 @@ class SwarmExploratorUWBSLAM():
                         weight, self.mainPath = (self.djikstra(sourceCell, targetCell))
                         self.mainPathIndex = 0
                         if self.mainPath is not None:
+                            if self.antiLoopMethod == "aggressive":
+                                self.infiniteLoopDetectionAggressive(nextGoal)
+                            elif self.antiLoopMethod == "patient":
+                                self.infiniteLoopDetection(targetCell, sourceCell, key)
                             self.lastRPBMoved = key
                             self.lastRPBBaseCell = targetCell
                             self.targetClusters = 2
@@ -854,6 +866,7 @@ class SwarmExploratorUWBSLAM():
                             self.addWeigthToPath()
                             self.hasObj = True
                             self.status = "movingRefPointBot"
+                            print("__________________________________________")
                         else:
                             if self.changeFirst == "RPB":
                                 print("cluster unreachable by RPB, tryin other RPB")
@@ -907,6 +920,68 @@ class SwarmExploratorUWBSLAM():
         if self.grid.graph[self.lastObj] == 1.5:
             print("measurerBot not covered, switching to visited clusters")
             self.targetClusters = 1.5
+
+
+    def infiniteLoopDetection(self, target, source, key):
+        newElement = (source, target, key, self.targetClusters)
+        if self.infiniteLoopCount == 0:
+            if newElement in self.infiniteLoopList:
+                self.infiniteLoopFirstElement = newElement
+                self.infiniteLoopFirstIndex = self.infiniteLoopList.index(newElement)
+                self.infiniteLoopCount +=1
+                print("first loop detected!")
+        else:
+            if newElement == self.infiniteLoopFirstElement:
+                self.infiniteLoopCount +=1
+                print("new loop iteration : ", self.infiniteLoopCount)
+            elif newElement != self.infiniteLoopList[self.infiniteLoopFirstIndex]:
+                self.infiniteLoopFirstElement = None
+                self.infiniteLoopCount = 0
+                self.infiniteLoopFirstIndex = None
+                print("loop ended")
+                if newElement in self.infiniteLoopList:
+                    self.infiniteLoopFirstElement = newElement
+                    self.infiniteLoopFirstIndex = self.infiniteLoopList.index(newElement)
+                    self.infiniteLoopCount +=1
+                    print("first loop detected!")
+        
+        if len(self.infiniteLoopList) > 20:
+            self.infiniteLoopList.pop()
+        self.infiniteLoopList = [newElement] + self.infiniteLoopList
+
+        if self.infiniteLoopCount >= 5:
+            self.end_simulation = True
+
+
+    def infiniteLoopDetectionAggressive(self, cluster):
+        newElement = (cluster, self.targetClusters)
+        if self.infiniteLoopCount == 0:
+            if newElement in self.infiniteLoopList:
+                self.infiniteLoopFirstElement = newElement
+                self.infiniteLoopFirstIndex = self.infiniteLoopList.index(newElement)
+                self.infiniteLoopCount +=1
+                print("first loop detected!")
+        else:
+            if newElement == self.infiniteLoopFirstElement:
+                self.infiniteLoopCount +=1
+                print("new loop iteration : ", self.infiniteLoopCount)
+            elif newElement != self.infiniteLoopList[self.infiniteLoopFirstIndex]:
+                self.infiniteLoopFirstElement = None
+                self.infiniteLoopCount = 0
+                self.infiniteLoopFirstIndex = None
+                print("loop ended")
+                if newElement in self.infiniteLoopList:
+                    self.infiniteLoopFirstElement = newElement
+                    self.infiniteLoopFirstIndex = self.infiniteLoopList.index(newElement)
+                    self.infiniteLoopCount +=1
+                    print("first loop detected!")
+        
+        if len(self.infiniteLoopList) > 20:
+            self.infiniteLoopList.pop()
+        self.infiniteLoopList = [newElement] + self.infiniteLoopList
+
+        if self.infiniteLoopCount >= 5:
+            self.end_simulation = True
 
 
     def detectExplorablePart(self):

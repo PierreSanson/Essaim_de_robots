@@ -16,13 +16,14 @@ screen = pygame.display.set_mode((sw, sh))
 
 
 
-defaultParameters = ["findTargetV3", "findClosestClusterToOrigin", "findClosestClusterToMeasurerBot", "findLeastUsefulBots", "RPB"]
+defaultParameters = ["findTargetV3", "findClosestClusterToOrigin", "findClosestClusterToMeasurerBot", "findLeastUsefulBots", "cluster", "aggressive"]
 parameters = {}
 parameters["targetMethod"] = [("findTargetV3",), ("findTargetV1",), ("findTargetV2",)]
 parameters["clusterExplorationMethod"] = [("findClosestClusterToOrigin",), ("findClosestClusterToMeasurerBot",)]
 parameters["visitedClusterExplorationMethod"]=[("findClosestClusterToMeasurerBot",), ("findClosestClusterToOrigin",)]
 parameters["RPBSelectionMethod"]=[("findLeastUsefulBots",), ("findLeastUsefulBotsV2",)]
-parameters["changeFirst"]=[("RPB",), ("cluster",)]
+parameters["changeFirst"]=[("cluster",), ("RPB",)]
+parameters["antiLoopMethod"]=[("aggressive",), ("patient",)]
 
 font = pygame_menu.font.FONT_OPEN_SANS
 
@@ -51,6 +52,8 @@ main_menu.add_selector("Select cluster exploration method : ",parameters["cluste
 main_menu.add_selector("Select visited cluster exploration method  : ",parameters["visitedClusterExplorationMethod"], onchange=updateParameters, index = 2)
 main_menu.add_selector("Select RPB selection method : ",parameters["RPBSelectionMethod"], onchange=updateParameters, index = 3)
 main_menu.add_selector("Select what to loop through first : ",parameters["changeFirst"], onchange=updateParameters, index = 4)
+main_menu.add_selector("Select anti infinite loop method : ",parameters["antiLoopMethod"], onchange=updateParameters, index = 5)
+
 
 main_menu.add_vertical_margin(40)
 main_menu.add_button('Quit', pygame_menu.events.EXIT)
