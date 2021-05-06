@@ -262,7 +262,7 @@ class Grid():
                 history[self.tiles[coord].metrics_coord] = self.tiles[coord].history
 
             tmp = self.tiles[coord].nbVisits
-            visitsPerTile[coord] = tmp
+            visitsPerTile[self.tiles[coord].metrics_coord] = tmp
             pathLength += tmp
     
 
