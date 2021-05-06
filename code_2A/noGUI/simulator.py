@@ -1,6 +1,7 @@
 import random as rd
 import numpy as np
 import time
+import copy
 
 # Interface en ligne de commande pour le lancement de la simulation
 import click
@@ -13,16 +14,18 @@ from drawing_to_simulation import load_and_launch_single_simulation, initialize_
 @click.option('--setup', is_flag=True, default=False, help='Use this option to trigger a series of prompts to setup a statistical test.')   
 
 def sim(filename,width,setup):
+
     if not setup: # Lancement d'une seule simulation, emplacement initial du robot mesureur déterminé par le dessin de départ.
         duration = load_and_launch_single_simulation(filename,width)
         print("Done in %3.2f seconds" %duration)
+
 
     else: # Lancement de nombreuses simulations pour récolter des données statistiques.
 
         # Initialisation, pour créer la grille une seule fois.
         print("\n")
         print("Initializing the simulation...")
-        control, positions = initialize_simulation(filename,width)
+        control, positions, nb_refPointBots = initialize_simulation(filename,width)
         print("Done\n")
 
         # Série de questions pour que l'utilisateur puisse rentrer ses paramètres.
@@ -58,7 +61,8 @@ def sim(filename,width,setup):
         else :
             positions_sim = positions
 
-        angles_sim = np.linspace(0, 2*np.pi, n_angle)
+        angles_sim = np.linspace(0, 2*np.pi/nb_refPointBots, n_angle+1)
+        angles_sim = angles_sim[:-1]
 
         print(len(positions_sim), len(angles_sim))
 
@@ -67,8 +71,6 @@ def sim(filename,width,setup):
         for pos in positions_sim:
             for angle in angles_sim:
                 parameters.append((pos,angle))
-        print(len(parameters))
-        print(parameters)
 
         print("\n")
         print("The simulator will now attempt to run %s simulations." %n_sim)
@@ -78,7 +80,9 @@ def sim(filename,width,setup):
         start = time.time()
         with click.progressbar(parameters) as bar:
             for params in bar:
-                launch_parametered_simulation(control,params)
+                control_param = copy.deepcopy(control)
+                metrics = launch_parametered_simulation(control_param,params)
+
         print("Done in %3.2f seconds" %(time.time()-start))
 
 

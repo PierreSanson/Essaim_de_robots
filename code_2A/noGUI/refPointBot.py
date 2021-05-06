@@ -33,7 +33,8 @@ class RefPointBot(Bot):
                 if distO <= self.UWBradius:
 
                     if distO < self.radius + obj.radius :
-                        print("COLLISION")
+                        pass
+                        #print("COLLISION")
                     if isinstance(obj, Obstacle) and obj.isWall:
                         if distO <= self.wallDetectionRadius:
                             sols = circleLineInter(self, obj, [self.objective[0]-self.x, self.objective[1]-self.y])

@@ -23,9 +23,8 @@ from shapely.ops import nearest_points
 
 
 class SwarmExploratorUWBSLAM():
-    def __init__(self, room, measurerBot, refPointBots, tileWidth, distRefPointBots = [110, 110], initRadius=50) :
+    def __init__(self, room, measurerBot, refPointBots, tileWidth):
         self.room = room
-        self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
 
         self.grid = Grid(self.room,self.measurerBot,refPointBots,tileWidth)
@@ -33,6 +32,8 @@ class SwarmExploratorUWBSLAM():
 
         self.refPointBots = {}
         self.nbRefPointBots = len(refPointBots)
+        self.initRefPointBots = refPointBots
+        self.initRadius = tileWidth//2
         
         self.initMeasurerPos = (self.measurerBot.x, self.measurerBot.y)
 
@@ -78,27 +79,6 @@ class SwarmExploratorUWBSLAM():
         self.lastRPBTarget = [None]
         self.lastRPBMoved = None
 
-        initObjectives = []
-        for i in range(self.nbRefPointBots):
-            initObjectives.append((self.measurerBot.x + initRadius*np.cos(self.theta*i), self.measurerBot.y +initRadius*np.sin(self.theta*i)))
-        
-        robotsPlaced = []
-        for i in range(self.nbRefPointBots):
-            distMin = None
-            minKey = -1
-            for j in range (self.nbRefPointBots):
-                if j not in robotsPlaced:
-                    dist = distObjList(refPointBots[j], initObjectives[i])
-                    if distMin == None or dist < distMin:
-                        distMin = dist
-                        self.refPointBots[i] = refPointBots[j]
-                        minKey = j
-            robotsPlaced.append(minKey)
-        
-        for i in range(self.nbRefPointBots):
-            #self.refPointBots[i].defineObjective(initObjectives[i])
-            self.refPointBots[i].x, self.refPointBots[i].y = initObjectives[i]
-
         for wall in self.room.walls:
             self.walls.append([[wall.x_start, wall.y_start],[wall.x_start+wall.width, wall.y_start]])
             self.walls.append([[wall.x_start, wall.y_start],[wall.x_start, wall.y_start + wall.height]])
@@ -110,9 +90,33 @@ class SwarmExploratorUWBSLAM():
         ############ Détection de la fin de la simulation
         self.end_simulation = False
 
-    ### à coder
+
     def set_params(self,params):
-        pass
+        start_pos, start_angle = params
+        self.measurerBot.x, self.measurerBot.y = start_pos[0], start_pos[1]
+        self.grid.origin = start_pos
+
+        initObjectives = []
+        for i in range(self.nbRefPointBots):
+            initObjectives.append((self.measurerBot.x + self.initRadius*np.cos(start_angle + self.theta*i), self.measurerBot.y + self.initRadius*np.sin(start_angle + self.theta*i)))
+        
+        robotsPlaced = []
+        for i in range(self.nbRefPointBots):
+            distMin = None
+            minKey = -1
+            for j in range (self.nbRefPointBots):
+                if j not in robotsPlaced:
+                    dist = distObjList(self.initRefPointBots[j], initObjectives[i])
+                    if distMin == None or dist < distMin:
+                        distMin = dist
+                        self.refPointBots[i] = self.initRefPointBots[j]
+                        minKey = j
+            robotsPlaced.append(minKey)
+        
+        for i in range(self.nbRefPointBots):
+            #self.refPointBots[i].defineObjective(initObjectives[i])
+            self.refPointBots[i].x, self.refPointBots[i].y = initObjectives[i]
+
 
     # Sortie du simulateur
     def get_metrics(self):

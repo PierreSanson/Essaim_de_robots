@@ -196,12 +196,11 @@ def initialize_simulation(filePath,tileWidth):
         sw, sh = 1600, 900
         room, SEUWBSLAM = drawing_to_simulation(table, sw, sh, tileWidth)
         
-        return SEUWBSLAM, SEUWBSLAM.grid.inside
+        return SEUWBSLAM, SEUWBSLAM.grid.inside, SEUWBSLAM.nbRefPointBots
 
 
 def launch_parametered_simulation(control,params):
 
-    ### à coder
     control.set_params(params)
 
     simulationStart = time.time()
