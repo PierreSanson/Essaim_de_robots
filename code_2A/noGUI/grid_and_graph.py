@@ -14,7 +14,7 @@ from shapely.geometry.polygon import Polygon
 
 
 class Tile():
-    def __init__(self, x, y, width):
+    def __init__(self, x, y, width, no_history):
 
         self.x = x # 
         self.y = y # coordonnées du CENTRE
@@ -39,6 +39,7 @@ class Tile():
         # Metriques
         self.metrics_coord = (0,0)
         self.history = [(self.seen,self.covered,self.obstacle,self.measured)]
+        self.no_history = no_history
         self.nbVisits = 0
 
 
@@ -84,7 +85,9 @@ class Tile():
             else:
                 self.obstacle = 0
 
-        self.history.append((self.seen,self.covered,self.obstacle,self.measured))
+        if not self.no_history:
+            self.history.append((self.seen,self.covered,self.obstacle,self.measured))
+
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured])
         if self.state != oldState:
             self.has_changed = True
@@ -165,6 +168,7 @@ class Grid():
 
         # Metriques
         self.surface = 0
+        self.no_history = False
 
         
         ### Construction de toute la grille
@@ -176,7 +180,7 @@ class Grid():
         while Xmin + i*tileWidth <= Xmax + tileWidth:
             j = 0
             while Ymin + j*tileWidth <= Ymax + tileWidth:
-                self.tiles[(Xmin + i*tileWidth,Ymin + j*tileWidth)] = Tile(Xmin + i*tileWidth, Ymin + j*tileWidth, self.tileWidth)
+                self.tiles[(Xmin + i*tileWidth,Ymin + j*tileWidth)] = Tile(Xmin + i*tileWidth, Ymin + j*tileWidth, self.tileWidth, self.no_history)
                 self.tiles[(Xmin + i*tileWidth,Ymin + j*tileWidth)].metrics_coord = (i,j)
                 j += 1
             i += 1
@@ -254,7 +258,8 @@ class Grid():
             if self.tiles[coord].measured == 1:
                 measuredTiles += 1
 
-            history[self.tiles[coord].metrics_coord] = self.tiles[coord].history
+            if not self.no_history:
+                history[self.tiles[coord].metrics_coord] = self.tiles[coord].history
 
             tmp = self.tiles[coord].nbVisits
             visitsPerTile[coord] = tmp

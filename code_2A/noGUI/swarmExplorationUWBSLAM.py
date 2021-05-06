@@ -65,11 +65,13 @@ class SwarmExploratorUWBSLAM():
         self.moveRefPointBot = 0
         self.instantMoving = True
         self.targetHistory = []
+        ############################################# PARAMETRES DE METHODES
         self.targetMethod = self.findTargetV3
         self.clusterExplorationMethod = self.findClosestClusterToOrigin
         self.targetClusters = 2
         self.visitedClusterExplorationMethod = self.findClosestClusterToMeasurerBot
         self.changeFirst = "cluster"
+        #############################################
         self.lastRPBBaseCell = None
         self.lastRPBTargetFull = []
 
@@ -125,8 +127,10 @@ class SwarmExploratorUWBSLAM():
 
         metrics = { 'nbRefPointBots': self.nbRefPointBots,
                     'nbMeasurerBots': len(self.room.bots)-self.nbRefPointBots,
-                    'algo_Measure'  : self.targetMethod.__name__,
-                    'algo_RefPoint' : self.clusterExplorationMethod.__name__ +" and "+ self.visitedClusterExplorationMethod.__name__,
+                    'mb_exp_method' : self.targetMethod.__name__,
+                    'rpb_exp_method': self.clusterExplorationMethod.__name__ +" and "+ self.visitedClusterExplorationMethod.__name__,
+                    'rpb_sel_method': self.findLeastUsefulBots.__name__,
+                    'first_loop'    : self.changeFirst,
                     'measuredTiles' : measuredTiles,
                     'surface'       : surface,
                     'pathLength'    : pathLength,

@@ -30,7 +30,27 @@ def sim(filename,width,setup):
         control, positions, nb_refPointBots = initialize_simulation(filename,width)
         print("Done\n")
 
-        # Série de questions pour que l'utilisateur puisse rentrer ses paramètres.
+        
+
+        ### Série de questions pour que l'utilisateur puisse rentrer ses paramètres.
+
+        # Stocker l'historique complet de toutes les cases donne de gros fichiers, donc on se donne la possibilté de s'en débarasser.
+        try:
+            answer = str(input("Do you want to save a detailed historic of the state of each tile ? [y/n] "))
+        except ValueError:
+            print("Invalid entry - Aborting")
+            return None
+        print("\n")
+        
+        if answer not in ['y','n']:
+            print('Please answer with yes [y] or no [n] - Aborting')
+        else:
+            if answer == 'y':
+                control.grid.no_history = False
+            else:
+                control.grid.no_history = True
+
+        # Nombre de positions de départ
         n_pos = len(positions)
         print("This simulation has %s available starting positions." %n_pos)
         try:
@@ -42,7 +62,8 @@ def sim(filename,width,setup):
         if n_pos_sim > n_pos or n_pos < 1:
             print("Invalid number - Aborting")
             return None
-
+        
+        # Nombres d'angles de départ par postion de départ
         try:
             n_angle = int(input("How many starting angles would you like to test per starting position ? "))
         except ValueError:
@@ -67,8 +88,6 @@ def sim(filename,width,setup):
         angles_sim = np.linspace(0, 2*np.pi/nb_refPointBots, n_angle+1)
         angles_sim = angles_sim[:-1]
 
-        print(len(positions_sim), len(angles_sim))
-
         # Création de toutes les combinaisons uniques de paramètres
         parameters = []
         for pos in positions_sim:
@@ -87,13 +106,15 @@ def sim(filename,width,setup):
                             'start_angle'   : [],
                             'nbRefPointBots': [],
                             'nbMeasurerBots': [],
-                            'algo_Measure'  : [],
-                            'algo_RefPoint' : [],
+                            'mb_exp_method' : [],
+                            'rpb_exp_method': [],
+                            'rpb_sel_method': [],
+                            'first_loop'    : [],
                             'measuredTiles' : [],
                             'surface'       : [],
                             'pathLength'    : [],
-                            'history'       : [],
                             'visitsPerTile' : [],
+                            'history'       : [],
                             'sim_duration'  : []}
 
         ### Multiples simulations
@@ -106,11 +127,12 @@ def sim(filename,width,setup):
                 multiple_metrics['start_pos'].append(params[0])
                 multiple_metrics['start_angle'].append(params[1])
                 for key in metrics.keys():
-                    multiple_metrics[key].append(metrics[key])
+                    if (key != 'history' and control.grid.no_history == True) or control.grid.no_history == False:
+                        multiple_metrics[key].append(metrics[key])
 
 
                 simulation_number += 1
-                if simulation_number % 20 == 0: # Toutes les 100 simulations, on sauvegarde les résultats dans un gros fichier.
+                if simulation_number % 100 == 0: # Toutes les 100 simulations, on sauvegarde les résultats dans un gros fichier.
                     file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+".pickle"), "wb")
                     pickle.dump(metrics, file)
                     file.close()
@@ -120,13 +142,15 @@ def sim(filename,width,setup):
                                         'start_angle'   : [],
                                         'nbRefPointBots': [],
                                         'nbMeasurerBots': [],
-                                        'algo_Measure'  : [],
-                                        'algo_RefPoint' : [],
+                                        'mb_exp_method' : [],
+                                        'rpb_exp_method': [],
+                                        'rpb_sel_method': [],
+                                        'first_loop'    : [],
                                         'measuredTiles' : [],
                                         'surface'       : [],
                                         'pathLength'    : [],
-                                        'history'       : [],
                                         'visitsPerTile' : [],
+                                        'history'       : [],
                                         'sim_duration'  : []}
                     file_number += 1
 
