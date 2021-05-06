@@ -2,6 +2,8 @@ import random as rd
 import numpy as np
 import time
 import copy
+import os
+import pickle
 
 # Interface en ligne de commande pour le lancement de la simulation
 import click
@@ -51,6 +53,7 @@ def sim(filename,width,setup):
             print("Invalid number - Aborting")
             return None
 
+
         # Calcul du nombre de simulations
         n_sim = n_pos_sim * n_angle
 
@@ -75,13 +78,61 @@ def sim(filename,width,setup):
         print("\n")
         print("The simulator will now attempt to run %s simulations." %n_sim)
         input("Press Enter to start. ")
-        
+
+        dirname = os.path.dirname(__file__)
+        simulation_number = 1
+        file_number = 1
+        multiple_metrics = {'sim_number'    : [],
+                            'start_pos'     : [],
+                            'start_angle'   : [],
+                            'nbRefPointBots': [],
+                            'nbMeasurerBots': [],
+                            'algo_Measure'  : [],
+                            'algo_RefPoint' : [],
+                            'measuredTiles' : [],
+                            'surface'       : [],
+                            'pathLength'    : [],
+                            'history'       : [],
+                            'visitsPerTile' : [],
+                            'sim_duration'  : []}
+
         ### Multiples simulations
         start = time.time()
         with click.progressbar(parameters) as bar:
             for params in bar:
                 control_param = copy.deepcopy(control)
                 metrics = launch_parametered_simulation(control_param,params)
+                multiple_metrics['sim_number'].append(simulation_number)
+                multiple_metrics['start_pos'].append(params[0])
+                multiple_metrics['start_angle'].append(params[1])
+                for key in metrics.keys():
+                    multiple_metrics[key].append(metrics[key])
+
+
+                simulation_number += 1
+                if simulation_number % 20 == 0: # Toutes les 100 simulations, on sauvegarde les résultats dans un gros fichier.
+                    file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+".pickle"), "wb")
+                    pickle.dump(metrics, file)
+                    file.close()
+
+                    multiple_metrics = {'sim_number'    : [],
+                                        'start_pos'     : [],
+                                        'start_angle'   : [],
+                                        'nbRefPointBots': [],
+                                        'nbMeasurerBots': [],
+                                        'algo_Measure'  : [],
+                                        'algo_RefPoint' : [],
+                                        'measuredTiles' : [],
+                                        'surface'       : [],
+                                        'pathLength'    : [],
+                                        'history'       : [],
+                                        'visitsPerTile' : [],
+                                        'sim_duration'  : []}
+                    file_number += 1
+
+        file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+".pickle"), "wb")
+        pickle.dump(metrics, file)
+        file.close()
 
         print("Done in %3.2f seconds" %(time.time()-start))
 
