@@ -14,6 +14,7 @@ from shapely.geometry.polygon import Polygon
 
 
 class Tile():
+
     def __init__(self, x, y, width, no_history):
 
         self.x = x # 
@@ -34,12 +35,15 @@ class Tile():
         self.has_changed = False
 
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured]) # on stocke l'état sous la forme d'une châine de caractères
+
         self.graph_status = 0
 
         # Metriques
         self.metrics_coord = (0,0)
         self.history = [(self.seen,self.covered,self.obstacle,self.measured)]
+
         self.no_history = no_history
+
         self.nbVisits = 0
 
 
@@ -57,6 +61,7 @@ class Tile():
         # 1001 : vu et plus couvert, déjà mesuré                couleur : violet                    (200,0,200,100)     #
         #                                                                                                               #
         #################################################################################################################
+
 
 
 
@@ -85,12 +90,14 @@ class Tile():
             else:
                 self.obstacle = 0
 
+
         if not self.no_history:
             self.history.append((self.seen,self.covered,self.obstacle,self.measured))
 
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured])
         if self.state != oldState:
             self.has_changed = True
+
 
         # mise à jour du graphe
         self.graph_status = graph_status_dictionary[self.state]
@@ -161,6 +168,11 @@ class Grid():
         self.measuringBot = measuringBot
         self.oldObjective = measuringBot.objective
 
+
+        xMeasurer = measuringBot.x
+        yMeasurer = measuringBot.y
+        self.origin = (xMeasurer,yMeasurer)
+
         # Initialisation du graphe 
         self.graph = {}
         self.graphLinks = []
@@ -170,10 +182,12 @@ class Grid():
         self.surface = 0
         self.no_history = False
 
+
         
         ### Construction de toute la grille
 
         # on trouve la zone de l'écran intéressante (zone contenue entre les murs les plus éloignés)
+
         Xmin, Xmax, Ymin, Ymax = self.room.Xmin, self.room.Xmax, self.room.Ymin, self.room.Xmax
 
         i = 0
@@ -182,6 +196,8 @@ class Grid():
             while Ymin + j*tileWidth <= Ymax + tileWidth:
                 self.tiles[(Xmin + i*tileWidth,Ymin + j*tileWidth)] = Tile(Xmin + i*tileWidth, Ymin + j*tileWidth, self.tileWidth, self.no_history)
                 self.tiles[(Xmin + i*tileWidth,Ymin + j*tileWidth)].metrics_coord = (i,j)
+
+
                 j += 1
             i += 1
             
@@ -200,6 +216,7 @@ class Grid():
 
 
         # On définit l'intérieur de la salle
+
         coordinates = list(self.tiles.keys())
         self.origin = minDistObjList(self.measuringBot,coordinates)
         self.inside = self.findCluster(self.origin)     
@@ -207,8 +224,10 @@ class Grid():
 
         # On nettoie les objets Tile, pour ne pas conserver de cases inutiles (ie on supprime toutes les cases extérieures, mais on garde les murs pour affichage)
         # On crée un noeud dans le graphe pour toutes les cases d'intérieur
+
         for coord in coordinates:
             if coord in self.inside:
+
                 self.graph[coord] = 0 # création des noeuds
                 self.surface += 1
             else :
@@ -263,6 +282,7 @@ class Grid():
 
             tmp = self.tiles[coord].nbVisits
             visitsPerTile[self.tiles[coord].metrics_coord] = tmp
+
             pathLength += tmp
     
 
@@ -294,7 +314,9 @@ class Grid():
 
 
     ### Méthodes pour la grille
+
     def update(self,status):
+
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
         # Une case a été mesurée si le robot a changé d'objectif
         if status == "movingMeasuringBot" and self.measuringBot.objective != None:
@@ -305,6 +327,7 @@ class Grid():
         self.oldObjective = self.measuringBot.objective        
 
         for coord in self.tiles:
+
             self.tiles[coord].updateDiscrete(self.room.walls,self.measuringBot,self.refPointBots,status,self.graph_status_dictionary) 
             self.graph[coord] = self.tiles[coord].graph_status
             if self.tiles[coord].has_changed:
@@ -376,4 +399,5 @@ class Grid():
             if neigh in self.adjacencyList:
                 if coord in self.adjacencyList[neigh]:
                     self.adjacencyList[neigh].remove(coord)
+
         

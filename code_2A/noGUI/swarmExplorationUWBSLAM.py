@@ -23,6 +23,7 @@ from shapely.ops import nearest_points
 
 
 class SwarmExploratorUWBSLAM():
+
     def __init__(self, room, measurerBot, refPointBots, tileWidth):
         self.room = room
         self.measurerBot = measurerBot
@@ -59,19 +60,16 @@ class SwarmExploratorUWBSLAM():
         self.RPBExclusionList = []
         self.thirdStepCount = 0
 
+        self.RPBExclusionListWholeStep = []
+
         self.status = "init"
         self.initCount = 0
         self.moveMeasuringBotCount = 0
         self.moveRefPointBot = 0
+
+        self.targetClusters = 2
         self.instantMoving = True
         self.targetHistory = []
-        ############################################# PARAMETRES DE METHODES
-        self.targetMethod = self.findTargetV3
-        self.clusterExplorationMethod = self.findClosestClusterToOrigin
-        self.targetClusters = 2
-        self.visitedClusterExplorationMethod = self.findClosestClusterToMeasurerBot
-        self.changeFirst = "cluster"
-        #############################################
         self.lastRPBBaseCell = None
         self.lastRPBTargetFull = []
 
@@ -80,6 +78,21 @@ class SwarmExploratorUWBSLAM():
         self.instantMovingRPB = True
         self.lastRPBTarget = [None]
         self.lastRPBMoved = None
+
+        # infinite loop detection :
+        self.infiniteLoopList = []
+        self.infiniteLoopFirstElement = None
+        self.infiniteLoopCount = 0
+        self.infiniteLoopFirstIndex = None
+
+        self.targetMethod = self.findTargetV3
+        self.clusterExplorationMethod = self.findClosestClusterToOrigin
+        # self.clusterExplorationMethod = self.findClosestClusterToMeasurerBot
+        self.visitedClusterExplorationMethod = self.findClosestClusterToMeasurerBot
+        self.RPBSelectionMethod = self.findLeastUsefulBots
+        self.changeFirst = "cluster"
+        self.antiLoopMethod = "aggressive"
+
 
         for wall in self.room.walls:
             self.walls.append([[wall.x_start, wall.y_start],[wall.x_start+wall.width, wall.y_start]])
@@ -101,6 +114,7 @@ class SwarmExploratorUWBSLAM():
         initObjectives = []
         for i in range(self.nbRefPointBots):
             initObjectives.append((self.measurerBot.x + self.initRadius*np.cos(start_angle + self.theta*i), self.measurerBot.y + self.initRadius*np.sin(start_angle + self.theta*i)))
+
         
         robotsPlaced = []
         for i in range(self.nbRefPointBots):
@@ -108,16 +122,19 @@ class SwarmExploratorUWBSLAM():
             minKey = -1
             for j in range (self.nbRefPointBots):
                 if j not in robotsPlaced:
+
                     dist = distObjList(self.initRefPointBots[j], initObjectives[i])
                     if distMin == None or dist < distMin:
                         distMin = dist
                         self.refPointBots[i] = self.initRefPointBots[j]
+
                         minKey = j
             robotsPlaced.append(minKey)
         
         for i in range(self.nbRefPointBots):
             #self.refPointBots[i].defineObjective(initObjectives[i])
             self.refPointBots[i].x, self.refPointBots[i].y = initObjectives[i]
+
 
 
     # Sortie du simulateur
@@ -140,10 +157,12 @@ class SwarmExploratorUWBSLAM():
         return metrics
 
 
+
     # Initial move of the refPointBots
     def initMove(self):
         refPointBotsStatus = self.checkMovingRefPointBots()
         if not refPointBotsStatus[0]:
+
             #self.defineConvexHulls()
             if self.instantMovingRefPointBot:
                 # if self.initCount == 2:
@@ -234,16 +253,18 @@ class SwarmExploratorUWBSLAM():
 
     # principal move function
     def move(self):
-        
+
         self.grid.update(self.status)
+
 
         if self.status == "init":
             if self.initCount < self.nbRefPointBots:
                 self.initMove()
                 if self.initCount == self.nbRefPointBots:
-                    self.status = "FirsttransferRefPointBotToMeasuringBot"      
-        
 
+                    self.status = "FirsttransferRefPointBotToMeasuringBot"      
+
+        
         if self.status == "movingRefPointBot":
             if self.hasObj:
                 step = self.goToObj(self.refPointBots[self.nextRefStepGoal[0]])
@@ -268,7 +289,9 @@ class SwarmExploratorUWBSLAM():
                             source = self.lastObj
                             # temporary solution!
                             self.grid.updateNeighOneNode(target)
+
                             weight, self.mainPath = (self.djikstra(source, target))
+
                             if self.mainPath is None:
                                 exclusionList.append(target)
                             else:
@@ -301,7 +324,6 @@ class SwarmExploratorUWBSLAM():
                     weight, self.mainPath = (self.djikstra(source, target))
                     self.addWeigthToPath()
 
-
         if self.status == "FirsttransferRefPointBotToMeasuringBot":
 
             if not self.checkMovingRefPointBots()[0]:
@@ -310,6 +332,7 @@ class SwarmExploratorUWBSLAM():
                 #self.defineConvexHulls()
                 
                 self.grid.graph[self.grid.origin] = 1
+
 
                 self.grid.updateNeighOneNode(self.grid.origin)
                 target = self.targetMethod()
@@ -331,6 +354,7 @@ class SwarmExploratorUWBSLAM():
                 for bot in self.refPointBots:
                     if isinstance(self.refPointBots[bot],refB.RefPointBot):
                         self.refPointBots[bot].isMoving = False
+
 
                 #self.updatePolygon()
                 #self.defineConvexHulls()
@@ -360,31 +384,11 @@ class SwarmExploratorUWBSLAM():
                         self.status = "moveRefPointBot1stStep"
                         self.initCount = len(self.refPointBots) + 2 
                         break
-                # target = self.targetMethod()
-                # if target is not None:
-                #     self.mainPathIndex = 0
-                #     source = self.lastObj
-                #     # temporary solution!
-                #     # self.grid.updateNeighOneNode(target)
-                #     weight, self.mainPath = (self.djikstra(source, target))
-                #     if self.mainPath is None:
-                #         self.hasObj = False
-                #         # self.moveRefPointBotsStep()
-                #         self.status = "moveRefPointBot1stStep"
-                #     else:
-                #         self.addWeigthToPath()
-                #         self.hasObj = True
-                #         self.status = "movingMeasuringBot"
-                #         self.initCount+=1
-                # else:
-                #     self.hasObj = False
-                #     # self.moveRefPointBotsStep()
-                #     self.status = "moveRefPointBot1stStep"
-                #     self.initCount = len(self.refPointBots) + 2   
+
 
         if self.status == "moveRefPointBot1stStep" or self.status == "moveRefPointBot2ndStep" or self.status == "moveRefPointBot3rdStep":
             self.moveRefPointBotsStep()
-        
+
 
     # find closest cell to define as objective for Djikstra    
     def findTargetV1(self, exclusionList=[]):
@@ -495,7 +499,7 @@ class SwarmExploratorUWBSLAM():
             else :
                 return minCoord
 
-
+              
     # add status of all the cells in the paths as info for dynamic Djikstra
     def addWeigthToPath(self):
         for i in range(len(self.mainPath)):
@@ -612,7 +616,9 @@ class SwarmExploratorUWBSLAM():
         for polygon in polygonsBot:
             for i in range(len(polygon)):
                 selfCoord, selfKey = polygon[i][:2], polygon[i][2]
-                if selfKey != self.lastRPBMoved and selfKey not in self.RPBExclusionList:
+
+                if selfKey != self.lastRPBMoved and selfKey not in self.RPBExclusionList and selfKey not in self.RPBExclusionListWholeStep:
+
                     v1 = polygon[(i-1)%(len(polygon))][:2]
                     v2 = polygon[(i+1)%(len(polygon))][:2]
                     vect1 = (v1[0]-selfCoord[0], v1[1] - selfCoord[1])
@@ -620,25 +626,74 @@ class SwarmExploratorUWBSLAM():
                     theta = signedAngle2Vects2(vect1, vect2)
                     if abs(abs(theta)-np.pi) < leastUseful[0]:
                         leastUseful = (abs(abs(theta)-np.pi), selfKey)
-        self.lastRPBMoved = leastUseful[1]
-        return leastUseful[1]
-    
+
+        key = leastUseful[1]
+        if key is None:
+            key = self.findLeastUsefulBotsNoPolygons()
+        return key
+
 
     def findLeastUsefulBotsNoPolygons(self):
         # find furthest RPB (available)
-        # print("No polygons left!")
+        print("No polygons left!")
         maxDist = 0
         bestBot = None
         for bot in self.refPointBots:
-            if bot not in self.RPBExclusionList:
+            if bot != self.lastRPBMoved and bot not in self.RPBExclusionList and bot not in self.RPBExclusionListWholeStep :
+
                 dist = distObj(self.refPointBots[bot], self.measurerBot)
                 if dist > maxDist:
                     maxDist = dist
                     bestBot = bot 
 
-        # self.end_simulation = True # à changer avec la vraie méthode!
-    
         return bestBot
+
+      
+    def findLeastUsefulBotsV2(self):
+        self.defineConvexHulls()
+        self.polygons = []
+        polygonsBot = []
+        for hull in self.convexHulls:
+            # doesn't break triangles
+            if len(hull)>=4:
+                refPointBotsPoints = list(chain.from_iterable([[[self.refPointBots[keyBot].x, self.refPointBots[keyBot].y, keyBot]] for keyBot in hull]))
+                coordList = [refPointBotsPoints[i][:2] for i in range(len(refPointBotsPoints))]
+                try:
+                    convexHullObstacles = ConvexHull(coordList)
+                except QhullError:
+                    "polygon shape incorrect, not taken into account"
+                    continue
+                polygon = [(coordList[i],refPointBotsPoints[i][2]) for i in list(convexHullObstacles.vertices)[:]]
+                self.polygons.append(coordList)
+                polygonsBot.append(refPointBotsPoints)
+        leastUseful = (np.pi,None)
+        leastUsefulDict = {}
+        for polygon in polygonsBot:
+            n = len(polygon)
+            for i in range(n):
+                selfCoord, selfKey = polygon[i][:2], polygon[i][2]
+                if selfKey != self.lastRPBMoved and selfKey not in self.RPBExclusionList and selfKey not in self.RPBExclusionListWholeStep:
+                    v1 = polygon[(i-1)%(len(polygon))][:2]
+                    v2 = polygon[(i+1)%(len(polygon))][:2]
+                    vect1 = (v1[0]-selfCoord[0], v1[1] - selfCoord[1])
+                    vect2 = (v2[0]-selfCoord[0], v2[1] - selfCoord[1])
+                    theta = signedAngle2Vects2(vect1, vect2)
+                    if abs(abs(theta)-np.pi) < leastUseful[0]:
+                        leastUseful = (abs(abs(theta)-np.pi), selfKey)
+                    dist = distObjList(self.measurerBot, selfCoord)
+                    leastUsefulDict[selfKey] = (abs(abs(theta)-np.pi), dist)
+        bestBot = leastUseful[1]
+        if bestBot is None:
+            bestBot = self.findLeastUsefulBotsNoPolygons()
+            return bestBot
+        bestAngle = leastUseful[0]
+        maxDist = leastUsefulDict[leastUseful[1]][1]
+        for element in leastUsefulDict:
+            if leastUsefulDict[element][0]  <= bestAngle + np.pi/6 and leastUsefulDict[element][1] > maxDist:
+                maxDist = leastUsefulDict[element][1]
+                bestBot = element
+        return element
+        
 
     def findClosestClusterToOrigin(self):
         minDist = 10000
@@ -664,134 +719,237 @@ class SwarmExploratorUWBSLAM():
 
 
     def moveRefPointBotsStep(self):
-            if not self.checkMovingRefPointBots()[0] and not self.checkMovingMeasurerBot():
-                
-                if self.status == "moveRefPointBot1stStep":
-                    self.checkMeasurerBotCovered()
-                    key = self.findLeastUsefulBots()
-                    if key is None:
-                        key = self.findLeastUsefulBotsNoPolygons()
-                    if key is None :
+
+        if not self.checkMovingRefPointBots()[0] and not self.checkMovingMeasurerBot():
+            
+            if self.status == "moveRefPointBot1stStep":
+                self.checkMeasurerBotCovered()
+                key = self.RPBSelectionMethod()
+                print("key chose : ", key)
+                if  self.clusterExclusionList == []:
+                    self.explorableClusters = []
+                    self.explorableClustersDict = {}
+                    self.nearestPoints = []
+                    self.nextRefStepGoals = {}
+                    self.nextRefStepGoal = None
+                    self.detectExplorablePart()
+                    self.defineGravityCenterExplorableClusters()
+                if self.end_simulation : return
+                if self.targetClusters == 2:
+                    nextGoal = self.clusterExplorationMethod()
+                elif self.targetClusters == 1.5:
+                    nextGoal = self.visitedClusterExplorationMethod()
+                print("cluster chose : ", nextGoal)
+                if key is None and nextGoal is not None:
+                    if self.changeFirst == "cluster":
                         self.end_simulation = True
-                    else:
-                        self.grid.update(self.status)
-                        self.explorableClusters = []
-                        self.explorableClustersDict = {}
-                        self.nearestPoints = []
-                        self.nextRefStepGoals = {}
-                        self.nextRefStepGoal = None
-                        self.detectExplorablePart()
-                        self.defineGravityCenterExplorableClusters()
+                    else :
+                        self.clusterExclusionList.append(nextGoal)
                         if self.targetClusters == 2:
                             nextGoal = self.clusterExplorationMethod()
                         elif self.targetClusters == 1.5:
                             nextGoal = self.visitedClusterExplorationMethod()
-                        if key is None and nextGoal is not None:
-                            self.clusterExclusionList.append(nextGoal)                        
+
+                        print("cluster chose after exclusion : ", nextGoal)
+                        if nextGoal is None:
+                            if self.targetClusters == 2:
+                                self.targetClusters = 1.5
+                                self.RPBExclusionList = []
+                                self.clusterExclusionList = []
+                                print("existing explorable clusters but none accessible, moving to visited clusters")
+                                self.moveRefPointBotsStep()    
+                            elif self.targetClusters == 1.5:
+                                self.end_simulation = True
+                        else:    
                             self.RPBExclusionList = []
-                            # print("current cluster not accessible by any RPB, moving to other clusters")
+                            print("current cluster not accessible by any RPB, moving to other clusters")
                             self.moveRefPointBotsStep()
 
 
-                        if nextGoal is None:
-                            if self.targetClusters == 2 and not self.end_simulation:
-                                if key is None:
-                                    self.targetClusters = 1.5
-                                    self.RPBExclusionList = []
-                                    print("existing explorable clusters but none accessible, moving to visited clusters")
-                                    self.moveRefPointBotsStep()    
-                                else:
-                                    print("current RPB can't access any cluster, moving to other RPBs")
-                                    self.RPBExclusionList.append(key)
-                                    self.clusterExclusionList = []
-                                    self.moveRefPointBotsStep()    
+                if nextGoal is None:
+                    if self.targetClusters == 2 and not self.end_simulation:
+                        if self.changeFirst == "cluster":
+                            self.targetClusters = 1.5
+                            self.RPBExclusionList = []
+                            self.clusterExclusionList = []
+                            print("existing explorable clusters but none accessible, moving to visited clusters")
+                            self.moveRefPointBotsStep()    
+                        elif self.changeFirst == "RPB":
+                            if key is None:
+                                self.targetClusters = 1.5
+                                self.RPBExclusionList = []
+                                self.clusterExclusionList = []
+                                print("existing explorable clusters but none accessible, moving to visited clusters")
+                                self.moveRefPointBotsStep() 
 
-                            else :  
-                                if key is not None and not self.end_simulation:
-                                    # print("current RPB can't access any cluster, moving to other RPBs")
-                                    self.RPBExclusionList.append(key)
-                                    self.clusterExclusionList = []
-                                    self.moveRefPointBotsStep() 
-                                else:
-                                    self.end_simulation = True
-                        if key is not None:
-                            self.refPointBots[key].isMoving = True
-                            for bot in self.refPointBots:
-                                self.refPointBots[bot].color = (0, 0, 255)
-                            self.refPointBots[key].color = (150, 0, 255)
-
-                        
-                        if nextGoal is not None and key is not None:
-                            targetCell = self.findClosestVisitedCellSmart(nextGoal)
-                            sourceCell = self.findClosestVisitedCellSmart((self.refPointBots[key].x, self.refPointBots[key].y), source=True)
-                            minBot = key
-                            self.nextRefStepGoal = [minBot, nextGoal]
-                            if sourceCell is None:
-                                # print("RPB in non covered space, trying other RPB")
+                            else :
+                                print("current RPB can't access any (not explored) cluster, moving to other RPBs")
                                 self.RPBExclusionList.append(key)
+                                self.clusterExclusionList = []
+                                self.moveRefPointBotsStep()    
+
+                    else : 
+                        if self.changeFirst == "cluster":
+                            self.end_simulation = True  
+                        elif self.changeFirst == "RPB":
+                            if key is None:
+                                self.end_simulation = True
                             else:
-                                weight, self.mainPath = (self.djikstra(sourceCell, targetCell))
-                                self.mainPathIndex = 0
-                                if self.mainPath is not None:
-                                    self.lastRPBBaseCell = targetCell
-                                    self.targetClusters = 2
-                                    self.clusterExclusionList = []
-                                    self.RPBExclusionList = []
-                                    self.addWeigthToPath()
-                                    self.hasObj = True
-                                    self.status = "movingRefPointBot"
-                                else:
-                                    if self.changeFirst == "RPB":
-                                        # print("cluster unreachable by RPB, tryin other RPB")
-                                        self.RPBExclusionList.append(key)
-                                        self.moveRefPointBotsStep()
-                                    elif self.changeFirst == "cluster":
-                                        # print("cluster unreachable by RPB, tryin other cluster")
-                                        self.clusterExclusionList.append(nextGoal)
-                                        self.moveRefPointBotsStep()
+                                print("current RPB can't access any (visited) cluster, moving to other RPBs")
+                                self.RPBExclusionList.append(key)
+                                self.clusterExclusionList = []
+                                self.moveRefPointBotsStep() 
+                       
+                if key is not None:
+                    self.refPointBots[key].isMoving = True
+                    for bot in self.refPointBots:
+                        self.refPointBots[bot].color = (0, 0, 255)
+                    self.refPointBots[key].color = (150, 0, 255)
+                
+                if nextGoal is not None and key is not None:
+                    targetCell = self.findClosestVisitedCellSmart(nextGoal)
+                    sourceCell = self.findClosestVisitedCellSmart((self.refPointBots[key].x, self.refPointBots[key].y), source=True)
+                    minBot = key
+                    self.nextRefStepGoal = [minBot, nextGoal]
+                    if sourceCell is None:
+                        print("RPB in non covered space, trying other RPB")
+                        self.RPBExclusionListWholeStep.append(key)
+                        self.moveRefPointBotsStep()
+                    else:
+                        weight, self.mainPath = (self.djikstra(sourceCell, targetCell))
+                        self.mainPathIndex = 0
+                        if self.mainPath is not None:
+                            if self.antiLoopMethod == "aggressive":
+                                self.infiniteLoopDetectionAggressive(nextGoal)
+                            elif self.antiLoopMethod == "patient":
+                                self.infiniteLoopDetection(targetCell, sourceCell, key)
+                            self.lastRPBMoved = key
+                            self.lastRPBBaseCell = targetCell
+                            self.targetClusters = 2
+                            self.clusterExclusionList = []
+                            self.RPBExclusionList = []
+                            self.RPBExclusionListWholeStep = []
+                            self.addWeigthToPath()
+                            self.hasObj = True
+                            self.status = "movingRefPointBot"
+                            print("__________________________________________")
+                        else:
+                            if self.changeFirst == "RPB":
+                                print("cluster unreachable by RPB, tryin other RPB")
+                                self.RPBExclusionList.append(key)
+                                self.moveRefPointBotsStep()
+                            elif self.changeFirst == "cluster":
+                                print("cluster unreachable by RPB, tryin other cluster")
+                                self.clusterExclusionList.append(nextGoal)
+                                self.moveRefPointBotsStep()
 
-                elif self.status == "moveRefPointBot2ndStep":
-                    if self.instantMovingRefPointBot:
-                        bot = self.refPointBots[self.nextRefStepGoal[0]]
+            elif self.status == "moveRefPointBot2ndStep":
+                if self.instantMovingRefPointBot:
+                    bot = self.refPointBots[self.nextRefStepGoal[0]]
+                    vec = self.nextRefStepGoals[self.nextRefStepGoal[1]]
+                    if vec in self.lastRPBTarget or (vec, self.lastRPBBaseCell) in self.lastRPBTargetFull:
+                        n=len(self.lastRPBTarget)
+                        self.nextRefStepGoals[self.nextRefStepGoal[1]] = rot2D(vec, ((-1)**(n+1))*(1/((n+1)//2))*np.pi/6)
                         vec = self.nextRefStepGoals[self.nextRefStepGoal[1]]
-                        if vec in self.lastRPBTarget or (vec, self.lastRPBBaseCell) in self.lastRPBTargetFull:
-                            n=len(self.lastRPBTarget)
-                            self.nextRefStepGoals[self.nextRefStepGoal[1]] = rot2D(vec, ((-1)**(n+1))*(1/((n+1)//2))*np.pi/6)
-                            vec = self.nextRefStepGoals[self.nextRefStepGoal[1]]
-                            self.lastRPBTarget.append(vec)
-                            self.lastRPBTargetFull.append((vec, self.lastRPBBaseCell))
-                        else :
-                            self.lastRPBTarget = [vec]
-                            self.lastRPBTargetFull.append((vec, self.lastRPBBaseCell))
-                        target = self.instantMovingRefPointBot(self.nextRefStepGoal[0], self.nextRefStepGoals[self.nextRefStepGoal[1]])
-
+                        self.lastRPBTarget.append(vec)
+                        self.lastRPBTargetFull.append((vec, self.lastRPBBaseCell))
+                    else :
+                         self.lastRPBTarget = [vec]
+                         self.lastRPBTargetFull.append((vec, self.lastRPBBaseCell))
+                    target = self.instantMovingRefPointBot(self.nextRefStepGoal[0], self.nextRefStepGoals[self.nextRefStepGoal[1]])
+                    if target is None:
+                        self.RPBExclusionList.append(bot)
+                    else:
                         bot.defineObjective(target)
                         bot.x, bot.y = target
                         bot.wallDetectionAction()
+                else :
+                    self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoals[self.nextRefStepGoal[1]])
+                self.mainPathIndex = 0
+                self.status = "moveRefPointBot3rdStep"
+            # step used to wait for the map to be updated
+            elif self.status == "moveRefPointBot3rdStep":
+                if not self.checkMovingRefPointBots()[0]:
+                    if self.thirdStepCount == 2:
+                        self.thirdStepCount = 0
+                        self.status = "transferRefPointBotToMeasuringBot"
+                        if self.mode == 'exact':
+                            self.updateUWB()
                     else :
-                        self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoals[self.nextRefStepGoal[1]])
-                    self.mainPathIndex = 0
-                    self.status = "moveRefPointBot3rdStep"
+                        for bot in self.refPointBots:
+                            if isinstance(self.refPointBots[bot],refB.RefPointBot):
+                                self.refPointBots[bot].isMoving = False
+                        self.thirdStepCount +=1
 
-                # step used to wait for the map to be updated
-                elif self.status == "moveRefPointBot3rdStep":
-                    if not self.checkMovingRefPointBots()[0]:
-                        if self.thirdStepCount == 2:
-                            self.thirdStepCount = 0
-                            self.status = "transferRefPointBotToMeasuringBot"
-                        else :
-                            for bot in self.refPointBots:
-                                if isinstance(self.refPointBots[bot],refB.RefPointBot):
-                                    self.refPointBots[bot].isMoving = False
-                            self.thirdStepCount +=1
-                            
 
     def checkMeasurerBotCovered(self):
         if self.grid.graph[self.lastObj] == 1.5:
-            # print("measurerBot not covered, switching to visited clusters")
+            print("measurerBot not covered, switching to visited clusters")
             self.targetClusters = 1.5
 
 
+    def infiniteLoopDetection(self, target, source, key):
+        newElement = (source, target, key, self.targetClusters)
+        if self.infiniteLoopCount == 0:
+            if newElement in self.infiniteLoopList:
+                self.infiniteLoopFirstElement = newElement
+                self.infiniteLoopFirstIndex = self.infiniteLoopList.index(newElement)
+                self.infiniteLoopCount +=1
+                print("first loop detected!")
+        else:
+            if newElement == self.infiniteLoopFirstElement:
+                self.infiniteLoopCount +=1
+                print("new loop iteration : ", self.infiniteLoopCount)
+            elif newElement != self.infiniteLoopList[self.infiniteLoopFirstIndex]:
+                self.infiniteLoopFirstElement = None
+                self.infiniteLoopCount = 0
+                self.infiniteLoopFirstIndex = None
+                print("loop ended")
+                if newElement in self.infiniteLoopList:
+                    self.infiniteLoopFirstElement = newElement
+                    self.infiniteLoopFirstIndex = self.infiniteLoopList.index(newElement)
+                    self.infiniteLoopCount +=1
+                    print("first loop detected!")
+        
+        if len(self.infiniteLoopList) > 20:
+            self.infiniteLoopList.pop()
+        self.infiniteLoopList = [newElement] + self.infiniteLoopList
+
+        if self.infiniteLoopCount >= 5:
+            self.end_simulation = True
+
+
+    def infiniteLoopDetectionAggressive(self, cluster):
+        newElement = (cluster, self.targetClusters)
+        if self.infiniteLoopCount == 0:
+            if newElement in self.infiniteLoopList:
+                self.infiniteLoopFirstElement = newElement
+                self.infiniteLoopFirstIndex = self.infiniteLoopList.index(newElement)
+                self.infiniteLoopCount +=1
+                print("first loop detected!")
+        else:
+            if newElement == self.infiniteLoopFirstElement:
+                self.infiniteLoopCount +=1
+                print("new loop iteration : ", self.infiniteLoopCount)
+            elif newElement != self.infiniteLoopList[self.infiniteLoopFirstIndex]:
+                self.infiniteLoopFirstElement = None
+                self.infiniteLoopCount = 0
+                self.infiniteLoopFirstIndex = None
+                print("loop ended")
+                if newElement in self.infiniteLoopList:
+                    self.infiniteLoopFirstElement = newElement
+                    self.infiniteLoopFirstIndex = self.infiniteLoopList.index(newElement)
+                    self.infiniteLoopCount +=1
+                    print("first loop detected!")
+        
+        if len(self.infiniteLoopList) > 20:
+            self.infiniteLoopList.pop()
+        self.infiniteLoopList = [newElement] + self.infiniteLoopList
+
+        if self.infiniteLoopCount >= 5:
+            self.end_simulation = True
+
+            
     def detectExplorablePart(self):
         for coord in self.grid.graph:  
             if self.grid.graph[coord] == self.targetClusters:
@@ -912,3 +1070,6 @@ class SwarmExploratorUWBSLAM():
                     changed = True
 
         self.convexHulls = convexHulls
+    
+
+   

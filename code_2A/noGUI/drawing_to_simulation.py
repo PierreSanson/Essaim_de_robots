@@ -25,7 +25,7 @@ def LoadFile(filePath):
         fileName = filePathList[-1]
 
         return colors, fileName[8:-7]
-    
+
     return None
 
 
@@ -88,6 +88,7 @@ def find_walls_corners(table):
     walls_corners = vertical_walls_corners + horizontal_walls_corners
 
     return walls_corners
+
 
 
 def drawing_to_simulation(table,width,height,tileWidth):
@@ -175,8 +176,10 @@ def load_and_launch_single_simulation(filePath,tileWidth):
 
 
 
+
         # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre
         simulationDuration = time.time() - simulationStart
+
         metrics = control.get_metrics()
         metrics["init_duration"] = initDuration
         metrics["sim_duration"] = simulationDuration

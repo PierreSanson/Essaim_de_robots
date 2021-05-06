@@ -88,7 +88,9 @@ class Wall():
 
 
 class Room():
+
     def __init__(self, walls_corners, width, height):
+
         self.walls = []
         self.defWalls(walls_corners)
 
@@ -113,7 +115,6 @@ class Room():
     def addBots(self,bots):
         self.bots += bots 
         self.objects += bots
-
 
     def defWalls(self, walls_corners):
         for corners in walls_corners:

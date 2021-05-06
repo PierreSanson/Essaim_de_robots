@@ -52,6 +52,7 @@ class Bot():
         self.maxDistConsider = 100
         if not self.haveObjective:
             self.vel2D = np.asarray([0,0])
+
         
 
     def move(self):
@@ -60,8 +61,10 @@ class Bot():
             self.polygonPoints[i][1] = self.polygonPointsAbsolute[i][1] + self.y
         if self.randomObjective:
             if random.random() > (1 - 1/(100*self.randomInterval)) :
+
                 self.objective[0] = random.randrange(50, self.room.self.room.width - 50)  
                 self.objective[1] = random.randrange(50, self.room.self.room.height - 50) 
+
                 self.haveObjective = True
                 self.ontoObjective = False
                 self.vel2D = np.asarray([0.01,0.01])
@@ -79,10 +82,6 @@ class Bot():
             if obj != self :
                 distO = distObj(self, obj)
                 if distO <= self.radiusDetection:
-
-                    # if distO < self.radius + obj.radius :
-                    #     print("COLLISION")
-
 
                     if (obj not in self.detectedObj):
                         self.detectedObj.append(obj)
