@@ -159,6 +159,7 @@ def load_and_launch_single_simulation(filePath,tileWidth):
         run = True 
         ## Choix du type de déplacement
         control = SEUWBSLAM
+        control.set_params([control.grid.origin,0])
 
         while run:
             

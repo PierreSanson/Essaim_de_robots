@@ -159,3 +159,7 @@ def sim(filename,width,setup):
         file.close()
 
         print("Done in %3.2f seconds" %(time.time()-start))
+
+
+if __name__ == "__main__":
+    sim()

@@ -635,7 +635,7 @@ class SwarmExploratorUWBSLAM():
 
     def findLeastUsefulBotsNoPolygons(self):
         # find furthest RPB (available)
-        print("No polygons left!")
+        #print("No polygons left!")
         maxDist = 0
         bestBot = None
         for bot in self.refPointBots:
@@ -725,7 +725,7 @@ class SwarmExploratorUWBSLAM():
             if self.status == "moveRefPointBot1stStep":
                 self.checkMeasurerBotCovered()
                 key = self.RPBSelectionMethod()
-                print("key chose : ", key)
+                #print("key chose : ", key)
                 if  self.clusterExclusionList == []:
                     self.explorableClusters = []
                     self.explorableClustersDict = {}
@@ -739,7 +739,7 @@ class SwarmExploratorUWBSLAM():
                     nextGoal = self.clusterExplorationMethod()
                 elif self.targetClusters == 1.5:
                     nextGoal = self.visitedClusterExplorationMethod()
-                print("cluster chose : ", nextGoal)
+                #print("cluster chose : ", nextGoal)
                 if key is None and nextGoal is not None:
                     if self.changeFirst == "cluster":
                         self.end_simulation = True
@@ -750,19 +750,19 @@ class SwarmExploratorUWBSLAM():
                         elif self.targetClusters == 1.5:
                             nextGoal = self.visitedClusterExplorationMethod()
 
-                        print("cluster chose after exclusion : ", nextGoal)
+                        #print("cluster chose after exclusion : ", nextGoal)
                         if nextGoal is None:
                             if self.targetClusters == 2:
                                 self.targetClusters = 1.5
                                 self.RPBExclusionList = []
                                 self.clusterExclusionList = []
-                                print("existing explorable clusters but none accessible, moving to visited clusters")
+                                #print("existing explorable clusters but none accessible, moving to visited clusters")
                                 self.moveRefPointBotsStep()    
                             elif self.targetClusters == 1.5:
                                 self.end_simulation = True
                         else:    
                             self.RPBExclusionList = []
-                            print("current cluster not accessible by any RPB, moving to other clusters")
+                            #print("current cluster not accessible by any RPB, moving to other clusters")
                             self.moveRefPointBotsStep()
 
 
@@ -772,18 +772,18 @@ class SwarmExploratorUWBSLAM():
                             self.targetClusters = 1.5
                             self.RPBExclusionList = []
                             self.clusterExclusionList = []
-                            print("existing explorable clusters but none accessible, moving to visited clusters")
+                            #print("existing explorable clusters but none accessible, moving to visited clusters")
                             self.moveRefPointBotsStep()    
                         elif self.changeFirst == "RPB":
                             if key is None:
                                 self.targetClusters = 1.5
                                 self.RPBExclusionList = []
                                 self.clusterExclusionList = []
-                                print("existing explorable clusters but none accessible, moving to visited clusters")
+                                #print("existing explorable clusters but none accessible, moving to visited clusters")
                                 self.moveRefPointBotsStep() 
 
                             else :
-                                print("current RPB can't access any (not explored) cluster, moving to other RPBs")
+                                #print("current RPB can't access any (not explored) cluster, moving to other RPBs")
                                 self.RPBExclusionList.append(key)
                                 self.clusterExclusionList = []
                                 self.moveRefPointBotsStep()    
@@ -795,7 +795,7 @@ class SwarmExploratorUWBSLAM():
                             if key is None:
                                 self.end_simulation = True
                             else:
-                                print("current RPB can't access any (visited) cluster, moving to other RPBs")
+                                #print("current RPB can't access any (visited) cluster, moving to other RPBs")
                                 self.RPBExclusionList.append(key)
                                 self.clusterExclusionList = []
                                 self.moveRefPointBotsStep() 
@@ -812,7 +812,7 @@ class SwarmExploratorUWBSLAM():
                     minBot = key
                     self.nextRefStepGoal = [minBot, nextGoal]
                     if sourceCell is None:
-                        print("RPB in non covered space, trying other RPB")
+                        #print("RPB in non covered space, trying other RPB")
                         self.RPBExclusionListWholeStep.append(key)
                         self.moveRefPointBotsStep()
                     else:
@@ -832,14 +832,14 @@ class SwarmExploratorUWBSLAM():
                             self.addWeigthToPath()
                             self.hasObj = True
                             self.status = "movingRefPointBot"
-                            print("__________________________________________")
+                            #print("__________________________________________")
                         else:
                             if self.changeFirst == "RPB":
-                                print("cluster unreachable by RPB, tryin other RPB")
+                                #print("cluster unreachable by RPB, tryin other RPB")
                                 self.RPBExclusionList.append(key)
                                 self.moveRefPointBotsStep()
                             elif self.changeFirst == "cluster":
-                                print("cluster unreachable by RPB, tryin other cluster")
+                                #print("cluster unreachable by RPB, tryin other cluster")
                                 self.clusterExclusionList.append(nextGoal)
                                 self.moveRefPointBotsStep()
 
@@ -873,8 +873,6 @@ class SwarmExploratorUWBSLAM():
                     if self.thirdStepCount == 2:
                         self.thirdStepCount = 0
                         self.status = "transferRefPointBotToMeasuringBot"
-                        if self.mode == 'exact':
-                            self.updateUWB()
                     else :
                         for bot in self.refPointBots:
                             if isinstance(self.refPointBots[bot],refB.RefPointBot):
@@ -884,7 +882,7 @@ class SwarmExploratorUWBSLAM():
 
     def checkMeasurerBotCovered(self):
         if self.grid.graph[self.lastObj] == 1.5:
-            print("measurerBot not covered, switching to visited clusters")
+            #print("measurerBot not covered, switching to visited clusters")
             self.targetClusters = 1.5
 
 
@@ -895,21 +893,21 @@ class SwarmExploratorUWBSLAM():
                 self.infiniteLoopFirstElement = newElement
                 self.infiniteLoopFirstIndex = self.infiniteLoopList.index(newElement)
                 self.infiniteLoopCount +=1
-                print("first loop detected!")
+                #print("first loop detected!")
         else:
             if newElement == self.infiniteLoopFirstElement:
                 self.infiniteLoopCount +=1
-                print("new loop iteration : ", self.infiniteLoopCount)
+                #print("new loop iteration : ", self.infiniteLoopCount)
             elif newElement != self.infiniteLoopList[self.infiniteLoopFirstIndex]:
                 self.infiniteLoopFirstElement = None
                 self.infiniteLoopCount = 0
                 self.infiniteLoopFirstIndex = None
-                print("loop ended")
+                #print("loop ended")
                 if newElement in self.infiniteLoopList:
                     self.infiniteLoopFirstElement = newElement
                     self.infiniteLoopFirstIndex = self.infiniteLoopList.index(newElement)
                     self.infiniteLoopCount +=1
-                    print("first loop detected!")
+                    #print("first loop detected!")
         
         if len(self.infiniteLoopList) > 20:
             self.infiniteLoopList.pop()
@@ -926,21 +924,21 @@ class SwarmExploratorUWBSLAM():
                 self.infiniteLoopFirstElement = newElement
                 self.infiniteLoopFirstIndex = self.infiniteLoopList.index(newElement)
                 self.infiniteLoopCount +=1
-                print("first loop detected!")
+                #print("first loop detected!")
         else:
             if newElement == self.infiniteLoopFirstElement:
                 self.infiniteLoopCount +=1
-                print("new loop iteration : ", self.infiniteLoopCount)
+                #print("new loop iteration : ", self.infiniteLoopCount)
             elif newElement != self.infiniteLoopList[self.infiniteLoopFirstIndex]:
                 self.infiniteLoopFirstElement = None
                 self.infiniteLoopCount = 0
                 self.infiniteLoopFirstIndex = None
-                print("loop ended")
+                #print("loop ended")
                 if newElement in self.infiniteLoopList:
                     self.infiniteLoopFirstElement = newElement
                     self.infiniteLoopFirstIndex = self.infiniteLoopList.index(newElement)
                     self.infiniteLoopCount +=1
-                    print("first loop detected!")
+                    #print("first loop detected!")
         
         if len(self.infiniteLoopList) > 20:
             self.infiniteLoopList.pop()
