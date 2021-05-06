@@ -353,7 +353,7 @@ def load_and_launch_discrete_simulation(parameters):
             
             ## Itération sur l'ensemble des robots pour les faire se déplacer
             # t = time.time()
-            for bot in room.bots:
+            for bot in control.room.bots:
                 bot.move()
             # print("duration of bot.move() : ", time.time() - t)
 

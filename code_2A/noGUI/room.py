@@ -1,5 +1,3 @@
-import pygame
-
 import obstacle as obs
 from refPointBot import RefPointBot
 from utilities import distObj, placeObstaclesOnLine
@@ -90,7 +88,9 @@ class Wall():
 
 
 class Room():
-    def __init__(self, walls_corners, surface1, surface2):
+
+    def __init__(self, walls_corners, width, height):
+
         self.walls = []
         self.defWalls(walls_corners)
 
@@ -103,13 +103,8 @@ class Room():
 
         self.bots = []
 
-        self.surface1 = surface1
-        self.surface2 = surface2
-        # surface2 va représenter les parties explorées ou non de la carte
-        self.surface2.fill((0,0,0,200))
-
-        self.width = surface1.get_width()
-        self.height = surface1.get_height()
+        self.width = width
+        self.height = height
 
         obstacles = self.defineObstaclesFromWalls()
         self.obstacles = obstacles
@@ -127,12 +122,10 @@ class Room():
 
                     
     def defineObstaclesFromWalls(self):
-
         obstacles = []
         radiusObstacles = 6                 
         spaceBetweenObstaclesCenter = 18  # il ne faut pas que (spaceBetweenObstaclesCenter - 2*radiusObstacles) soit plus grand qu'un robot, sinon ils passent au travers des murs
 
-        
         for wall in self.walls: 
             wall_obstacles = [] 
 
@@ -159,40 +152,3 @@ class Room():
             wall.obstacles = wall_obstacles
     
         return obstacles
-
-
-    def updateExploration(self, bots = None):
-        if bots is not None:
-            for bot in bots:
-                # détection des murs et des zones visibles
-                visibleSurface = bot.vision()
-
-                # affichage de la vision
-                self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MIN)
-
-        else :
-            for bot in self.bots:
-                # détection des murs et des zones visibles
-                visibleSurface = bot.vision()
-
-                # affichage de la vision
-                self.surface2.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_MIN)
-
-    
-
-    def updateUWBcoverArea(self):
-        temp = pygame.Surface((self.width,self.height),  pygame.SRCALPHA)
-        newSurfaceUWB = pygame.Surface((self.width,self.height),  pygame.SRCALPHA)
-        for bot in self.bots:
-            if isinstance(bot,RefPointBot):
-                # détection des murs et des zones visibles
-                visibleSurface = bot.UWBcover()
-
-                # affichage de la portée de chaque robot
-                temp.blit(visibleSurface, (0,0), special_flags=pygame.BLEND_RGBA_ADD)
-
-        # On ne conserve que les zones de couleur >= à (0,0,60,60)
-        UWBcolor = (0,0,200,60)
-        pygame.transform.threshold(newSurfaceUWB, temp, (0,0,255,255), set_color = UWBcolor, threshold=(0,0,195,195),inverse_set=True)
-
-        return newSurfaceUWB

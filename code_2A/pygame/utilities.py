@@ -31,6 +31,14 @@ def distObjDict(obj1, dict2):
 def distObjList(obj1, list2):
     return np.sqrt((obj1.x-list2[0])**2 + (obj1.y-list2[1])**2)
 
+def minDistObjList(obj1,list2):
+    dists = []
+    for coord in list2:
+        dists.append(distObjList(obj1,coord))
+    
+    m = min(dists)
+    return list2[dists.index(m)]
+
 
 def distLists(list1, list2):
     return np.sqrt((list1[0]-list2[0])**2 + (list1[1]-list2[1])**2)
@@ -253,10 +261,10 @@ def lineSegmentInter(line, segment):
         return(x,y)
     return None
 
-    
+
 def distMaxXY2Segments(seg1, seg2):
     distMaxX = -1
-    distMaxY =  -1
+    distMaxY = -1
     extremePoints = [[-1,-1], [-1, -1]]
     for point1 in seg1:
         for point2 in seg2:

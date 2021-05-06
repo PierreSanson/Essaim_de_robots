@@ -29,6 +29,10 @@ class SwarmExploratorUWBSLAM():
         self.room = room
         self.distRefPointBots = distRefPointBots
         self.measurerBot = measurerBot
+
+        self.grid = Grid(self.room,self.measurerBot,refPointBots)
+        self.measurerBot.x, self.measurerBot.y = minDistObjList(self.measurerBot,self.grid.inside)
+
         self.refPointBots = {}
         self.nbRefPointBots = len(refPointBots)
         
@@ -126,7 +130,6 @@ class SwarmExploratorUWBSLAM():
             #self.refPointBots[i].defineObjective(initObjectives[i])
             self.refPointBots[i].x, self.refPointBots[i].y = initObjectives[i]
 
-
         for wall in self.room.walls:
             self.walls.append([[wall.x_start, wall.y_start],[wall.x_start+wall.width, wall.y_start]])
             self.walls.append([[wall.x_start, wall.y_start],[wall.x_start, wall.y_start + wall.height]])
@@ -134,8 +137,6 @@ class SwarmExploratorUWBSLAM():
             self.walls.append([[wall.x_start, wall.y_start+wall.height],[wall.x_start+wall.width, wall.y_start + wall.height]])
 
         self.refPointBotsVisible = self.refPointBots.copy()
-
-        self.grid = Grid(self.room,self.measurerBot,refPointBots)
 
         ############ Détection de la fin de la simulation
         self.end_simulation = False
@@ -291,6 +292,7 @@ class SwarmExploratorUWBSLAM():
                     self.hasObj = False
                     self.status = "moveRefPointBot2ndStep"
 
+
         if self.status == "movingMeasuringBot":
             tTot = time.time()
             if self.hasObj:
@@ -344,6 +346,7 @@ class SwarmExploratorUWBSLAM():
 
                 # print("duration of movingMeasuringBot : ", time.time() - tTot)
 
+
         if self.status == "FirsttransferRefPointBotToMeasuringBot":
 
             if not self.checkMovingRefPointBots()[0]:
@@ -368,6 +371,7 @@ class SwarmExploratorUWBSLAM():
                     self.hasObj = False
                     # self.moveRefPointBotsStep()
                     self.status = "moveRefPointBot1stStep"
+
 
         if self.status == "transferRefPointBotToMeasuringBot":
             if not self.checkMovingRefPointBots()[0]:
@@ -448,6 +452,7 @@ class SwarmExploratorUWBSLAM():
                     minCoord = coord
         return minCoord
     
+
     def findTargetV2(self, exclusionList=[]):
         minDist = 10000
         minCoord = []
@@ -477,6 +482,7 @@ class SwarmExploratorUWBSLAM():
             return None
         return minCoordy[0]
 
+
     def findTargetV3(self, exclusionList=[]):
         minDist = 10000
         minCoord = None
@@ -502,6 +508,7 @@ class SwarmExploratorUWBSLAM():
                     self.targetHistory.remove(coord)
                     return coord
 
+
     def findClosestVisitedCell(self, point):
         minDist = 10000
         minCoord = None
@@ -512,6 +519,7 @@ class SwarmExploratorUWBSLAM():
                     minDist = dist
                     minCoord = coord
         return minCoord
+
 
     def findClosestVisitedCellSmart(self, point, source=False):
             minDist = 10000
@@ -540,11 +548,13 @@ class SwarmExploratorUWBSLAM():
                     return None
             else :
                 return minCoord
-    
+
+
     # add status of all the cells in the paths as info for dynamic Djikstra
     def addWeigthToPath(self):
         for i in range(len(self.mainPath)):
             self.mainPath[i] = [self.mainPath[i], self.grid.graph[self.mainPath[i]]]
+
 
     # attributes intermediary objectives to the measurerBot
     def goToObj(self, bot = None):
@@ -868,6 +878,7 @@ class SwarmExploratorUWBSLAM():
                             self.status = "movingRefPointBot"
                             print("__________________________________________")
                         else:
+
                             if self.changeFirst == "RPB":
                                 print("cluster unreachable by RPB, tryin other RPB")
                                 self.RPBExclusionList.append(key)
@@ -876,6 +887,7 @@ class SwarmExploratorUWBSLAM():
                                 print("cluster unreachable by RPB, tryin other cluster")
                                 self.clusterExclusionList.append(nextGoal)
                                 self.moveRefPointBotsStep()
+
 
             elif self.status == "moveRefPointBot2ndStep":
                 if self.instantMovingRefPointBot:
@@ -901,6 +913,7 @@ class SwarmExploratorUWBSLAM():
                     self.refPointBots[self.nextRefStepGoal[0]].defineObjective(self.nextRefStepGoals[self.nextRefStepGoal[1]])
                 self.mainPathIndex = 0
                 self.status = "moveRefPointBot3rdStep"
+
             # step used to wait for the map to be updated
             elif self.status == "moveRefPointBot3rdStep":
                 if not self.checkMovingRefPointBots()[0]:

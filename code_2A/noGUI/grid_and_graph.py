@@ -7,14 +7,15 @@ from igraph.drawing import graph
 
 from measuringBot import MeasuringBot
 
-from utilities import segmentsIntersect, distObj
+from utilities import segmentsIntersect, distObj, minDistObjList
 
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
 
 class Tile():
-    def __init__(self, x, y, width):
+
+    def __init__(self, x, y, width, no_history):
 
         self.x = x # 
         self.y = y # coordonnées du CENTRE
@@ -34,12 +35,15 @@ class Tile():
         self.has_changed = False
 
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured]) # on stocke l'état sous la forme d'une châine de caractères
-        self.color = (0,0,0,0) # transparent
+
         self.graph_status = 0
 
         # Metriques
         self.metrics_coord = (0,0)
         self.history = [(self.seen,self.covered,self.obstacle,self.measured)]
+
+        self.no_history = no_history
+
         self.nbVisits = 0
 
 
@@ -61,8 +65,7 @@ class Tile():
 
 
 
-
-    def updateDiscrete(self,walls,measuringBot,refPointBots,status,color_dictionary,graph_status_dictionary):
+    def updateDiscrete(self,walls,measuringBot,refPointBots,status,graph_status_dictionary):
 
         self.has_changed = False
         oldState = self.state
@@ -87,13 +90,16 @@ class Tile():
             else:
                 self.obstacle = 0
 
-        self.history.append((self.seen,self.covered,self.obstacle,self.measured))
+
+        if not self.no_history:
+            self.history.append((self.seen,self.covered,self.obstacle,self.measured))
+
         self.state = ''.join(str(e) for e in [self.seen,self.covered,self.obstacle,self.measured])
         if self.state != oldState:
             self.has_changed = True
 
-        # mise à jour de la couleur
-        self.color = color_dictionary[self.state]
+
+        # mise à jour du graphe
         self.graph_status = graph_status_dictionary[self.state]
 
 
@@ -162,6 +168,7 @@ class Grid():
         self.measuringBot = measuringBot
         self.oldObjective = measuringBot.objective
 
+
         xMeasurer = measuringBot.x
         yMeasurer = measuringBot.y
         self.origin = (xMeasurer,yMeasurer)
@@ -173,26 +180,24 @@ class Grid():
 
         # Metriques
         self.surface = 0
+        self.no_history = False
+
 
         
         ### Construction de toute la grille
 
         # on trouve la zone de l'écran intéressante (zone contenue entre les murs les plus éloignés)
-        Xmin, Xmax, Ymin, Ymax = self.room.Xmin - tileWidth, self.room.Xmax + tileWidth, self.room.Ymin - tileWidth, self.room.Xmax + tileWidth
-            
-        ####### faire une boucle qui récupère une liste coordinates, utiliser // pour trouver coordonnées de la case en haut à gauche
-        space_to_left = xMeasurer - Xmin
-        space_to_top = yMeasurer - Ymin
 
-        firstX = xMeasurer - (space_to_left//tileWidth)*tileWidth
-        firstY = yMeasurer - (space_to_top//tileWidth)*tileWidth
+        Xmin, Xmax, Ymin, Ymax = self.room.Xmin, self.room.Xmax, self.room.Ymin, self.room.Xmax
 
         i = 0
-        while firstX + i*tileWidth <= Xmax:
+        while Xmin + i*tileWidth <= Xmax + tileWidth:
             j = 0
-            while firstY + j*tileWidth <= Ymax:
-                self.tiles[(firstX + i*tileWidth,firstY + j*tileWidth)] = Tile(firstX + i*tileWidth, firstY + j*tileWidth, self.tileWidth)
-                self.tiles[(firstX + i*tileWidth,firstY + j*tileWidth)].metrics_coord = (i,j)
+            while Ymin + j*tileWidth <= Ymax + tileWidth:
+                self.tiles[(Xmin + i*tileWidth,Ymin + j*tileWidth)] = Tile(Xmin + i*tileWidth, Ymin + j*tileWidth, self.tileWidth, self.no_history)
+                self.tiles[(Xmin + i*tileWidth,Ymin + j*tileWidth)].metrics_coord = (i,j)
+
+
                 j += 1
             i += 1
             
@@ -211,41 +216,24 @@ class Grid():
 
 
         # On définit l'intérieur de la salle
-        inside = self.findCluster(self.origin)        
+
+        coordinates = list(self.tiles.keys())
+        self.origin = minDistObjList(self.measuringBot,coordinates)
+        self.inside = self.findCluster(self.origin)     
 
 
         # On nettoie les objets Tile, pour ne pas conserver de cases inutiles (ie on supprime toutes les cases extérieures, mais on garde les murs pour affichage)
         # On crée un noeud dans le graphe pour toutes les cases d'intérieur
-        coordinates = list(self.tiles.keys())
+
         for coord in coordinates:
-            if coord in inside:
+            if coord in self.inside:
+
                 self.graph[coord] = 0 # création des noeuds
                 self.surface += 1
             else :
                 if self.tiles[coord].containsWall == 0: # toute case qui ne sera pas un noeud du graphe et ne contient pas de mur est inutile
                     del self.tiles[coord]
 
-        
-
-        # Dictionnaire des couleurs des cases en fonction des états
-        self.color_dictionary = {
-            '0000' : (0,0,0,0),
-            '0001' : (0,0,0,0),
-            '0010' : (0,0,0,0),
-            '0011' : (0,0,0,0),
-            '0100' : (255,255,255,100),
-            '0101' : (255,255,255,100),
-            '0110' : (255,255,255,100),
-            '0111' : (255,255,255,100),
-            '1000' : (200,100,0,200),
-            '1001' : (200,0,200,200),
-            '1010' : (200,0,0,200),
-            '1011' : (200,0,0,200),
-            '1110' : (200,0,0,200),
-            '1111' : (200,0,0,200),
-            '1100' : (200,200,0,200),
-            '1101' : (0,200,0,200)
-        }
 
         # Dictionnaire des couleurs des cases en fonction des états
         self.graph_status_dictionary = {
@@ -289,10 +277,12 @@ class Grid():
             if self.tiles[coord].measured == 1:
                 measuredTiles += 1
 
-            history[self.tiles[coord].metrics_coord] = self.tiles[coord].history
+            if not self.no_history:
+                history[self.tiles[coord].metrics_coord] = self.tiles[coord].history
 
             tmp = self.tiles[coord].nbVisits
-            visitsPerTile[coord] = tmp
+            visitsPerTile[self.tiles[coord].metrics_coord] = tmp
+
             pathLength += tmp
     
 
@@ -324,7 +314,9 @@ class Grid():
 
 
     ### Méthodes pour la grille
-    def update(self,surfaceUWB,status,mode):
+
+    def update(self,status):
+
         # Pour ce qui est de la mesure, le changement de valeur doit venir du robot mesureur.
         # Une case a été mesurée si le robot a changé d'objectif
         if status == "movingMeasuringBot" and self.measuringBot.objective != None:
@@ -335,10 +327,8 @@ class Grid():
         self.oldObjective = self.measuringBot.objective        
 
         for coord in self.tiles:
-            if mode == 'exact':
-                self.tiles[coord].updateExact(self.room.surface2,surfaceUWB,self.room.bots,self.color_dictionary,self.graph_status_dictionary)
-            elif mode == 'discrete':
-                self.tiles[coord].updateDiscrete(self.room.walls,self.measuringBot,self.refPointBots,status,self.color_dictionary,self.graph_status_dictionary) 
+
+            self.tiles[coord].updateDiscrete(self.room.walls,self.measuringBot,self.refPointBots,status,self.graph_status_dictionary) 
             self.graph[coord] = self.tiles[coord].graph_status
             if self.tiles[coord].has_changed:
                 self.updateNeighOneNode(coord)
@@ -410,17 +400,4 @@ class Grid():
                 if coord in self.adjacencyList[neigh]:
                     self.adjacencyList[neigh].remove(coord)
 
-
-    def drawGraph(self):
-        g = Graph()
-        g.add_vertices(len(self.graph))
-        g.vs["name"] = list(self.graph.keys())
-        for neighbours in self.graphLinks:
-            v1 = g.vs['name'].index(neighbours[0])
-            v2 = g.vs['name'].index(neighbours[1])
-            g.add_edge(v1, v2)
-        g.vs["label"] = g.vs["name"]
-
-        layout = g.layout("fr")
-        plot(g, layout = layout)
         
