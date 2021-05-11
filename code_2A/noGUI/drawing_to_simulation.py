@@ -128,11 +128,11 @@ def drawing_to_simulation(table,width,height,tileWidth):
     for bot in robots_centers:
         botType = bot.pop()
         if botType == 1:
-            measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 10, room, objective = None, haveObjective = False, showDetails=True))
+            measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 10, room, objective = None, haveObjective = False, showDetails=False))
         elif botType == 2:
-            explorerBots.append(eb.ExplorerBot(bot[0][0], bot[0][1], 8, room, objective = [0, 0], randomObjective = True, randomInterval =1, showDetails = True))
+            explorerBots.append(eb.ExplorerBot(bot[0][0], bot[0][1], 8, room, objective = [0, 0], randomObjective = True, randomInterval =1, showDetails = False))
         elif botType == 3:
-            refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 6, room, objective = None, haveObjective = False, showDetails = True))
+            refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 6, room, objective = None, haveObjective = False, showDetails = False))
 
             
     bots = measuringBots + explorerBots + refPointBots
@@ -159,7 +159,7 @@ def load_and_launch_single_simulation(filePath,tileWidth):
         run = True 
         ## Choix du type de déplacement
         control = SEUWBSLAM
-        control.set_params([control.grid.origin,0])
+        control.set_default_params()
 
         while run:
             
@@ -200,8 +200,7 @@ def initialize_simulation(filePath,tileWidth):
         sw, sh = 1600, 900
         room, SEUWBSLAM = drawing_to_simulation(table, sw, sh, tileWidth)
         
-        return SEUWBSLAM, SEUWBSLAM.grid.inside, SEUWBSLAM.nbRefPointBots
-
+        return SEUWBSLAM
 
 def launch_parametered_simulation(control,params):
 
