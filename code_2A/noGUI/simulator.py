@@ -5,6 +5,10 @@ import copy
 import os
 import pickle
 from mpi4py import MPI
+<<<<<<< HEAD
+=======
+
+>>>>>>> 98617f2f53be12ae4b96f43b916621d4f1b53b08
 
 # Interface en ligne de commande pour le lancement de la simulation
 import click
