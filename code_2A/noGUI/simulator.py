@@ -4,11 +4,24 @@ import time
 import copy
 import os
 import pickle
+from mpi4py import MPI
+<<<<<<< HEAD
+=======
+
+>>>>>>> 98617f2f53be12ae4b96f43b916621d4f1b53b08
 
 # Interface en ligne de commande pour le lancement de la simulation
 import click
 
 from drawing_to_simulation import load_and_launch_single_simulation, initialize_simulation, launch_parametered_simulation
+
+
+comm = MPI.COMM_WORLD
+size = comm.Get_size()
+rank = comm.Get_rank()
+print("nb of threads : ", size)
+if rank == 0:
+    rd.seed(10)
 
 @click.command()
 @click.argument('path', type=click.Path(exists=True))
@@ -16,19 +29,27 @@ from drawing_to_simulation import load_and_launch_single_simulation, initialize_
 @click.option('-r','--recursive', is_flag=True, default=False)
 @click.option('--setup', is_flag=True, default=False, help='Use this option to trigger a series of prompts to setup a statistical test.')   
 
+
+
+
 def sim(path,width,recursive,setup):
 
     if not setup: # Lancement d'une seule simulation, emplacement initial du robot mesureur déterminé par le dessin de départ.
-        if recursive:
-            print("You cannot run a single simulation on a folder !")
-            return None
+        if rank == 0:
+            if recursive:
+                print("You cannot run a single simulation on a folder !")
+                return None
 
-        duration = load_and_launch_single_simulation(path,width)
-        print("Done in %3.2f seconds" %duration)
+            duration = load_and_launch_single_simulation(path,width)
+            print("Done in %3.2f seconds" %duration)
 
 
     else: # Lancement de nombreuses simulations pour récolter des données statistiques.
-        answers = get_answers()
+        if rank == 0:
+            answers = get_answers()
+        else :
+            answers = None
+        answers = comm.bcast(answers, root = 0)
 
         if recursive:
             list_control = []
@@ -39,12 +60,19 @@ def sim(path,width,recursive,setup):
             print("\n")
             print("Initializing the simulations...")
 
-            for filename in os.listdir(path):
-                control = init_sim(os.path.join(path,filename),width,recursive)
-                control, params = setup_sim(control,answers,recursive)
-                list_control.append(control)
-                list_params.append(params)
-                list_filename.append(os.path.join(path,filename))
+            # parallel initialization
+            for i, filename in enumerate(os.listdir(path)):
+                if i%rank == 0:
+                    control = init_sim(os.path.join(path,filename),width,recursive)
+                    control, params = setup_sim(control,answers,recursive)
+                    list_control.append(control)
+                    list_params.append(params)
+                    list_filename.append(os.path.join(path,filename))
+
+            list_control = comm.allreduce(list_control)
+            list_params = comm.allreduce(list_params)
+            list_filename = comm.allreduce(list_filename)
+
             
             n_sim = 0
             for params in list_params:
@@ -61,8 +89,14 @@ def sim(path,width,recursive,setup):
             
         else:
             filename = path
-            control = init_sim(filename,width,recursive)
-            control, params = setup_sim(control,answers,recursive)
+            if rank == 0:
+                control = init_sim(filename,width,recursive)
+                control, params = setup_sim(control,answers,recursive)
+            else:
+                control=None
+                params = None
+            control = comm.bcast(control, root=0)
+            params = comm.bcast(params, root=0)
             multi_sim(control,params,filename)
 
 
@@ -137,7 +171,7 @@ def get_answers():
         visited_cluster_exploration_method = str(input("Visited Cluster Exploartion Methods: same choices "))
         RPB_selection_method = str(input("Target Methods : 1='findLeastUsefulBots' 2='findLeastUsefulBotsV2' "))
         change_first = str(input("Cahnge First : 1='cluster' 2='RPB' "))
-        anti_loop_method = str(input("Anti Loop Method : 1='agressive' 2='patient' "))
+        anti_loop_method = str(input("Anti Loop Method : 1='aggressive' 2='patient' "))
 
     except ValueError:
         print("Value Error - Aborting")
@@ -277,49 +311,59 @@ def setup_sim(control,answers,recursive):
 
 def multi_sim(control,parameters,filename):
 
-    dirname = os.path.dirname(__file__)
+    dirname = os.path.dirname(os.path.abspath(__file__))
+    if rank == 0: 
+        print("dirname : " ,dirname)
+    # with open(os.path.join(dirname, "./results/",str(filename[8:-7])+"LOG-nproc"+str(rank)+".txt"), "w") as log:
 
-    with open(os.path.join(dirname, "./results/",str(filename[8:-7])+"LOG.txt"), "w") as log:
 
-        simulation_number = 1
-        file_number = 1
-        multiple_metrics = {'sim_number'    : [],
-                            'start_pos'     : [],
-                            'start_angle'   : [],
-                            'nbRefPointBots': [],
-                            'nbMeasurerBots': [],
-                            'mb_exp_method' : [],
-                            'rpb_exp_method': [],
-                            'rpb_sel_method': [],
-                            'first_loop'    : [],
-                            'measuredTiles' : [],
-                            'surface'       : [],
-                            'pathLength'    : [],
-                            'visitsPerTile' : [],
-                            'history'       : [],
-                            'sim_duration'  : []}
+    simulation_number = 1
+    file_number = 1
+    multiple_metrics = {'sim_number'    : [],
+                        'start_pos'     : [],
+                        'start_angle'   : [],
+                        'nbRefPointBots': [],
+                        'nbMeasurerBots': [],
+                        'mb_exp_method' : [],
+                        'rpb_exp_method': [],
+                        'rpb_sel_method': [],
+                        'first_loop'    : [],
+                        'measuredTiles' : [],
+                        'surface'       : [],
+                        'pathLength'    : [],
+                        'visitsPerTile' : [],
+                        'history'       : [],
+                        'sim_duration'  : []}
 
-        ### Multiples simulations
-        start = time.time()
-        with click.progressbar(parameters) as bar:
-            for params in bar:
-
+    ### Multiples simulations
+    start = time.time()
+    metrics = None
+    with click.progressbar(parameters) as bar:
+        for i, params in enumerate(bar):
+            if i%size == rank:
                 control_param = copy.deepcopy(control)
                 metrics = launch_parametered_simulation(control_param,params)
-
-                log.write("Simulation number %s done in %3.2f s\n" %(simulation_number,metrics["sim_duration"]))
-
                 multiple_metrics['sim_number'].append(simulation_number)
                 multiple_metrics['start_pos'].append(params[0])
                 multiple_metrics['start_angle'].append(params[1])
                 for key in metrics.keys():
                     if (key != 'history' and control.grid.no_history == True) or control.grid.no_history == False:
                         multiple_metrics[key].append(metrics[key])
+                with open("./results/" +str(filename[8:-7])+"LOG-nproc"+str(rank)+".txt", "a") as log:
+                    log.write("Simulation number %s done in %3.2f s\n" %(simulation_number,metrics["sim_duration"]))
+                    nbRPB = multiple_metrics["nbRefPointBots"][simulation_number-1]
+                    log.write(f"Nb RefPointBots : {nbRPB}\n")
+                    nbTiles = multiple_metrics["measuredTiles"][simulation_number-1]
+                    log.write(f"Measured Tiles : {nbTiles}\n")
+                    log.close()
+
+                
 
 
                 simulation_number += 1
                 if simulation_number % 100 == 0: # Toutes les 100 simulations, on sauvegarde les résultats dans un gros fichier.
-                    file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+".pickle"), "wb")
+                    # file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle"), "wb")
+                    file = open("./results/" +str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle", "wb")
                     pickle.dump(metrics, file)
                     file.close()
 
@@ -340,15 +384,33 @@ def multi_sim(control,parameters,filename):
                                         'sim_duration'  : []}
                     file_number += 1
 
-        file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+".pickle"), "wb")
+    # file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle"), "wb")
+    if metrics is not None:
+        file = open("./results/"+str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle", "wb")
         pickle.dump(metrics, file)
         file.close()
-
+    comm.Barrier()
+    if rank == 0:
         print("Done in %3.2f seconds" %(time.time()-start))
-
+    with open("./results/" +str(filename[8:-7])+"LOG-nproc"+str(rank)+".txt", "a") as log:
         log.write("Simulations were all successfull")
         log.close()
 
+def combineAllLogs():
+    pass
+
+def combineAllResults():
+    pass
+
 
 if __name__ == "__main__":
+    # if rank == 1:
+    #     a = [1, 2, 3]
+    # elif rank == 0:
+    #     a = [3, 2, 1]
+    # c = comm.allreduce(a)
+
+    # if rank == 1:
+    #     print(c)
+    #     print(a)
     sim()

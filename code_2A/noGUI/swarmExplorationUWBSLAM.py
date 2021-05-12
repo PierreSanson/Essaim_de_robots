@@ -72,6 +72,8 @@ class SwarmExploratorUWBSLAM():
         self.targetHistory = []
         self.lastRPBBaseCell = None
         self.lastRPBTargetFull = []
+        self.targetExclusionList = []
+
 
         self.time = time.time()
 
@@ -98,7 +100,7 @@ class SwarmExploratorUWBSLAM():
                             'visitedClusterExplorationMethod':{1:self.findClosestClusterToOrigin,2:self.findClosestClusterToMeasurerBot},
                             'RPBSelectionMethod':{1:self.findLeastUsefulBots,2:self.findLeastUsefulBotsV2},
                             'changeFirst':{1:"cluster",2:"RPB"},
-                            'antiLoopMethod':{1:"agressive",2:"patient"}}
+                            'antiLoopMethod':{1:"aggressive",2:"patient"}}
 
 
         for wall in self.room.walls:
@@ -152,6 +154,7 @@ class SwarmExploratorUWBSLAM():
 
         if newNbRefPointBots != self.nbRefPointBots:
             self.nbRefPointBots = newNbRefPointBots
+            self.theta = 2*np.pi/self.nbRefPointBots
             self.initRefPointBots = []
             for _ in range(newNbRefPointBots):
                 self.initRefPointBots.append(refB.RefPointBot(0,0, 6, self.room, objective = None, haveObjective = False, showDetails = False))
@@ -215,8 +218,9 @@ class SwarmExploratorUWBSLAM():
                 #     target = self.instantMovingRefPointBot(self.initCount, (0, -1))
                 # else :
                 target = self.instantMovingRefPointBot(self.initCount, (np.cos(self.theta*self.initCount), np.sin(self.theta*self.initCount)))
-                self.refPointBots[self.initCount].defineObjective(target)
-                self.refPointBots[self.initCount].x, self.refPointBots[self.initCount].y = target
+                if target is not None:
+                    self.refPointBots[self.initCount].defineObjective(target)
+                    self.refPointBots[self.initCount].x, self.refPointBots[self.initCount].y = target
                 self.refPointBots[self.initCount].wallDetectionAction()
 
             else:
@@ -315,6 +319,7 @@ class SwarmExploratorUWBSLAM():
                 if step == "end":
                     self.hasObj = False
                     self.status = "moveRefPointBot2ndStep"
+                    self.refPointBots[self.nextRefStepGoal[0]].wallDetectionAction()
 
 
         if self.status == "movingMeasuringBot":
@@ -383,9 +388,18 @@ class SwarmExploratorUWBSLAM():
                 if target is not None:
                     source = (self.grid.origin[0], self.grid.origin[1])
                     weight, self.mainPath = (self.djikstra(source, target))
-                    self.addWeigthToPath()
-                    self.hasObj = True
-                    self.status = "movingMeasuringBot"
+                    while self.mainPath is None:
+                        self.targetExclusionList.append(target)
+                        target = self.targetMethod(self.targetExclusionList)
+                        if target is None:
+                            self.end_simulation = True
+                            break
+                        else:
+                            weight, self.mainPath = (self.djikstra(source, target))
+                    if self.mainPath is not None:
+                        self.addWeigthToPath()
+                        self.hasObj = True
+                        self.status = "movingMeasuringBot"
                 else:
                     self.hasObj = False
                     # self.moveRefPointBotsStep()
@@ -560,7 +574,6 @@ class SwarmExploratorUWBSLAM():
                 #print(status)
                 if status == "ok":
                     obj = self.mainPath[self.mainPathIndex][0]
-                    
                     if self.instantMoving:
                         bot.defineObjective(obj)
                         x, y = obj
@@ -763,9 +776,7 @@ class SwarmExploratorUWBSLAM():
 
 
     def moveRefPointBotsStep(self):
-
         if not self.checkMovingRefPointBots()[0] and not self.checkMovingMeasurerBot():
-            
             if self.status == "moveRefPointBot1stStep":
                 self.checkMeasurerBotCovered()
                 key = self.RPBSelectionMethod()
@@ -968,11 +979,9 @@ class SwarmExploratorUWBSLAM():
                 self.infiniteLoopFirstElement = newElement
                 self.infiniteLoopFirstIndex = self.infiniteLoopList.index(newElement)
                 self.infiniteLoopCount +=1
-                #print("first loop detected!")
         else:
             if newElement == self.infiniteLoopFirstElement:
                 self.infiniteLoopCount +=1
-                #print("new loop iteration : ", self.infiniteLoopCount)
             elif newElement != self.infiniteLoopList[self.infiniteLoopFirstIndex]:
                 self.infiniteLoopFirstElement = None
                 self.infiniteLoopCount = 0
