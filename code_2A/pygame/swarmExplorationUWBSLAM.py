@@ -291,6 +291,7 @@ class SwarmExploratorUWBSLAM():
                 if step == "end":
                     self.hasObj = False
                     self.status = "moveRefPointBot2ndStep"
+                    self.refPointBots[self.nextRefStepGoal[0]].wallDetectionAction()
 
 
         if self.status == "movingMeasuringBot":
