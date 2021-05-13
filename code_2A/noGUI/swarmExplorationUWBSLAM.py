@@ -109,16 +109,14 @@ class SwarmExploratorUWBSLAM():
             self.walls.append([[wall.x_start + wall.width, wall.y_start],[wall.x_start + wall.width, wall.y_start + wall.height]])
             self.walls.append([[wall.x_start, wall.y_start+wall.height],[wall.x_start+wall.width, wall.y_start + wall.height]])
 
-        self.refPointBotsVisible = self.refPointBots.copy()
-
         ############ Détection de la fin de la simulation
         self.end_simulation = False
+
 
     def set_default_params(self):
         initObjectives = []
         for i in range(self.nbRefPointBots):
             initObjectives.append((self.measurerBot.x + self.initRadius*np.cos(self.theta*i), self.measurerBot.y + self.initRadius*np.sin(self.theta*i)))
-
         
         robotsPlaced = []
         for i in range(self.nbRefPointBots):
@@ -138,6 +136,8 @@ class SwarmExploratorUWBSLAM():
         for i in range(self.nbRefPointBots):
             #self.refPointBots[i].defineObjective(initObjectives[i])
             self.refPointBots[i].x, self.refPointBots[i].y = initObjectives[i]
+
+        self.refPointBotsVisible = self.refPointBots.copy()
         
 
     def set_params(self,params):
@@ -153,11 +153,20 @@ class SwarmExploratorUWBSLAM():
         self.antiLoopMethod = self.methods_dic['antiLoopMethod'][methods[5]]
 
         if newNbRefPointBots != self.nbRefPointBots:
-            self.nbRefPointBots = newNbRefPointBots
-            self.theta = 2*np.pi/self.nbRefPointBots
+            # On enlève toute trace des anciens refPointBots
+            self.room.removeRefPointBots()
             self.initRefPointBots = []
-            for _ in range(newNbRefPointBots):
+            self.grid.refPointBots = []
+
+            # On crée les nouveaux et on les remet à la place des anciens
+            self.nbRefPointBots = newNbRefPointBots
+            for _ in range(self.nbRefPointBots):
                 self.initRefPointBots.append(refB.RefPointBot(0,0, 6, self.room, objective = None, haveObjective = False, showDetails = False))
+            self.room.addBots(self.initRefPointBots)
+            self.grid.refPointBots = self.initRefPointBots
+            
+            # On corrige les angles car le nombre de robots a changé
+            self.theta = 2*np.pi/self.nbRefPointBots
 
         initObjectives = []
         for i in range(self.nbRefPointBots):
@@ -182,6 +191,7 @@ class SwarmExploratorUWBSLAM():
             #self.refPointBots[i].defineObjective(initObjectives[i])
             self.refPointBots[i].x, self.refPointBots[i].y = initObjectives[i]
 
+        self.refPointBotsVisible = self.refPointBots.copy()
 
 
     # Sortie du simulateur

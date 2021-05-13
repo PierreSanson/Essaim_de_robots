@@ -141,9 +141,86 @@ class SwarmExploratorUWBSLAM():
         ############ Détection de la fin de la simulation
         self.end_simulation = False
 
+        ############
+        ### TEST ###
+        ############
+        self.initRadius = 40
+        self.methods_dic = {'targetMethod':{1:self.findTargetV1,2:self.findTargetV2,3:self.findTargetV3},
+                            'clusterExplorationMethod':{1:self.findClosestClusterToOrigin,2:self.findClosestClusterToMeasurerBot},
+                            'visitedClusterExplorationMethod':{1:self.findClosestClusterToOrigin,2:self.findClosestClusterToMeasurerBot},
+                            'RPBSelectionMethod':{1:self.findLeastUsefulBots,2:self.findLeastUsefulBotsV2},
+                            'changeFirst':{1:"cluster",2:"RPB"},
+                            'antiLoopMethod':{1:"aggressive",2:"patient"}}
+
+        ### Commenter ou pas cette ligne pour changer paramètres choisis avec le dessin et l'interface graphique
+        # self.set_params([self.grid.origin, 0, 4, [3,1,1,1,1,1]])
+
+
+    ############
+    ### TEST ###
+    ############
+    def set_params(self,params):
+        start_pos, start_angle, newNbRefPointBots, methods = params
+        self.measurerBot.x, self.measurerBot.y = start_pos[0], start_pos[1]
+        self.grid.origin = start_pos
+
+        self.targetMethod = self.methods_dic['targetMethod'][methods[0]]
+        self.clusterExplorationMethod = self.methods_dic['clusterExplorationMethod'][methods[1]]
+        self.visitedClusterExplorationMethod = self.methods_dic['visitedClusterExplorationMethod'][methods[2]]
+        self.RPBSelectionMethod = self.methods_dic['RPBSelectionMethod'][methods[3]]
+        self.changeFirst = self.methods_dic['changeFirst'][methods[4]]
+        self.antiLoopMethod = self.methods_dic['antiLoopMethod'][methods[5]]
+
+        if newNbRefPointBots != self.nbRefPointBots:
+            # On enlève toute trace des anciens refPointBots
+            self.refPointBots = {}
+            self.refPointBotsVisibleBots = {}
+            self.room.removeRefPointBots()
+            self.initRefPointBots = []
+            self.grid.refPointBots = []
+
+            # On crée les nouveaux et on les remet à la place des anciens
+            self.nbRefPointBots = newNbRefPointBots
+            for _ in range(self.nbRefPointBots):
+                self.initRefPointBots.append(refB.RefPointBot(0,0, 6, self.room, objective = None, haveObjective = False, showDetails = False))
+            self.room.addBots(self.initRefPointBots)
+            self.grid.refPointBots = self.initRefPointBots
+            
+            # On corrige les angles car le nombre de robots a changé
+            self.theta = 2*np.pi/self.nbRefPointBots
+
+        initObjectives = []
+        for i in range(self.nbRefPointBots):
+            initObjectives.append((self.measurerBot.x + self.initRadius*np.cos(start_angle + self.theta*i), self.measurerBot.y + self.initRadius*np.sin(start_angle + self.theta*i)))
+
+        robotsPlaced = []
+        for i in range(self.nbRefPointBots):
+            distMin = None
+            minKey = -1
+            for j in range (self.nbRefPointBots):
+                if j not in robotsPlaced:
+
+                    dist = distObjList(self.initRefPointBots[j], initObjectives[i])
+                    if distMin == None or dist < distMin:
+                        distMin = dist
+                        self.refPointBots[i] = self.initRefPointBots[j]
+
+                        minKey = j
+            robotsPlaced.append(minKey)
+        
+        for i in range(self.nbRefPointBots):
+            #self.refPointBots[i].defineObjective(initObjectives[i])
+            self.refPointBots[i].x, self.refPointBots[i].y = initObjectives[i]
+
+        self.refPointBotsVisible = self.refPointBots.copy()
+
+
 
     # Sortie du simulateur
     def print_metrics(self):
+
+        print(self.refPointBots)
+        print(self.room.bots)
 
         print('\r\n')
  

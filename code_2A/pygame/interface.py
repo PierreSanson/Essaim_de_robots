@@ -14,8 +14,13 @@ screen = pygame.display.set_mode((sw, sh))
 # Global theme of the menus
 # -------------------
 
+font = pygame_menu.font.FONT_OPEN_SANS
 
+mytheme = pygame_menu.themes.THEME_DEFAULT.copy()
+mytheme.title_bar_style = pygame_menu.widgets.MENUBAR_STYLE_SIMPLE
+mytheme.selection_color = (0,0,0)
 
+# Paramètres de la simulation
 defaultParameters = ["findTargetV3", "findClosestClusterToOrigin", "findClosestClusterToMeasurerBot", "findLeastUsefulBots", "cluster", "aggressive"]
 parameters = {}
 parameters["targetMethod"] = [("findTargetV3",), ("findTargetV1",), ("findTargetV2",)]
@@ -24,12 +29,6 @@ parameters["visitedClusterExplorationMethod"]=[("findClosestClusterToMeasurerBot
 parameters["RPBSelectionMethod"]=[("findLeastUsefulBots",), ("findLeastUsefulBotsV2",)]
 parameters["changeFirst"]=[("cluster",), ("RPB",)]
 parameters["antiLoopMethod"]=[("aggressive",), ("patient",)]
-
-font = pygame_menu.font.FONT_OPEN_SANS
-
-mytheme = pygame_menu.themes.THEME_DEFAULT.copy()
-mytheme.title_bar_style = pygame_menu.widgets.MENUBAR_STYLE_SIMPLE
-mytheme.selection_color = (0,0,0)
 
 def updateParameters(item, index):
     defaultParameters[index] = item[0][0]

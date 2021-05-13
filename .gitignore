@@ -133,4 +133,4 @@ dmypy.json
 settings.json
 *.pickle
 test*.py
-*LOG.txt
+*LOG*.txt

@@ -109,12 +109,24 @@ class Room():
         obstacles = self.defineObstaclesFromWalls()
         self.obstacles = obstacles
 
-        self.objects = self.bots + self.obstacles
+        self.objects = self.obstacles
 
 
     def addBots(self,bots):
         self.bots += bots 
         self.objects += bots
+
+    def removeRefPointBots(self): ### pas très élégant, mais je n'ai pas trouvé d'autre solution : attention à ne pas itérer sur une liste qu'one est en train de modifier
+        old_bots = self.bots[:]
+        self.bots = []
+        for bot in old_bots:
+            if not isinstance(bot,RefPointBot):
+                self.bots.append(bot)
+        old_objects = self.objects[:]
+        self.objects = []
+        for obj in old_objects:
+            if not isinstance(obj,RefPointBot):
+                self.objects.append(obj)
 
     def defWalls(self, walls_corners):
         for corners in walls_corners:

@@ -3,6 +3,7 @@ import numpy as np
 import time
 import copy
 import os
+import sys
 import pickle
 from mpi4py import MPI
 
@@ -11,27 +12,17 @@ import click
 
 from drawing_to_simulation import load_and_launch_single_simulation, initialize_simulation, launch_parametered_simulation
 
-
-comm = MPI.COMM_WORLD
-size = comm.Get_size()
-rank = comm.Get_rank()
-print("nb of threads : ", size)
-if rank == 0:
-    rd.seed(10)
-
 @click.command()
 @click.argument('path', type=click.Path(exists=True))
 @click.option('-w','--width', default=50, help='Specify the width of the tiles in the simulation.')
-@click.option('-r','--recursive', is_flag=True, default=False)
+@click.option('-r','--recursive', is_flag=True, default=False, help='To launch simulations on each room of a folder.')
+@click.option('-m','--multithread', is_flag=True, default=False, help='To launch a multithreaded simulation')
 @click.option('--setup', is_flag=True, default=False, help='Use this option to trigger a series of prompts to setup a statistical test.')   
 
 
-
-
-def sim(path,width,recursive,setup):
+def sim(path,width,recursive, multithread, setup):
 
     if not setup: # Lancement d'une seule simulation, emplacement initial du robot mesureur déterminé par le dessin de départ.
-        if rank == 0:
             if recursive:
                 print("You cannot run a single simulation on a folder !")
                 return None
@@ -39,70 +30,133 @@ def sim(path,width,recursive,setup):
             duration = load_and_launch_single_simulation(path,width)
             print("Done in %3.2f seconds" %duration)
 
+    else : # Lancement de nombreuses simulations pour récolter des données statistiques.
 
-    else: # Lancement de nombreuses simulations pour récolter des données statistiques.
-        if rank == 0:
+        if not multithread: # Single-threaded simulation
+                
             answers = get_answers()
-        else :
-            answers = None
-        answers = comm.bcast(answers, root = 0)
+        
+            if recursive: # Simulations sur un dossier
+                list_control = []
+                list_params = []
+                list_filename = []
 
-        if recursive:
-            list_control = []
-            list_params = []
-            list_filename = []
+                print("There are %s rooms in the selected folder." %len(os.listdir(path)))
+                print("\n")
+                print("Initializing the simulations...")
 
-            print("There are %s rooms in the selected folder." %len(os.listdir(path)))
-            print("\n")
-            print("Initializing the simulations...")
-
-            # parallel initialization
-            for i, filename in enumerate(os.listdir(path)):
-                if i%rank == 0:
+                for filename in os.listdir(path):
                     control = init_sim(os.path.join(path,filename),width,recursive)
                     control, params = setup_sim(control,answers,recursive)
                     list_control.append(control)
                     list_params.append(params)
                     list_filename.append(os.path.join(path,filename))
 
-            list_control = comm.allreduce(list_control)
-            list_params = comm.allreduce(list_params)
-            list_filename = comm.allreduce(list_filename)
+                n_sim = 0
+                for params in list_params:
+                    n_sim += len(params)
 
-            
-            n_sim = 0
-            for params in list_params:
-                n_sim += len(params)
+                print("Done")
 
-            print("Done")
+                print("\n")
+                print("The simulator will now attempt to run %s simulations." %n_sim)
+                input("Press Enter to start. ")
 
-            print("\n")
-            print("The simulator will now attempt to run %s simulations." %n_sim)
-            input("Press Enter to start. ")
-
-            for k in range(len(list_control)):
-                multi_sim(list_control[k],list_params[k],list_filename[k])    
-            
-        else:
-            filename = path
-            if rank == 0:
+                for k in range(len(list_control)):
+                    multi_sim(list_control[k],list_params[k],list_filename[k],multithread)    
+                
+            else: # Simulations sur un seul fichier
+                filename = path
                 control = init_sim(filename,width,recursive)
                 control, params = setup_sim(control,answers,recursive)
-            else:
-                control=None
-                params = None
-            control = comm.bcast(control, root=0)
-            params = comm.bcast(params, root=0)
-            multi_sim(control,params,filename)
+            
+                multi_sim(control,params,filename,multithread)
+
+
+        else : # Multi-threaded simulation
+               # For multithreading : mpiexec -n [nb_threads] python ./simulator.py [...]
+            global comm
+            comm = MPI.COMM_WORLD
+            global size
+            size = comm.Get_size()
+            global rank
+            rank = comm.Get_rank()
+
+            if rank == 0:
+                print("nb of threads : ", size,flush=True)
+
+            if rank == 0:
+                rd.seed(10)
+           
+            if rank == 0:
+                answers = get_answers()
+            else :
+                answers = None
+            answers = comm.bcast(answers, root = 0)
+
+            if recursive: # simulations sur un dossier
+                list_control = []
+                list_params = []
+                list_filename = []
+
+                if rank == 0:
+                    print("There are %s rooms in the selected folder." %len(os.listdir(path)),flush=True)
+                    print("\n",flush=True)
+                    print("Initializing the simulations...",flush=True)
+
+                # parallel initialization
+                for i, filename in enumerate(os.listdir(path)):
+                    if i%size == rank:
+                        control = init_sim(os.path.join(path,filename),width,recursive)
+                        control, params = setup_sim(control,answers,recursive)
+                        list_control.append(control)
+                        list_params.append(params)
+                        list_filename.append(os.path.join(path,filename))
+
+                list_control = comm.allreduce(list_control)
+                list_params = comm.allreduce(list_params)
+                list_filename = comm.allreduce(list_filename)
+                
+                n_sim = 0
+                for params in list_params:
+                    n_sim += len(params)
+
+                if rank == 0:
+                    print("Done",flush=True)
+
+                if rank == 0:
+                    print("\n",flush=True)
+                    print("The simulator will now attempt to run %s simulations." %n_sim,flush=True)
+                    input("Press Enter to start. ")
+
+                nb_room = 1
+                for k in range(len(list_control)):
+                    if rank == 0:
+                        print('\n', flush=True)
+                        print('Room',nb_room, 'out of',len(os.listdir(path)),flush=True)
+                    multi_sim(list_control[k],list_params[k],list_filename[k],multithread)    
+                    nb_room += 1
+                
+            else: # Simulations sur un seul fichier
+                filename = path
+                if rank == 0:
+                    control = init_sim(filename,width,recursive)
+                    control, params = setup_sim(control,answers,recursive)
+                else:
+                    control=None
+                    params = None
+                control = comm.bcast(control, root=0)
+                params = comm.bcast(params, root=0)
+                multi_sim(control,params,filename,multithread)
 
 
 def init_sim(filename,width,recursive):
         # Initialisation, pour créer la grille une seule fois.
         if not recursive :
-            print("\n")
-            print("Initializing the simulation...")
+            print("\n",flush=True)
+            print("Initializing the simulation...",flush=True)
             control = initialize_simulation(filename,width)
-            print("Done\n")
+            print("Done\n",flush=True)
         else :
             control = initialize_simulation(filename,width)
 
@@ -166,7 +220,7 @@ def get_answers():
         cluster_exploration_method = str(input("Cluster Exploartion Methods : 1='findClosestClusterToOrigin' 2='findClosestClusterToMeasurerBot' "))
         visited_cluster_exploration_method = str(input("Visited Cluster Exploartion Methods: same choices "))
         RPB_selection_method = str(input("Target Methods : 1='findLeastUsefulBots' 2='findLeastUsefulBotsV2' "))
-        change_first = str(input("Cahnge First : 1='cluster' 2='RPB' "))
+        change_first = str(input("Change First : 1='cluster' 2='RPB' "))
         anti_loop_method = str(input("Anti Loop Method : 1='aggressive' 2='patient' "))
 
     except ValueError:
@@ -305,38 +359,134 @@ def setup_sim(control,answers,recursive):
     return control, parameters
 
 
-def multi_sim(control,parameters,filename):
+def multi_sim(control,parameters,filename, multithread):
 
-    dirname = os.path.dirname(os.path.abspath(__file__))
-    if rank == 0: 
-        print("dirname : " ,dirname)
-    # with open(os.path.join(dirname, "./results/",str(filename[8:-7])+"LOG-nproc"+str(rank)+".txt"), "w") as log:
+    if not multithread:
+        dirname = os.path.dirname(os.path.abspath(__file__))
+        with open(os.path.join(dirname, "./results/",str(filename[8:-7])+"LOG.txt"), "w") as log:
+
+            simulation_number = 1
+            file_number = 1
+            multiple_metrics = {'sim_number'    : [],
+                                'start_pos'     : [],
+                                'start_angle'   : [],
+                                'nbRefPointBots': [],
+                                'nbMeasurerBots': [],
+                                'mb_exp_method' : [],
+                                'rpb_exp_method': [],
+                                'rpb_sel_method': [],
+                                'first_loop'    : [],
+                                'measuredTiles' : [],
+                                'surface'       : [],
+                                'pathLength'    : [],
+                                'visitsPerTile' : [],
+                                'history'       : [],
+                                'sim_duration'  : []}
+
+            ### Multiples simulations
+            start = time.time()
+            metrics = None
+
+            durations = []
+            nb_simu = len(parameters)
+            
+            for params in parameters:
+                
+                control_param = copy.deepcopy(control)
+                metrics = launch_parametered_simulation(control_param,params)
+
+                multiple_metrics['sim_number'].append(simulation_number)
+                multiple_metrics['start_pos'].append(params[0])
+                multiple_metrics['start_angle'].append(params[1])
+                for key in metrics.keys():
+                    if (key != 'history' and control.grid.no_history == True) or control.grid.no_history == False:
+                        multiple_metrics[key].append(metrics[key])
+                
+                log.write("Simulation number %s done in %3.2f s\n" %(simulation_number,metrics["sim_duration"]))
+                nbRPB = multiple_metrics["nbRefPointBots"][-1]
+                log.write(f"Nb RefPointBots : {nbRPB}\n")
+                nbTiles = multiple_metrics["measuredTiles"][-1]
+                log.write(f"Measured Tiles : {nbTiles}\n")
+
+                # gestion de la barre de chargement
+                durations.append(metrics["sim_duration"])
+                avg_duration = np.mean(durations)
+                done = simulation_number/nb_simu
+                nb = int(done*40)
+                bar = '  ['+'#'*nb +'-'*(40-nb)+']' + '  ' +' '*(3-len(str(int(done*100))))+str(int(done*100))+'%' + '  ' + time.strftime('%H:%M:%S', time.gmtime(int(max(0,nb_simu*avg_duration*(1-done)))))
+                sys.stdout.write("\033[F") # efface la barre précédente
+                print(bar,flush=True)
+
+                simulation_number += 1
+                if simulation_number % 100 == 0: # Toutes les 100 simulations, on sauvegarde les résultats dans un gros fichier.
+                    file = open("./results/" +str(filename[8:-7])+"-noGUI-results-"+str(file_number)+".pickle", "wb")
+                    pickle.dump(metrics, file)
+                    file.close()
+
+                    multiple_metrics = {'sim_number'    : [],
+                                        'start_pos'     : [],
+                                        'start_angle'   : [],
+                                        'nbRefPointBots': [],
+                                        'nbMeasurerBots': [],
+                                        'mb_exp_method' : [],
+                                        'rpb_exp_method': [],
+                                        'rpb_sel_method': [],
+                                        'first_loop'    : [],
+                                        'measuredTiles' : [],
+                                        'surface'       : [],
+                                        'pathLength'    : [],
+                                        'visitsPerTile' : [],
+                                        'history'       : [],
+                                        'sim_duration'  : []}
+                    file_number += 1
+
+            if metrics is not None:
+                file = open("./results/"+str(filename[8:-7])+"-noGUI-results-"+str(file_number)+".pickle", "wb")
+                pickle.dump(metrics, file)
+                file.close()
+           
+            print("Done in %3.2f seconds" %(time.time()-start))
+            
+            log.write("Simulations were all successfull")
+
+        log.close()
 
 
-    simulation_number = 1
-    file_number = 1
-    multiple_metrics = {'sim_number'    : [],
-                        'start_pos'     : [],
-                        'start_angle'   : [],
-                        'nbRefPointBots': [],
-                        'nbMeasurerBots': [],
-                        'mb_exp_method' : [],
-                        'rpb_exp_method': [],
-                        'rpb_sel_method': [],
-                        'first_loop'    : [],
-                        'measuredTiles' : [],
-                        'surface'       : [],
-                        'pathLength'    : [],
-                        'visitsPerTile' : [],
-                        'history'       : [],
-                        'sim_duration'  : []}
+    else: # multithread
+        
+        dirname = os.path.dirname(os.path.abspath(__file__))
+        if rank == 0: 
+            print("dirname : " ,dirname,'\n', flush=True)
+        # with open(os.path.join(dirname, "./results/",str(filename[8:-7])+"LOG-nproc"+str(rank)+".txt"), "w") as log:
 
-    ### Multiples simulations
-    start = time.time()
-    metrics = None
-    with click.progressbar(parameters) as bar:
-        for i, params in enumerate(bar):
-            if i%size == rank:
+
+        simulation_number = 1
+        file_number = 1
+        multiple_metrics = {'sim_number'    : [],
+                            'start_pos'     : [],
+                            'start_angle'   : [],
+                            'nbRefPointBots': [],
+                            'nbMeasurerBots': [],
+                            'mb_exp_method' : [],
+                            'rpb_exp_method': [],
+                            'rpb_sel_method': [],
+                            'first_loop'    : [],
+                            'measuredTiles' : [],
+                            'surface'       : [],
+                            'pathLength'    : [],
+                            'visitsPerTile' : [],
+                            'history'       : [],
+                            'sim_duration'  : []}
+
+        ### Multiples simulations
+        start = time.time()
+        metrics = None
+
+        durations = []
+        nb_simu_thread = len(parameters)//size
+        
+        for i, params in enumerate(parameters):
+            if i%size == rank: 
                 control_param = copy.deepcopy(control)
                 metrics = launch_parametered_simulation(control_param,params)
                 multiple_metrics['sim_number'].append(simulation_number)
@@ -347,13 +497,21 @@ def multi_sim(control,parameters,filename):
                         multiple_metrics[key].append(metrics[key])
                 with open("./results/" +str(filename[8:-7])+"LOG-nproc"+str(rank)+".txt", "a") as log:
                     log.write("Simulation number %s done in %3.2f s\n" %(simulation_number,metrics["sim_duration"]))
-                    nbRPB = multiple_metrics["nbRefPointBots"][simulation_number-1]
+                    nbRPB = multiple_metrics["nbRefPointBots"][-1]
                     log.write(f"Nb RefPointBots : {nbRPB}\n")
-                    nbTiles = multiple_metrics["measuredTiles"][simulation_number-1]
+                    nbTiles = multiple_metrics["measuredTiles"][-1]
                     log.write(f"Measured Tiles : {nbTiles}\n")
                     log.close()
-
                 
+                if rank == 0:
+                    durations.append(metrics["sim_duration"])
+                    avg_duration = np.mean(durations)
+
+                    done = simulation_number/nb_simu_thread
+                    nb = int(done*40)
+                    bar = 'Thread 0 in progress : ' + '['+'#'*nb +'-'*(40-nb)+']' + '  ' +' '*(3-len(str(int(done*100))))+str(int(done*100))+'%' + '  ' + time.strftime('%H:%M:%S', time.gmtime(int(max(0,nb_simu_thread*avg_duration*(1-done)))))
+                    sys.stdout.write("\033[F") # efface la barre précédente
+                    print(bar,flush=True)
 
 
                 simulation_number += 1
@@ -380,20 +538,26 @@ def multi_sim(control,parameters,filename):
                                         'sim_duration'  : []}
                     file_number += 1
 
-    # file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle"), "wb")
-    if metrics is not None:
-        file = open("./results/"+str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle", "wb")
-        pickle.dump(metrics, file)
-        file.close()
-    comm.Barrier()
-    if rank == 0:
-        print("Done in %3.2f seconds" %(time.time()-start))
-    with open("./results/" +str(filename[8:-7])+"LOG-nproc"+str(rank)+".txt", "a") as log:
-        log.write("Simulations were all successfull")
-        log.close()
+        # file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle"), "wb")
+        if metrics is not None:
+            file = open("./results/"+str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle", "wb")
+            pickle.dump(metrics, file)
+            file.close()
+
+        #------------------------------------------
+        comm.Barrier() 
+        #------------------------------------------
+
+        if rank == 0:
+            print("Done in %3.2f seconds\n" %(time.time()-start))
+        with open("./results/" +str(filename[8:-7])+"LOG-nproc"+str(rank)+".txt", "a") as log:
+            log.write("Simulations were all successfull")
+            log.close()
+
 
 def combineAllLogs():
     pass
+
 
 def combineAllResults():
     pass

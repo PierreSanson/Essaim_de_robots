@@ -134,7 +134,6 @@ def drawing_to_simulation(table,width,height,tileWidth):
         elif botType == 3:
             refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 6, room, objective = None, haveObjective = False, showDetails = False))
 
-            
     bots = measuringBots + explorerBots + refPointBots
 
     room.addBots(bots)
@@ -175,9 +174,6 @@ def load_and_launch_single_simulation(filePath,tileWidth):
             for bot in room.bots:
                 bot.move()
 
-
-
-
         # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre
         simulationDuration = time.time() - simulationStart
 
@@ -201,6 +197,7 @@ def initialize_simulation(filePath,tileWidth):
         room, SEUWBSLAM = drawing_to_simulation(table, sw, sh, tileWidth)
         
         return SEUWBSLAM
+
 
 def launch_parametered_simulation(control,params):
 
