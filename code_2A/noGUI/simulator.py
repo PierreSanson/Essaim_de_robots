@@ -1,4 +1,5 @@
 import random as rd
+from click.types import DateTime
 import numpy as np
 import time
 import copy
@@ -6,6 +7,8 @@ import os
 import sys
 import pickle
 from mpi4py import MPI
+import csv
+from datetime import datetime
 
 # Interface en ligne de commande pour le lancement de la simulation
 import click
@@ -63,7 +66,10 @@ def sim(path,width,recursive, multithread, setup):
                 input("Press Enter to start. ")
 
                 for k in range(len(list_control)):
-                    multi_sim(list_control[k],list_params[k],list_filename[k],multithread)    
+                    multi_sim(list_control[k],list_params[k],list_filename[k],multithread)
+                
+                
+                combineAllResultsAfterSim(1, list_filename)   
                 
             else: # Simulations sur un seul fichier
                 filename = path
@@ -136,6 +142,7 @@ def sim(path,width,recursive, multithread, setup):
                         print('Room',nb_room, 'out of',len(os.listdir(path)),flush=True)
                     multi_sim(list_control[k],list_params[k],list_filename[k],multithread)    
                     nb_room += 1
+                combineAllResultsAfterSim(4, list_filename, multithreaded=True, delete=False) 
                 
             else: # Simulations sur un seul fichier
                 filename = path
@@ -363,7 +370,7 @@ def multi_sim(control,parameters,filename, multithread):
 
     if not multithread:
         dirname = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(dirname, "./results/",str(filename[8:-7])+"LOG.txt"), "w") as log:
+        with open(os.path.join(dirname, "./results/",str(filename)+"LOG.txt"), "w") as log:
 
             simulation_number = 1
             file_number = 1
@@ -419,7 +426,7 @@ def multi_sim(control,parameters,filename, multithread):
 
                 simulation_number += 1
                 if simulation_number % 100 == 0: # Toutes les 100 simulations, on sauvegarde les résultats dans un gros fichier.
-                    file = open("./results/" +str(filename[8:-7])+"-noGUI-results-"+str(file_number)+".pickle", "wb")
+                    file = open("./results/" +str(filename)+"-noGUI-results-"+str(file_number)+".pickle", "wb")
                     pickle.dump(metrics, file)
                     file.close()
 
@@ -440,9 +447,9 @@ def multi_sim(control,parameters,filename, multithread):
                                         'sim_duration'  : []}
                     file_number += 1
 
-            if metrics is not None:
-                file = open("./results/"+str(filename[8:-7])+"-noGUI-results-"+str(file_number)+".pickle", "wb")
-                pickle.dump(metrics, file)
+            if multiple_metrics is not None:
+                file = open("./results/"+str(filename)+"-noGUI-results-"+str(file_number)+".pickle", "wb")
+                pickle.dump(multiple_metrics, file)
                 file.close()
            
             print("Done in %3.2f seconds" %(time.time()-start))
@@ -495,7 +502,7 @@ def multi_sim(control,parameters,filename, multithread):
                 for key in metrics.keys():
                     if (key != 'history' and control.grid.no_history == True) or control.grid.no_history == False:
                         multiple_metrics[key].append(metrics[key])
-                with open("./results/" +str(filename[8:-7])+"LOG-nproc"+str(rank)+".txt", "a") as log:
+                with open("./results/" +str(filename)+"LOG-nproc"+str(rank)+".txt", "a") as log:
                     log.write("Simulation number %s done in %3.2f s\n" %(simulation_number,metrics["sim_duration"]))
                     nbRPB = multiple_metrics["nbRefPointBots"][-1]
                     log.write(f"Nb RefPointBots : {nbRPB}\n")
@@ -517,7 +524,7 @@ def multi_sim(control,parameters,filename, multithread):
                 simulation_number += 1
                 if simulation_number % 100 == 0: # Toutes les 100 simulations, on sauvegarde les résultats dans un gros fichier.
                     # file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle"), "wb")
-                    file = open("./results/" +str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle", "wb")
+                    file = open("./results/" +str(filename)+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle", "wb")
                     pickle.dump(metrics, file)
                     file.close()
 
@@ -539,9 +546,9 @@ def multi_sim(control,parameters,filename, multithread):
                     file_number += 1
 
         # file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle"), "wb")
-        if metrics is not None:
-            file = open("./results/"+str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle", "wb")
-            pickle.dump(metrics, file)
+        if multiple_metrics is not None:
+            file = open("./results/"+str(filename)+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle", "wb")
+            pickle.dump(multiple_metrics, file)
             file.close()
 
         #------------------------------------------
@@ -550,7 +557,7 @@ def multi_sim(control,parameters,filename, multithread):
 
         if rank == 0:
             print("Done in %3.2f seconds\n" %(time.time()-start))
-        with open("./results/" +str(filename[8:-7])+"LOG-nproc"+str(rank)+".txt", "a") as log:
+        with open("./results/" +str(filename)+"LOG-nproc"+str(rank)+".txt", "a") as log:
             log.write("Simulations were all successfull")
             log.close()
 
@@ -559,18 +566,69 @@ def combineAllLogs():
     pass
 
 
-def combineAllResults():
-    pass
+
+def combineAllResultsAfterSim(nb_cores, file_names, file_path_results = "results/", file_path=None, multithreaded = False, delete = True):
+    date = datetime.now().isoformat().split(".")[0].replace(":", "-")
+    csvFile = open(f"{file_path_results}combined_results_{date}.csv", 'w')
+    writer = csv.writer(csvFile)
+    if file_path is not None:
+        file_names = []
+        for filename in os.listdir(file_path):
+            if filename[-6:] == "pickle":
+                file_names.append(os.path.join(file_path,filename))
+
+    header = False
+    for filename in file_names:
+        # cas où on lance la fonction juste après la création des fichiers pickle
+        if file_path is None:
+            for core in range(nb_cores):
+                file_number=1
+                while True:
+                    name = filename
+                    if multithreaded:
+                        try :
+                            with open(f"{file_path_results}{name}-noGUI-results-{file_number}nproc{core}.pickle", 'rb') as pickle_file:
+                                data = pickle.load(pickle_file)
+                                pickle_file.close()
+                            if delete:
+                                os.remove(f"{file_path_results}{name}-noGUI-results-{file_number}nproc{core}.pickle")
+                        except FileNotFoundError:
+                            break
+                    else:
+                        try :
+                            with open(f"{file_path_results}{name}-noGUI-results-{file_number}.pickle", 'rb') as pickle_file:
+                                data = pickle.load(pickle_file)
+                                pickle_file.close()
+                            if delete:
+                                os.remove(f"{file_path_results}{name}-noGUI-results-{file_number}.pickle")
+                        except FileNotFoundError:
+                            break
+                    data.pop("history", None)
+                    data.pop("visitsPerTile", None)
+                    n = len(data["sim_number"])
+                    if not header:
+                        writer.writerow(list(data.keys())+["roomName"])
+                        header = True
+                    for i in range(n):
+                        writer.writerow([data_list[i] for data_list in list(data.values())] + [filename.split("\\")[-1]])
+                    file_number+=1
+        # cas où on lance la fonction dans sur des fichiers pickle existants dans le dossier file_path
+        else:
+            with open(filename, 'rb') as pickle_file:
+                data = pickle.load(pickle_file)
+                pickle_file.close()
+            if delete:
+                os.remove(filename)
+            data.pop("history", None)
+            data.pop("visitsPerTile", None)
+            n = len(data["sim_number"])
+            if not header:
+                writer.writerow(list(data.keys())+["roomName"])
+                header = True
+            for i in range(n):
+                writer.writerow([data_list[i] for data_list in list(data.values())] + [filename.split("\\")[-1]])
 
 
 if __name__ == "__main__":
-    # if rank == 1:
-    #     a = [1, 2, 3]
-    # elif rank == 0:
-    #     a = [3, 2, 1]
-    # c = comm.allreduce(a)
-
-    # if rank == 1:
-    #     print(c)
-    #     print(a)
     sim()
+    # combineAllResultsAfterSim(4, [], file_path="./results/simFolderTest/", multithreaded=True, delete=False)
