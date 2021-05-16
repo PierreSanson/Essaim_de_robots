@@ -81,6 +81,13 @@ class SwarmExploratorUWBSLAM():
         self.lastRPBTarget = [None]
         self.lastRPBMoved = None
 
+        # RPB metrics :
+        self.totalPathLengthRPB = 0
+        self.nbRPBMoves = 0
+        self.maxLengthMoveRPB = 0
+        self.currentRPBMoveLength = 0
+
+
         # infinite loop detection :
         self.infiniteLoopList = []
         self.infiniteLoopFirstElement = None
@@ -209,7 +216,11 @@ class SwarmExploratorUWBSLAM():
                     'surface'       : surface,
                     'pathLength'    : pathLength,
                     'history'       : history,
-                    'visitsPerTile' : visitsPerTile}
+                    'visitsPerTile' : visitsPerTile,
+                    'totalPathLengthRPB' : self.totalPathLengthRPB,
+                    'nbMovesRPB' : self.nbRPBMoves,
+                    'averageMoveLengthRPB' : self.totalPathLengthRPB/self.nbRPBMoves,
+                    'maxLengthMoveRPB' : self.maxLengthMoveRPB}
 
         return metrics
 
@@ -229,6 +240,13 @@ class SwarmExploratorUWBSLAM():
                 # else :
                 target = self.instantMovingRefPointBot(self.initCount, (np.cos(self.theta*self.initCount), np.sin(self.theta*self.initCount)))
                 if target is not None:
+
+                    dist = distObjList(self.refPointBots[self.initCount], target)
+                    if dist > self.maxLengthMoveRPB :
+                        self.maxLengthMoveRPB = dist
+                    self.totalPathLengthRPB+=dist
+                    self.nbRPBMoves+=1
+
                     self.refPointBots[self.initCount].defineObjective(target)
                     self.refPointBots[self.initCount].x, self.refPointBots[self.initCount].y = target
                 self.refPointBots[self.initCount].wallDetectionAction()
@@ -888,6 +906,7 @@ class SwarmExploratorUWBSLAM():
                                 self.infiniteLoopDetectionAggressive(nextGoal)
                             elif self.antiLoopMethod == "patient":
                                 self.infiniteLoopDetection(targetCell, sourceCell, key)
+                            self.currentRPBMoveLength = weight
                             self.lastRPBMoved = key
                             self.lastRPBBaseCell = targetCell
                             self.targetClusters = 2
@@ -925,6 +944,11 @@ class SwarmExploratorUWBSLAM():
                     if target is None:
                         self.RPBExclusionList.append(bot)
                     else:
+                        dist = distObjList(bot, target) + self.currentRPBMoveLength
+                        if dist > self.maxLengthMoveRPB :
+                            self.maxLengthMoveRPB = dist
+                        self.totalPathLengthRPB+=dist
+                        self.nbRPBMoves+=1
                         bot.defineObjective(target)
                         bot.x, bot.y = target
                         bot.wallDetectionAction()
