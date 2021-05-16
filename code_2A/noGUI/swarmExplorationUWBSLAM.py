@@ -241,7 +241,7 @@ class SwarmExploratorUWBSLAM():
                 target = self.instantMovingRefPointBot(self.initCount, (np.cos(self.theta*self.initCount), np.sin(self.theta*self.initCount)))
                 if target is not None:
 
-                    dist = distObjList(self.refPointBots[self.initCount], target)
+                    dist = distObjList(self.refPointBots[self.initCount], target)/self.grid.tileWidth
                     if dist > self.maxLengthMoveRPB :
                         self.maxLengthMoveRPB = dist
                     self.totalPathLengthRPB+=dist
@@ -944,7 +944,7 @@ class SwarmExploratorUWBSLAM():
                     if target is None:
                         self.RPBExclusionList.append(bot)
                     else:
-                        dist = distObjList(bot, target) + self.currentRPBMoveLength
+                        dist = distObjList(bot, target)/self.grid.tileWidth + self.currentRPBMoveLength
                         if dist > self.maxLengthMoveRPB :
                             self.maxLengthMoveRPB = dist
                         self.totalPathLengthRPB+=dist
