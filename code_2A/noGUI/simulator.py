@@ -155,6 +155,7 @@ def sim(path,width,recursive, multithread, setup):
                 control = comm.bcast(control, root=0)
                 params = comm.bcast(params, root=0)
                 multi_sim(control,params,filename,multithread)
+                combineAllResultsAfterSim(4, [filename], multithreaded=True, delete=False) 
 
 
 def init_sim(filename,width,recursive):
@@ -374,21 +375,25 @@ def multi_sim(control,parameters,filename, multithread):
 
             simulation_number = 1
             file_number = 1
-            multiple_metrics = {'sim_number'    : [],
-                                'start_pos'     : [],
-                                'start_angle'   : [],
-                                'nbRefPointBots': [],
-                                'nbMeasurerBots': [],
-                                'mb_exp_method' : [],
-                                'rpb_exp_method': [],
-                                'rpb_sel_method': [],
-                                'first_loop'    : [],
-                                'measuredTiles' : [],
-                                'surface'       : [],
-                                'pathLength'    : [],
-                                'visitsPerTile' : [],
-                                'history'       : [],
-                                'sim_duration'  : []}
+            multiple_metrics = {'sim_number'           : [],
+                                'start_pos'            : [],
+                                'start_angle'          : [],
+                                'nbRefPointBots'       : [],
+                                'nbMeasurerBots'       : [],
+                                'mb_exp_method'        : [],
+                                'rpb_exp_method'       : [],
+                                'rpb_sel_method'       : [],
+                                'first_loop'           : [],
+                                'measuredTiles'        : [],
+                                'surface'              : [],
+                                'pathLength'           : [],
+                                'visitsPerTile'        : [],
+                                'history'              : [],
+                                'sim_duration'         : [],
+                                'totalPathLengthRPB'   : [],
+                                'nbMovesRPB'           : [],
+                                'averageMoveLengthRPB' : [],
+                                'maxLengthMoveRPB'     : []}
 
             ### Multiples simulations
             start = time.time()
@@ -430,21 +435,25 @@ def multi_sim(control,parameters,filename, multithread):
                     pickle.dump(metrics, file)
                     file.close()
 
-                    multiple_metrics = {'sim_number'    : [],
-                                        'start_pos'     : [],
-                                        'start_angle'   : [],
-                                        'nbRefPointBots': [],
-                                        'nbMeasurerBots': [],
-                                        'mb_exp_method' : [],
-                                        'rpb_exp_method': [],
-                                        'rpb_sel_method': [],
-                                        'first_loop'    : [],
-                                        'measuredTiles' : [],
-                                        'surface'       : [],
-                                        'pathLength'    : [],
-                                        'visitsPerTile' : [],
-                                        'history'       : [],
-                                        'sim_duration'  : []}
+                    multiple_metrics = {'sim_number'           : [],
+                                        'start_pos'            : [],
+                                        'start_angle'          : [],
+                                        'nbRefPointBots'       : [],
+                                        'nbMeasurerBots'       : [],
+                                        'mb_exp_method'        : [],
+                                        'rpb_exp_method'       : [],
+                                        'rpb_sel_method'       : [],
+                                        'first_loop'           : [],
+                                        'measuredTiles'        : [],
+                                        'surface'              : [],
+                                        'pathLength'           : [],
+                                        'visitsPerTile'        : [],
+                                        'history'              : [],
+                                        'sim_duration'         : [],
+                                        'totalPathLengthRPB'   : [],
+                                        'nbMovesRPB'           : [],
+                                        'averageMoveLengthRPB' : [],
+                                        'maxLengthMoveRPB'     : []}
                     file_number += 1
 
             if multiple_metrics is not None:
@@ -469,21 +478,25 @@ def multi_sim(control,parameters,filename, multithread):
 
         simulation_number = 1
         file_number = 1
-        multiple_metrics = {'sim_number'    : [],
-                            'start_pos'     : [],
-                            'start_angle'   : [],
-                            'nbRefPointBots': [],
-                            'nbMeasurerBots': [],
-                            'mb_exp_method' : [],
-                            'rpb_exp_method': [],
-                            'rpb_sel_method': [],
-                            'first_loop'    : [],
-                            'measuredTiles' : [],
-                            'surface'       : [],
-                            'pathLength'    : [],
-                            'visitsPerTile' : [],
-                            'history'       : [],
-                            'sim_duration'  : []}
+        multiple_metrics = {'sim_number'           : [],
+                            'start_pos'            : [],
+                            'start_angle'          : [],
+                            'nbRefPointBots'       : [],
+                            'nbMeasurerBots'       : [],
+                            'mb_exp_method'        : [],
+                            'rpb_exp_method'       : [],
+                            'rpb_sel_method'       : [],
+                            'first_loop'           : [],
+                            'measuredTiles'        : [],
+                            'surface'              : [],
+                            'pathLength'           : [],
+                            'visitsPerTile'        : [],
+                            'history'              : [],
+                            'sim_duration'         : [],
+                            'totalPathLengthRPB'   : [],
+                            'nbMovesRPB'           : [],
+                            'averageMoveLengthRPB' : [],
+                            'maxLengthMoveRPB'     : []}
 
         ### Multiples simulations
         start = time.time()
@@ -514,7 +527,10 @@ def multi_sim(control,parameters,filename, multithread):
                     durations.append(metrics["sim_duration"])
                     avg_duration = np.mean(durations)
 
-                    done = simulation_number/nb_simu_thread
+                    if nb_simu_thread != 0:
+                        done = simulation_number/nb_simu_thread
+                    else :
+                        done = 0
                     nb = int(done*40)
                     bar = 'Thread 0 in progress : ' + '['+'#'*nb +'-'*(40-nb)+']' + '  ' +' '*(3-len(str(int(done*100))))+str(int(done*100))+'%' + '  ' + time.strftime('%H:%M:%S', time.gmtime(int(max(0,nb_simu_thread*avg_duration*(1-done)))))
                     sys.stdout.write("\033[F") # efface la barre précédente
@@ -528,21 +544,25 @@ def multi_sim(control,parameters,filename, multithread):
                     pickle.dump(metrics, file)
                     file.close()
 
-                    multiple_metrics = {'sim_number'    : [],
-                                        'start_pos'     : [],
-                                        'start_angle'   : [],
-                                        'nbRefPointBots': [],
-                                        'nbMeasurerBots': [],
-                                        'mb_exp_method' : [],
-                                        'rpb_exp_method': [],
-                                        'rpb_sel_method': [],
-                                        'first_loop'    : [],
-                                        'measuredTiles' : [],
-                                        'surface'       : [],
-                                        'pathLength'    : [],
-                                        'visitsPerTile' : [],
-                                        'history'       : [],
-                                        'sim_duration'  : []}
+                    multiple_metrics = {'sim_number'           : [],
+                                        'start_pos'            : [],
+                                        'start_angle'          : [],
+                                        'nbRefPointBots'       : [],
+                                        'nbMeasurerBots'       : [],
+                                        'mb_exp_method'        : [],
+                                        'rpb_exp_method'       : [],
+                                        'rpb_sel_method'       : [],
+                                        'first_loop'           : [],
+                                        'measuredTiles'        : [],
+                                        'surface'              : [],
+                                        'pathLength'           : [],
+                                        'visitsPerTile'        : [],
+                                        'history'              : [],
+                                        'sim_duration'         : [],
+                                        'totalPathLengthRPB'   : [],
+                                        'nbMovesRPB'           : [],
+                                        'averageMoveLengthRPB' : [],
+                                        'maxLengthMoveRPB'     : []}
                     file_number += 1
 
         # file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle"), "wb")
