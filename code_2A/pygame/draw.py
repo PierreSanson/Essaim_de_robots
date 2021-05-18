@@ -268,18 +268,33 @@ def OpenFile(filePath, gridObject):
         colors = pickle.load(file)
         file.close()
 
-        for row in range(gridObject.yCount):
-            for column in range(gridObject.xCount):
-                if colors[row][column] == 0:
-                    gridObject.change_color(row,column,[0,0,0])
-                elif colors[row][column] == 1:
-                    gridObject.change_color(row,column,[255,0,0])
-                elif colors[row][column] == 2:
-                    gridObject.change_color(row,column,[0,255,0])
-                elif colors[row][column] == 3:
-                    gridObject.change_color(row,column,[0,0,255])
-                else:
-                    gridObject.change_color(row,column,[255,255,255])     
+        try :
+            for row in range(gridObject.yCount):
+                for column in range(gridObject.xCount):
+                    if colors[row][column] == 0:
+                        gridObject.change_color(row,column,[0,0,0])
+                    elif colors[row][column] == 1:
+                        gridObject.change_color(row,column,[255,0,0])
+                    elif colors[row][column] == 2:
+                        gridObject.change_color(row,column,[0,255,0])
+                    elif colors[row][column] == 3:
+                        gridObject.change_color(row,column,[0,0,255])
+                    else:
+                        gridObject.change_color(row,column,[255,255,255])
+
+        except IndexError :
+            for row in range(gridObject.yCount):
+                for column in range(gridObject.xCount):
+                    if colors[column][row] == 0:
+                        gridObject.change_color(row,column,[0,0,0])
+                    elif colors[column][row] == 1:
+                        gridObject.change_color(row,column,[255,0,0])
+                    elif colors[column][row] == 2:
+                        gridObject.change_color(row,column,[0,255,0])
+                    elif colors[column][row] == 3:
+                        gridObject.change_color(row,column,[0,0,255])
+                    else:
+                        gridObject.change_color(row,column,[255,255,255])  
         
         filePathList = filePath.split("/")
         fileName = filePathList[-1]
