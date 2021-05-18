@@ -168,11 +168,6 @@ class Grid():
         self.measuringBot = measuringBot
         self.oldObjective = measuringBot.objective
 
-
-        xMeasurer = measuringBot.x
-        yMeasurer = measuringBot.y
-        self.origin = (xMeasurer,yMeasurer)
-
         # Initialisation du graphe 
         self.graph = {}
         self.graphLinks = []
@@ -216,7 +211,6 @@ class Grid():
 
 
         # On définit l'intérieur de la salle
-
         coordinates = list(self.tiles.keys())
         self.origin = minDistObjList(self.measuringBot,coordinates)
         self.inside = self.findCluster(self.origin)     

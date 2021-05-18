@@ -179,7 +179,6 @@ def rotate(vect, theta):
     return np.dot(R, vect.T)
 
 
-
 def createPolygonMask(center, sides, radius):
     points = []
     x,y = center[0], center[1]
@@ -199,13 +198,6 @@ def pointInPolygon(lineEmitter, polygon):
             return True
     return False
     
-def rot2D(vec, theta):
-    x = vec[0]*np.cos(theta) + vec[1]*np.sin(theta)
-    y = -vec[0]*np.sin(theta) + vec[1]*np.cos(theta)
-    vec = np.array([x,y])
-    vec = vec/np.linalg.norm(vec)
-    vec = list(np.around(vec, 5))
-    return vec
 
 def rot2D(vec, theta):
     x = vec[0]*np.cos(theta) + vec[1]*np.sin(theta)
@@ -274,9 +266,7 @@ def lineSegmentInter(line, segment):
 
 def distMaxXY2Segments(seg1, seg2):
     distMaxX = -1
-
     distMaxY = -1
-
     extremePoints = [[-1,-1], [-1, -1]]
     for point1 in seg1:
         for point2 in seg2:
@@ -295,7 +285,6 @@ def distMaxXY2Segments(seg1, seg2):
                 else:
                     extremePoints[1] = [point2[1], point1[1]]    
     return [distMaxX, distMaxY, extremePoints]
-
 
 
 def addToListDict(dict, index, element):
