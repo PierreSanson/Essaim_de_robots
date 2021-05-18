@@ -39,7 +39,7 @@ def LoadFile():
 
         return colors, fileName[:-7]
     
-    return None
+    return None, None
 
 
 def find_walls_corners(table):

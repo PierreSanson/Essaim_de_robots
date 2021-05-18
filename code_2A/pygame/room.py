@@ -94,6 +94,8 @@ class Room():
         self.walls = []
         self.defWalls(walls_corners)
 
+        print(self.walls)
+
         Xs, Ys = [], []
         for wall in self.walls:
             Xs += wall.Xs
