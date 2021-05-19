@@ -112,7 +112,7 @@ def polygonLineInter(lineEmitter, polygon, barycenterPolygon, vel2D):
         x, y = 0, 0
         xP, yP = 0,0
         vectLine = np.array([polygon[(i+1)%len(polygon)][0] - polygon[i][0], polygon[(i+1)%len(polygon)][1] - polygon[i][1]])
-        lenLine = np.linalg.norm(vectLine)
+        lenLine = np.sqrt((vectLine**2).sum())
         aL = vectLine[1]
         bL = -vectLine[0]
         cL = - bL*polygon[i][1] -aL*polygon[i][0]
@@ -156,14 +156,14 @@ def polygonLineInter(lineEmitter, polygon, barycenterPolygon, vel2D):
         angleCheck = signedAngle2Vects2([barycenterPolygon['x'] - lineEmitter.x ,barycenterPolygon['y'] - lineEmitter.y], vectP)
 
 
-        if np.linalg.norm(vectP)<= lineEmitter.radius + 5.5 and np.linalg.norm(vectP2) <= lenLine and (np.dot(vectLine, vectP2) >= 0) :
+        if np.sqrt((vectP**2).sum())<= lineEmitter.radius + 5.5 and np.sqrt((vectP2**2).sum()) <= lenLine and (np.dot(vectLine, vectP2) >= 0) :
             if abs(angleCheck)<=np.pi/2:
                 angleP = signedAngle2Vects2(vectP, vectLine)
                 if angleP >= 0:
                     return ['indirect']
                 else:
                     return ['direct']
-        elif np.linalg.norm(vectCol) <= lenLine and (np.dot(vectLine, vectCol)) >= 0 :
+        elif np.sqrt((vectCol**2).sum()) <= lenLine and (np.dot(vectLine, vectCol)) >= 0 :
             sols.append([x, y])
     return sols
 
@@ -203,17 +203,13 @@ def rot2D(vec, theta):
     x = vec[0]*np.cos(theta) + vec[1]*np.sin(theta)
     y = -vec[0]*np.sin(theta) + vec[1]*np.cos(theta)
     vec = np.array([x,y])
-    vec = vec/np.linalg.norm(vec)
-    vec = list(np.around(vec, 5))
-    return vec
+    if np.sqrt((vec**2).sum()) != 0 : 
+        vec = vec/np.sqrt((vec**2).sum()) 
+        vec = list(np.around(vec, 5))
+        return vec
+    else :
+        return [1,0]
 
-def rot2D(vec, theta):
-    x = vec[0]*np.cos(theta) + vec[1]*np.sin(theta)
-    y = -vec[0]*np.sin(theta) + vec[1]*np.cos(theta)
-    vec = np.array([x,y])
-    vec = vec/np.linalg.norm(vec)
-    vec = list(np.around(vec, 5))
-    return vec
 
 
 def lineSegmentInter(line, segment):
@@ -227,7 +223,7 @@ def lineSegmentInter(line, segment):
     xP, yP = 0,0
 
     vectLine = np.array([segment[1][0] - segment[0][0], segment[1][1] - segment[0][1]])
-    lenLine = np.linalg.norm(vectLine)
+    lenLine = np.sqrt((vectLine**2).sum())
     aL = vectLine[1]
     bL = -vectLine[0]
     cL = - bL*segment[0][1] -aL*segment[0][0]
@@ -267,7 +263,7 @@ def lineSegmentInter(line, segment):
     vectP = np.array([xP - line[1][0], yP - line[1][1]])
     vectP2 = np.array([xP - segment[0][0], yP - segment[0][1]])
 
-    if np.linalg.norm(vectCol) <= lenLine and (np.dot(vectLine, vectCol)) >= 0 :
+    if np.sqrt((vectCol**2).sum()) <= lenLine and (np.dot(vectLine, vectCol)) >= 0 :
         return(x,y)
     return None
     

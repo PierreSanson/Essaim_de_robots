@@ -75,7 +75,7 @@ class Tile():
             if self.isSeen(walls,measuringBot):
                 self.seen = 1
 
-        if status in ["init","FirsttransferRefPointBotToMeasuringBot","transferRefPointBotToMeasuringBot"]:
+        if status in ["init","FirsttransferRefPointBotToMeasuringBot","transferRefPointBotToMeasuringBot", "resetRefPointBot1stStep"]:
             # On vérifie si la case est couverte
             if self.isCovered(walls, refPointBots):
                 self.covered = 1
