@@ -49,11 +49,12 @@ def sim(path,width,recursive, multithread, setup):
                 print("Initializing the simulations...")
 
                 for filename in os.listdir(path):
+                    print(filename+"\n")
                     control = init_sim(os.path.join(path,filename),width,recursive)
                     control, params = setup_sim(control,answers,recursive)
                     list_control.append(control)
                     list_params.append(params)
-                    list_filename.append(os.path.join(path,filename))
+                    list_filename.append(filename)
 
                 n_sim = 0
                 for params in list_params:
@@ -114,11 +115,12 @@ def sim(path,width,recursive, multithread, setup):
                 # parallel initialization
                 for i, filename in enumerate(os.listdir(path)):
                     if i%size == rank:
+                        print(filename+"\n",flush=True)
                         control = init_sim(os.path.join(path,filename),width,recursive)
                         control, params = setup_sim(control,answers,recursive)
                         list_control.append(control)
                         list_params.append(params)
-                        list_filename.append(os.path.join(path,filename))
+                        list_filename.append(filename)
 
                 list_control = comm.allreduce(list_control)
                 list_params = comm.allreduce(list_params)

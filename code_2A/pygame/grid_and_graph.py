@@ -243,7 +243,8 @@ class Grid():
         # On définit l'intérieur de la salle
         coordinates = list(self.tiles.keys())
         self.origin = minDistObjList(self.measuringBot,coordinates)
-        self.inside = self.findCluster(self.origin)      
+        self.inside = self.findCluster(self.origin)
+        
 
 
         # On nettoie les objets Tile, pour ne pas conserver de cases inutiles (ie on supprime toutes les cases extérieures, mais on garde les murs pour affichage)
@@ -332,14 +333,17 @@ class Grid():
 
     # Méthode utilisée pour détecter un ensemble de cases connectées (non interrompues par un mur)
     def findCluster(self,start):
+        print(start)
         cluster = []
         neighbours = []
 
         straight, diag = self.getNeighbours(start)
         tmp = straight + diag
         for coord in tmp:
+            print(coord)
             if coord in self.tiles and self.tiles[coord].containsWall == 0:
                 neighbours.append(coord)
+            print(neighbours)
         
         while neighbours != []:
             current = neighbours.pop()

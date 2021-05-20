@@ -94,6 +94,8 @@ class Room():
         self.walls = []
         self.defWalls(walls_corners)
 
+        print(self.walls)
+
         Xs, Ys = [], []
         for wall in self.walls:
             Xs += wall.Xs
@@ -121,6 +123,7 @@ class Room():
         self.bots += bots 
         self.objects += bots
 
+
     def removeRefPointBots(self): ### pas très élégant, mais je n'ai pas trouvé d'autre solution : attention à ne pas itérer sur une liste qu'one est en train de modifier
         old_bots = self.bots[:]
         self.bots = []
@@ -132,6 +135,7 @@ class Room():
         for obj in old_objects:
             if not isinstance(obj,RefPointBot):
                 self.objects.append(obj)
+
 
     def defWalls(self, walls_corners):
         for corners in walls_corners:
@@ -157,7 +161,6 @@ class Room():
         radiusObstacles = 6                 
         spaceBetweenObstaclesCenter = 18  # il ne faut pas que (spaceBetweenObstaclesCenter - 2*radiusObstacles) soit plus grand qu'un robot, sinon ils passent au travers des murs
 
-        
         for wall in self.walls: 
             wall_obstacles = [] 
 
