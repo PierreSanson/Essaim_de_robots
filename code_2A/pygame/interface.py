@@ -21,12 +21,13 @@ mytheme.title_bar_style = pygame_menu.widgets.MENUBAR_STYLE_SIMPLE
 mytheme.selection_color = (0,0,0)
 
 # Paramètres de la simulation
-defaultParameters = ["findTargetV3", "findClosestClusterToOrigin", "findClosestClusterToMeasurerBot", "findLeastUsefulBots", "cluster", "aggressive"]
+defaultParameters = ["progressive", "findTargetV3", "findClosestClusterToOrigin", "findClosestClusterToMeasurerBot", "findLeastUsefulBotsDjikstra", "cluster", "aggressive"]
 parameters = {}
+parameters["globalMethodRPB"] = [("progressive",), ("reset",)]
 parameters["targetMethod"] = [("findTargetV3",), ("findTargetV1",), ("findTargetV2",)]
 parameters["clusterExplorationMethod"] = [("findClosestClusterToOrigin",), ("findClosestClusterToMeasurerBot",)]
 parameters["visitedClusterExplorationMethod"]=[("findClosestClusterToMeasurerBot",), ("findClosestClusterToOrigin",)]
-parameters["RPBSelectionMethod"]=[("findLeastUsefulBots",), ("findLeastUsefulBotsV2",)]
+parameters["RPBSelectionMethod"]=[("findLeastUsefulBotsEuclidian",), ("findLeastUsefulBotsDjikstra",), ("findLeastUsefulBotsV2Euclidian",), ("findLeastUsefulBotsV2Djikstra",),("findFurthestBotEuclidian",), ("findFurthestBotDjikstra",)]
 parameters["changeFirst"]=[("cluster",), ("RPB",)]
 parameters["antiLoopMethod"]=[("aggressive",), ("patient",)]
 
@@ -46,12 +47,13 @@ main_menu.add_button("Load and launch 'exact' simulation", load_and_launch_exact
 main_menu.add_button('Load and launch discrete simulation', load_and_launch_discrete_simulation, defaultParameters)
 main_menu.add_vertical_margin(40)
 main_menu.add_label("Parameters : ")
-main_menu.add_selector("Select MeasurerBot exploration method : ",parameters["targetMethod"], onchange=updateParameters, index = 0)
-main_menu.add_selector("Select cluster exploration method : ",parameters["clusterExplorationMethod"], onchange=updateParameters, index = 1)
-main_menu.add_selector("Select visited cluster exploration method  : ",parameters["visitedClusterExplorationMethod"], onchange=updateParameters, index = 2)
-main_menu.add_selector("Select RPB selection method : ",parameters["RPBSelectionMethod"], onchange=updateParameters, index = 3)
-main_menu.add_selector("Select what to loop through first : ",parameters["changeFirst"], onchange=updateParameters, index = 4)
-main_menu.add_selector("Select anti infinite loop method : ",parameters["antiLoopMethod"], onchange=updateParameters, index = 5)
+main_menu.add_selector("Select global method RPB : ",parameters["globalMethodRPB"], onchange=updateParameters, index = 0)
+main_menu.add_selector("Select MeasurerBot exploration method : ",parameters["targetMethod"], onchange=updateParameters, index = 1)
+main_menu.add_selector("Select cluster exploration method : ",parameters["clusterExplorationMethod"], onchange=updateParameters, index = 2)
+main_menu.add_selector("Select visited cluster exploration method  : ",parameters["visitedClusterExplorationMethod"], onchange=updateParameters, index = 3)
+main_menu.add_selector("Select RPB selection method : ",parameters["RPBSelectionMethod"], onchange=updateParameters, index = 4)
+main_menu.add_selector("Select what to loop through first : ",parameters["changeFirst"], onchange=updateParameters, index = 5)
+main_menu.add_selector("Select anti infinite loop method : ",parameters["antiLoopMethod"], onchange=updateParameters, index = 6)
 
 
 main_menu.add_vertical_margin(40)

@@ -70,7 +70,7 @@ def sim(path,width,recursive, multithread, setup):
                     multi_sim(list_control[k],list_params[k],list_filename[k],multithread)
                 
                 
-                combineAllResultsAfterSim(1, list_filename)   
+                combineAllResultsAfterSim(1, list_filename, delete=False)   
                 
             else: # Simulations sur un seul fichier
                 filename = path
@@ -78,6 +78,7 @@ def sim(path,width,recursive, multithread, setup):
                 control, params = setup_sim(control,answers,recursive)
             
                 multi_sim(control,params,filename,multithread)
+                combineAllResultsAfterSim(1, [filename], delete=False)  
 
 
         else : # Multi-threaded simulation
@@ -225,11 +226,11 @@ def get_answers():
     try:
         print("\nYou will now select the different methods that need to be tested.\r")
         print("If you want to select multiple methods in each category, simply type more than one number.\n")
-
+        globalMethodRPB = str(input("Global Methods : 1='progressive' 2='reset '"))
         target_method = str(input("Target Methods : 1='findTargetV1' 2='findTargerV2' 3='findTargetV3' "))
         cluster_exploration_method = str(input("Cluster Exploartion Methods : 1='findClosestClusterToOrigin' 2='findClosestClusterToMeasurerBot' "))
         visited_cluster_exploration_method = str(input("Visited Cluster Exploartion Methods: same choices "))
-        RPB_selection_method = str(input("Target Methods : 1='findLeastUsefulBots' 2='findLeastUsefulBotsV2' "))
+        RPB_selection_method = str(input("RPB Selection Methods : 1='self.findLeastUsefulBotsEuclidian', 2='self.findLeastUsefulBotsDjikstra', 3='self.findLeastUsefulBotsV2Euclidian', 4='self.findLeastUsefulBotsV2Djikstra', 5='self.findFurthestBotEuclidian', 6='self.findFurthestBotDjikstra' "))
         change_first = str(input("Change First : 1='cluster' 2='RPB' "))
         anti_loop_method = str(input("Anti Loop Method : 1='aggressive' 2='patient' "))
 
@@ -238,11 +239,23 @@ def get_answers():
         return None
 
     # conversion des entrées de l'utilisateur
+
+    tmp = []
+    for char in globalMethodRPB:
+            if char in ["1","2"]:
+                tmp.append(int(char))
+            elif char != " ":
+                print("bad char globalMethodRPB: ", char)
+                print("Not a valid number - Aborting")
+                return None
+    globalMethodRPB = tmp
+
     tmp = []
     for char in target_method:
             if char in ["1","2","3"]:
                 tmp.append(int(char))
             elif char != " ":
+                print("bad char target_method: ", char)
                 print("Not a valid number - Aborting")
                 return None
     target_method = tmp
@@ -252,6 +265,7 @@ def get_answers():
             if char in ["1","2"]:
                 tmp.append(int(char))
             elif char != " ":
+                print("bad char cluster_exploration_method: ", char)
                 print("Not a valid number - Aborting")
                 return None
     cluster_exploration_method = tmp
@@ -261,15 +275,17 @@ def get_answers():
             if char in ["1","2"]:
                 tmp.append(int(char))
             elif char != " ":
+                print("bad char visited_cluster_exploration_method: ", char)
                 print("Not a valid number - Aborting")
                 return None
     visited_cluster_exploration_method = tmp
 
     tmp = []
     for char in RPB_selection_method:
-            if char in ["1","2"]:
+            if char in ["1","2","3","4","5","6"]:
                 tmp.append(int(char))
             elif char != " ":
+                print("bad char RPB_selection_method: ", char)
                 print("Not a valid number - Aborting")
                 return None
     RPB_selection_method = tmp
@@ -279,6 +295,7 @@ def get_answers():
             if char in ["1","2"]:
                 tmp.append(int(char))
             elif char != " ":
+                print("bad char change_first: ", char)
                 print("Not a valid number - Aborting")
                 return None
     change_first = tmp
@@ -288,6 +305,7 @@ def get_answers():
             if char in ["1","2"]:
                 tmp.append(int(char))
             elif char != " ":
+                print("bad char anti_loop_method: ", char)
                 print("Not a valid number - Aborting")
                 return None
     anti_loop_method = tmp
@@ -297,12 +315,15 @@ def get_answers():
                 "nb_starting_angles": n_angle,
                 "nb_rpb_min": n_rp_bots_min,
                 "nb_rpb_max": n_rp_bots_max,
+                "globalMethodRPB" : globalMethodRPB,
                 "target_method": target_method,
                 "cluster_exploration_method": cluster_exploration_method,
                 "visited_cluster_exploration_method": visited_cluster_exploration_method,
                 "RPB_selection_method": RPB_selection_method,
                 "change_first": change_first,
                 "anti_loop_method": anti_loop_method}
+    
+    print(answers)
 
     return answers
 
@@ -325,6 +346,7 @@ def setup_sim(control,answers,recursive):
     n_rp_bots_max = answers["nb_rpb_max"]
     n_rp_bots_min = answers["nb_rpb_min"]
 
+    globalMethodRPB = answers["globalMethodRPB"]
     target_method = answers["target_method"]
     cluster_exploration_method = answers["cluster_exploration_method"]
     visited_cluster_exploration_method = answers["visited_cluster_exploration_method"]
@@ -346,13 +368,14 @@ def setup_sim(control,answers,recursive):
 
     # Création de toutes les combinaisons uniques de paramètres
     method_params = []
-    for t in target_method:
-        for c in cluster_exploration_method:
-            for v in visited_cluster_exploration_method:
-                for R in RPB_selection_method:
-                    for ch in change_first:
-                        for a in anti_loop_method:
-                            method_params.append((t,c,v,R,ch,a))
+    for g in globalMethodRPB:
+        for t in target_method:
+            for c in cluster_exploration_method:
+                for v in visited_cluster_exploration_method:
+                    for R in RPB_selection_method:
+                        for ch in change_first:
+                            for a in anti_loop_method:
+                                method_params.append((g,t,c,v,R,ch,a))
 
     parameters = []
     for pos in positions_sim:
@@ -382,6 +405,7 @@ def multi_sim(control,parameters,filename, multithread):
                                 'start_angle'          : [],
                                 'nbRefPointBots'       : [],
                                 'nbMeasurerBots'       : [],
+                                'globalMethodRPB'      : [],
                                 'mb_exp_method'        : [],
                                 'rpb_exp_method'       : [],
                                 'rpb_sel_method'       : [],
@@ -442,6 +466,7 @@ def multi_sim(control,parameters,filename, multithread):
                                         'start_angle'          : [],
                                         'nbRefPointBots'       : [],
                                         'nbMeasurerBots'       : [],
+                                        'globalMethodRPB'      : [],
                                         'mb_exp_method'        : [],
                                         'rpb_exp_method'       : [],
                                         'rpb_sel_method'       : [],
@@ -485,6 +510,7 @@ def multi_sim(control,parameters,filename, multithread):
                             'start_angle'          : [],
                             'nbRefPointBots'       : [],
                             'nbMeasurerBots'       : [],
+                            'globalMethodRPB'      : [],
                             'mb_exp_method'        : [],
                             'rpb_exp_method'       : [],
                             'rpb_sel_method'       : [],
@@ -551,6 +577,7 @@ def multi_sim(control,parameters,filename, multithread):
                                         'start_angle'          : [],
                                         'nbRefPointBots'       : [],
                                         'nbMeasurerBots'       : [],
+                                        'globalMethodRPB'      : [],
                                         'mb_exp_method'        : [],
                                         'rpb_exp_method'       : [],
                                         'rpb_sel_method'       : [],
