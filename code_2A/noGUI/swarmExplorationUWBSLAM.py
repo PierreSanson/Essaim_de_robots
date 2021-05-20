@@ -102,6 +102,7 @@ class SwarmExploratorUWBSLAM():
         self.infiniteLoopFirstIndex = None
 
         self.targetMethod = self.findTargetV3
+        self.globalMethodRPB = "progressive"
         self.clusterExplorationMethod = self.findClosestClusterToOrigin
         self.visitedClusterExplorationMethod = self.findClosestClusterToMeasurerBot
         self.RPBSelectionMethod = self.findLeastUsefulBotsEuclidian
