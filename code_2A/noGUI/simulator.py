@@ -458,7 +458,7 @@ def multi_sim(control,parameters,filename, multithread):
                 simulation_number += 1
                 if simulation_number % 100 == 0: # Toutes les 100 simulations, on sauvegarde les résultats dans un gros fichier.
                     file = open("./results/" +str(filename)+"-noGUI-results-"+str(file_number)+".pickle", "wb")
-                    pickle.dump(metrics, file)
+                    pickle.dump(multiple_metrics, file)
                     file.close()
 
                     multiple_metrics = {'sim_number'           : [],
@@ -569,7 +569,7 @@ def multi_sim(control,parameters,filename, multithread):
                 if simulation_number % 100 == 0: # Toutes les 100 simulations, on sauvegarde les résultats dans un gros fichier.
                     # file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle"), "wb")
                     file = open("./results/" +str(filename)+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle", "wb")
-                    pickle.dump(metrics, file)
+                    pickle.dump(multiple_metrics, file)
                     file.close()
 
                     multiple_metrics = {'sim_number'           : [],
