@@ -467,7 +467,7 @@ def multi_sim(control,parameters,filename, multithread):
                 simulation_number += 1
                 if simulation_number % 100 == 0: # Toutes les 100 simulations, on sauvegarde les résultats dans un gros fichier.
                     file = open("./results/" +str(filename)+"-noGUI-results-"+str(file_number)+".pickle", "wb")
-                    pickle.dump(metrics, file)
+                    pickle.dump(multiple_metrics, file)
                     file.close()
 
                     multiple_metrics = {'sim_number'           : [],
@@ -509,8 +509,10 @@ def multi_sim(control,parameters,filename, multithread):
         dirname = os.path.dirname(os.path.abspath(__file__))
         if rank == 0: 
             print("dirname : " ,dirname,'\n', flush=True)
-        # with open(os.path.join(dirname, "./results/",str(filename[8:-7])+"LOG-nproc"+str(rank)+".txt"), "w") as log:
-
+            done = 0
+        else:
+            done = None
+        
         simulation_number = 1
         file_number = 1
         multiple_metrics = {'sim_number'           : [],
@@ -564,6 +566,7 @@ def multi_sim(control,parameters,filename, multithread):
 
                 # On récupère l'avancement des différents threads
                 done = comm.reduce(simulation_number, op=MPI.SUM, root=0)
+                done = comm.bcast(done,root = 0)
                 
                 if rank == 0:
                     fraction = done/len(parameters)
@@ -577,7 +580,7 @@ def multi_sim(control,parameters,filename, multithread):
                 if simulation_number % 100 == 0: # Toutes les 100 simulations, on sauvegarde les résultats dans un gros fichier.
                     # file = open(os.path.join(dirname, "./results/",str(filename[8:-7])+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle"), "wb")
                     file = open("./results/" +str(filename)+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle", "wb")
-                    pickle.dump(metrics, file)
+                    pickle.dump(multiple_metrics, file)
                     file.close()
 
                     multiple_metrics = {'sim_number'           : [],
@@ -609,14 +612,14 @@ def multi_sim(control,parameters,filename, multithread):
             pickle.dump(multiple_metrics, file)
             file.close()
 
-        while done != len(parameters) and rank == 0:
-            fraction = done/len(parameters)
-            nb = int(fraction*40)
-            bar = '  ['+'#'*nb +'-'*(40-nb)+']' + '  ' +' '*(3-len(str(int(fraction*100))))+str(int(fraction*100))+'%' + '  ' + time.strftime('%H:%M:%S', time.gmtime(int(max(0,len(parameters)*avg_duration*(1-fraction)))))
-            
-            sys.stdout.write("\033[F") # passe à la ligne précédente
-            print(bar,flush=True)
-
+        while done != len(parameters):
+            if rank == 0 :
+                fraction = done/len(parameters)
+                nb = int(fraction*40)
+                bar = '  ['+'#'*nb +'-'*(40-nb)+']' + '  ' +' '*(3-len(str(int(fraction*100))))+str(int(fraction*100))+'%' + '  ' + time.strftime('%H:%M:%S', time.gmtime(int(max(0,len(parameters)*avg_duration*(1-fraction)))))
+                
+                sys.stdout.write("\033[F") # passe à la ligne précédente
+                print(bar,flush=True)
 
         #------------------------------------------
         comm.Barrier() 
@@ -653,12 +656,10 @@ def combineAllResultsAfterSim(nb_cores, file_names, file_path_results = "results
                 while True:
                     name = filename
                     if multithreaded:
-                        if rank == 0:
+                        if rank == 0: # le premier thread s'occupe de faire les regroupements
                             try :
                                 with open(f"{file_path_results}{name}-noGUI-results-{file_number}nproc{core}.pickle", 'rb') as pickle_file:
                                     data = pickle.load(pickle_file)
-                                    print(f"{file_path_results}{name}-noGUI-results-{file_number}nproc{core}.pickle")
-                                    print(data.keys())
                                     pickle_file.close()
                                 if delete:
                                     os.remove(f"{file_path_results}{name}-noGUI-results-{file_number}nproc{core}.pickle")
@@ -674,6 +675,8 @@ def combineAllResultsAfterSim(nb_cores, file_names, file_path_results = "results
                             for i in range(n):
                                 writer.writerow([data_list[i] for data_list in list(data.values())] + [filename.split("\\")[-1]])
                             file_number+=1
+                        else: # les autres threads n'ont rien à faire
+                            break
 
                     else:
                         try :
