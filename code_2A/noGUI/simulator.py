@@ -460,7 +460,7 @@ def multi_sim(control,parameters,filename, multithread):
                 avg_duration = np.mean(durations)
                 done = simulation_number/nb_simu
                 nb = int(done*40)
-                bar = '  ['+'#'*nb +'-'*(40-nb)+']' + '  ' +' '*(3-len(str(int(done*100))))+str(int(done*100))+'%' + '  ' + time.strftime('%H:%M:%S', time.gmtime(int(max(0,nb_simu*avg_duration*(1-done)))))
+                bar = '   ['+'#'*nb +'-'*(40-nb)+']' + '  ' +' '*(3-len(str(int(done*100))))+str(int(done*100))+'%' + '  ' + time.strftime('%H:%M:%S', time.gmtime(int(max(0,nb_simu*avg_duration*(1-done)))))
                 sys.stdout.write("\033[F") # efface la barre précédente
                 print(bar,flush=True)
 
@@ -567,8 +567,8 @@ def multi_sim(control,parameters,filename, multithread):
                 # On superpose les barres de chargement de tous les threads
                 fraction = simulation_number/(len(parameters)/size)
                 nb = int(fraction*40)
-                bar = str(rank)+' ['+'#'*nb +'-'*(40-nb)+']' + '  ' +' '*(3-len(str(int(fraction*100))))+str(min(100,int(fraction*100)))+'%' + '  ' + time.strftime('%H:%M:%S', time.gmtime(int(max(0,len(parameters)*avg_duration*(1-fraction)))))
-                
+                bar = str(rank)+' '*(3-len(str(rank)))+'['+'#'*nb +'-'*(40-nb)+']' + '  ' +' '*(3-len(str(int(fraction*100))))+str(min(100,np.ceil(fraction*100)))+'%' + '  ' + time.strftime('%H:%M:%S', time.gmtime(int(max(0,len(parameters)/size*avg_duration*(1-fraction)))))
+                 
                 sys.stdout.write("\033[F") # passe à la ligne précédente
                 print(bar,flush=True)
                             
