@@ -564,17 +564,13 @@ def multi_sim(control,parameters,filename, multithread):
                 durations.append(metrics["sim_duration"])
                 avg_duration = np.mean(durations)
 
-                # On récupère l'avancement des différents threads
-                done = comm.reduce(simulation_number, op=MPI.SUM, root=0)
-                done = comm.bcast(done,root = 0)
+                # On superpose les barres de chargement de tous les threads
+                fraction = simulation_number/(len(parameters)/size)
+                nb = int(fraction*40)
+                bar = str(rank)+' ['+'#'*nb +'-'*(40-nb)+']' + '  ' +' '*(3-len(str(int(fraction*100))))+str(min(100,int(fraction*100)))+'%' + '  ' + time.strftime('%H:%M:%S', time.gmtime(int(max(0,len(parameters)*avg_duration*(1-fraction)))))
                 
-                if rank == 0:
-                    fraction = done/len(parameters)
-                    nb = int(fraction*40)
-                    bar = '  ['+'#'*nb +'-'*(40-nb)+']' + '  ' +' '*(3-len(str(int(fraction*100))))+str(int(fraction*100))+'%' + '  ' + time.strftime('%H:%M:%S', time.gmtime(int(max(0,len(parameters)*avg_duration*(1-fraction)))))
-                    
-                    sys.stdout.write("\033[F") # passe à la ligne précédente
-                    print(bar,flush=True)
+                sys.stdout.write("\033[F") # passe à la ligne précédente
+                print(bar,flush=True)
                             
                 simulation_number += 1
                 if simulation_number % 100 == 0: # Toutes les 100 simulations, on sauvegarde les résultats dans un gros fichier.
@@ -611,15 +607,6 @@ def multi_sim(control,parameters,filename, multithread):
             file = open("./results/"+str(filename)+"-noGUI-results-"+str(file_number)+"nproc"+str(rank)+".pickle", "wb")
             pickle.dump(multiple_metrics, file)
             file.close()
-
-        while done != len(parameters):
-            if rank == 0 :
-                fraction = done/len(parameters)
-                nb = int(fraction*40)
-                bar = '  ['+'#'*nb +'-'*(40-nb)+']' + '  ' +' '*(3-len(str(int(fraction*100))))+str(int(fraction*100))+'%' + '  ' + time.strftime('%H:%M:%S', time.gmtime(int(max(0,len(parameters)*avg_duration*(1-fraction)))))
-                
-                sys.stdout.write("\033[F") # passe à la ligne précédente
-                print(bar,flush=True)
 
         #------------------------------------------
         comm.Barrier() 

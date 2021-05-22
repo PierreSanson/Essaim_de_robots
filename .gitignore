@@ -134,5 +134,6 @@ settings.json
 *.pickle
 test*.py
 *LOG*.txt
+*.csv
 
 !bouygues1.pickle
