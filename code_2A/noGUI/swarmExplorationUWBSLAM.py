@@ -638,7 +638,7 @@ class SwarmExploratorUWBSLAM():
                 return minCoords
 
             if source:
-                if minDist <= 2*np.sqrt(2)*self.grid.tileWidth:
+                if minDist <= np.sqrt(2)*self.grid.tileWidth:
                     return minCoord
                 else:
                     return None
@@ -1040,7 +1040,7 @@ class SwarmExploratorUWBSLAM():
         else :
             targetCell = self.findClosestVisitedCellSmart(nextGoal)
             sourceCell = self.findClosestVisitedCellSmart((self.measurerBot.x, self.measurerBot.y), source=True)
-            if sourceCell is not None:
+            if sourceCell is not None and targetCell is not None:
                 weight, self.mainPath = (self.djikstra(sourceCell, targetCell))
                 self.mainPathIndex = 0
                 if self.mainPath is not None:
