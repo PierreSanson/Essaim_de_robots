@@ -20,10 +20,11 @@ from drawing_to_simulation import load_and_launch_single_simulation, initialize_
 @click.option('-w','--width', default=50, help='Specify the width of the tiles in the simulation.')
 @click.option('-r','--recursive', is_flag=True, default=False, help='To launch simulations on each room of a folder.')
 @click.option('-m','--multithread', is_flag=True, default=False, help='To launch a multithreaded simulation')
+@click.option('-p','--progressive',is_flag=True, default=False, help='To resume a simulation. in which not all starting positions were tested. Use it with setup.')
 @click.option('--setup', is_flag=True, default=False, help='Use this option to trigger a series of prompts to setup a statistical test.')   
 
 
-def sim(path,width,recursive, multithread, setup):
+def sim(path,width,recursive, multithread, progressive, setup):
 
     if not setup: # Lancement d'une seule simulation, emplacement initial du robot mesureur déterminé par le dessin de départ.
             if recursive:
@@ -51,7 +52,7 @@ def sim(path,width,recursive, multithread, setup):
                 for filename in os.listdir(path):
                     print(filename+"\n")
                     control = init_sim(os.path.join(path,filename),width,recursive)
-                    control, params = setup_sim(control,answers,recursive)
+                    control, params = setup_sim(control,answers,recursive,progressive,filename)
                     list_control.append(control)
                     list_params.append(params)
                     list_filename.append(filename)
@@ -73,10 +74,10 @@ def sim(path,width,recursive, multithread, setup):
                 combineAllResultsAfterSim(1, list_filename, delete=False)   
                 
             else: # Simulations sur un seul fichier
-                control = init_sim(path,width,recursive)
-                control, params = setup_sim(control,answers,recursive)
-
                 filename = path.split('\\')[-1]
+                control = init_sim(path,width,recursive)
+                control, params = setup_sim(control,answers,recursive,progressive,filename)
+
                 multi_sim(control,params,filename,multithread)
                 combineAllResultsAfterSim(1, [filename], delete=False)  
 
@@ -117,7 +118,7 @@ def sim(path,width,recursive, multithread, setup):
                     if i%size == rank:
                         print(filename+"\n",flush=True)
                         control = init_sim(os.path.join(path,filename),width,recursive)
-                        control, params = setup_sim(control,answers,recursive)
+                        control, params = setup_sim(control,answers,recursive,progressive,filename)
                         list_control.append(control)
                         list_params.append(params)
                         list_filename.append(filename)
@@ -151,9 +152,10 @@ def sim(path,width,recursive, multithread, setup):
                 combineAllResultsAfterSim(size, list_filename, multithreaded=True, delete=False) 
                 
             else: # Simulations sur un seul fichier
+                filename = path.split('\\')[-1]
                 if rank == 0:
                     control = init_sim(path,width,recursive)
-                    control, params = setup_sim(control,answers,recursive)
+                    control, params = setup_sim(control,answers,recursive,progressive, filename)
                 else:
                     control=None
                     params = None
@@ -162,7 +164,6 @@ def sim(path,width,recursive, multithread, setup):
                 #------------------------------------------
                 comm.Barrier() 
                 #------------------------------------------
-                filename = path.split('\\')[-1]
                 multi_sim(control,params,filename,multithread)
                 combineAllResultsAfterSim(size, [filename], multithreaded=True, delete=False) 
 
@@ -334,7 +335,7 @@ def get_answers():
     return answers
 
 
-def setup_sim(control,answers,recursive):
+def setup_sim(control,answers,recursive, progressive, fileName):
 
     history = answers["history"]
     if history == 'y':
@@ -362,11 +363,46 @@ def setup_sim(control,answers,recursive):
 
     
     # Calcul des différentes valeurs de positions initiales et angles initiaux
-    if n_pos_sim < n_pos:
-        rd.shuffle(positions)
-        positions_sim = positions[:n_pos_sim]
-    else :
-        positions_sim = positions
+    if progressive:
+        fileName = fileName.split('.')[-2]
+        positions_sim = []
+        tested_positions = []
+        if os.path.exists('./rooms_tested_positions/'+fileName+'.csv'):
+            with open('./rooms_tested_positions/'+fileName+'.csv','r') as tested_positions_csv:
+                reader = csv.reader(tested_positions_csv, delimiter=' ')
+                for row in reader:
+                    tested_positions.append((int(row[0]),int(row[1])))
+            tested_positions_csv.close()
+            
+            index = 0
+            while len(positions_sim) < n_pos_sim and index < len(positions):
+                pos = positions[index]
+                if not pos in tested_positions:
+                   positions_sim.append(pos)
+                index += 1
+
+            with open('./rooms_tested_positions/'+fileName+'.csv','a',newline='') as tested_positions_csv:
+                writer = csv.writer(tested_positions_csv, delimiter=' ')
+                for pos in positions_sim:
+                    writer.writerow([pos[0],pos[1]])
+            tested_positions_csv.close()
+
+        else:
+            for pos in positions[:n_pos_sim]:
+                positions_sim.append(pos)
+
+            with open('./rooms_tested_positions/'+fileName+'.csv','w',newline='') as tested_positions_csv:
+                writer = csv.writer(tested_positions_csv, delimiter=' ')
+                for pos in positions_sim:
+                    writer.writerow([pos[0],pos[1]])
+            tested_positions_csv.close()
+            
+    else:
+        if n_pos_sim < n_pos :
+            rd.shuffle(positions)
+            positions_sim = positions[:n_pos_sim]
+        else:
+            positions_sim = positions
 
     
     angles_sim = np.linspace(0, 2*np.pi/control.nbRefPointBots, n_angle+1)
