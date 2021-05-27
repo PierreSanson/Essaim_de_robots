@@ -4,15 +4,17 @@ import time
 from tkinter import *
 from tkinter.filedialog import askopenfilename
 
-import sys
 import pickle
+import time
+
+import numpy as np
 
 import explorerBot as eb
 import refPointBot as rpb
 import measuringBot as mb
 from room import *
 import swarmExplorationUWBSLAM as seUWBSLAM
-import time
+
 
 
 def LoadFile(filePath):
@@ -147,6 +149,8 @@ def drawing_to_simulation(table,width,height,tileWidth):
 def load_and_launch_single_simulation(filePath,tileWidth):
 
     table, fileName = LoadFile(filePath)
+    fileName = fileName.split('\\')[-1]
+    print(fileName)
 
     if table is not None : # évite un crash si on ne sélectionne pas de fichier
         initStart = time.time()
@@ -160,7 +164,11 @@ def load_and_launch_single_simulation(filePath,tileWidth):
         control = SEUWBSLAM
         control.set_default_params()
 
+        iteration_durations = []
+
         while run:
+
+            iterationStart = time.time()
             
             # fin de la simulation (les robtos ont arrêté de bouger)
             if control.end_simulation == True:
@@ -174,12 +182,15 @@ def load_and_launch_single_simulation(filePath,tileWidth):
             for bot in room.bots:
                 bot.move()
 
+            iteration_durations.append(time.time() - iterationStart)
+
         # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre
         simulationDuration = time.time() - simulationStart
 
         metrics = control.get_metrics()
         metrics["init_duration"] = initDuration
         metrics["sim_duration"] = simulationDuration
+        metrics["avg_iteration_duration"] = np.mean(iteration_durations)
         
         dirname = os.path.dirname(__file__)
         file = open(os.path.join(dirname, "./results/",str(fileName)+"-noGUI-results.pickle"), "wb")
@@ -206,8 +217,12 @@ def launch_parametered_simulation(control,params):
     simulationStart = time.time()
     run = True 
 
+    iteration_durations = []
+
     while run:
         
+        iterationStart = time.time()
+
         # fin de la simulation (les robtos ont arrêté de bouger)
         if control.end_simulation == True:
             run = False
@@ -220,10 +235,13 @@ def launch_parametered_simulation(control,params):
         for bot in control.room.bots:
             bot.move()
 
+        iteration_durations.append(time.time() - iterationStart)
+
 
     # si la simulation s'est achevée, on affiche les métriques et on attend que l'utilisateur ferme la fenêtre
     simulationDuration = time.time() - simulationStart
     metrics = control.get_metrics()
     metrics["sim_duration"] = simulationDuration
+    metrics["avg_iteration_duration"] = np.mean(iteration_durations)
     
     return metrics
