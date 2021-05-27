@@ -663,7 +663,7 @@ class SwarmExploratorUWBSLAM():
                 return minCoords
 
             if source:
-                if minDist <= 2*np.sqrt(2)*self.grid.tileWidth:
+                if minDist <= np.sqrt(2)*self.grid.tileWidth:
                     return minCoord
                 else:
                     return None
@@ -959,6 +959,13 @@ class SwarmExploratorUWBSLAM():
             return dist
         return None
 
+    def getSmartDistList(self, coord1, coord2):
+        sourceCell = self.findClosestVisitedCellSmart(coord1, source=True)
+        if sourceCell != None:
+            dist, path = (self.djikstra(sourceCell, coord2))
+            return dist
+        return None
+
     def findClosestClusterToOrigin(self):
         minDist = 10000
         closestGoal = None
@@ -970,15 +977,43 @@ class SwarmExploratorUWBSLAM():
                     closestGoal = goal
         return closestGoal
 
+    def findClosestClusterToOriginDjikstra(self):
+        minDist = 10000
+        closestGoal = None
+        for goal in self.nextRefStepGoals:
+            if goal not in self.clusterExclusionList:
+                targetCell = self.findClosestVisitedCell(goal)
+                dist = self.getSmartDistList(self.initMeasurerPos, targetCell)
+                if dist is not None:
+                    dist += distLists(goal, targetCell)
+                    if dist < minDist:
+                        minDist = dist
+                        closestGoal = goal
+        return closestGoal
+
     def findClosestClusterToMeasurerBot(self):
         minDist = 10000
         closestGoal = None
         for goal in self.nextRefStepGoals:
             if goal not in self.clusterExclusionList:
-                dist = distLists((self.measurerBot.x, self.measurerBot.y), goal)
+                dist =  distLists((self.measurerBot.x, self.measurerBot.y), goal)
                 if dist < minDist:
                     minDist = dist
                     closestGoal = goal
+        return closestGoal
+
+    def findClosestClusterToMeasurerBotDjikstra(self):
+        minDist = 10000
+        closestGoal = None
+        for goal in self.nextRefStepGoals:
+            if goal not in self.clusterExclusionList:
+                targetCell = self.findClosestVisitedCell(goal)
+                dist = self.getSmartDist(self.measurerBot, targetCell) 
+                if dist is not None: 
+                    dist += distLists(goal, targetCell)
+                    if dist < minDist:
+                        minDist = dist
+                        closestGoal = goal
         return closestGoal
 
     def getRefPointBots1stTargets(self, key):
@@ -1056,6 +1091,7 @@ class SwarmExploratorUWBSLAM():
             if self.targetClusters == 2:
                 self.targetClusters = 1.5
                 self.RPBExclusionList = []
+                self.clusterExclusionList = []
                 self.resetMeasurerBot()
             elif self.targetClusters == 1.5:
                 self.end_simulation = True
@@ -1063,7 +1099,7 @@ class SwarmExploratorUWBSLAM():
         else :
             targetCell = self.findClosestVisitedCellSmart(nextGoal)
             sourceCell = self.findClosestVisitedCellSmart((self.measurerBot.x, self.measurerBot.y), source=True)
-            if sourceCell is not None:
+            if sourceCell is not None and targetCell is not None:
                 weight, self.mainPath = (self.djikstra(sourceCell, targetCell))
                 self.mainPathIndex = 0
                 if self.mainPath is not None:
