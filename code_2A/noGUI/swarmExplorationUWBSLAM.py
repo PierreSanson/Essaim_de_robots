@@ -1033,6 +1033,7 @@ class SwarmExploratorUWBSLAM():
             if self.targetClusters == 2:
                 self.targetClusters = 1.5
                 self.RPBExclusionList = []
+                self.clusterExclusionList = []
                 self.resetMeasurerBot()
             elif self.targetClusters == 1.5:
                 self.end_simulation = True
