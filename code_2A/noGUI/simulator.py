@@ -363,6 +363,9 @@ def setup_sim(control,answers,recursive, progressive, fileName):
 
     
     # Calcul des différentes valeurs de positions initiales et angles initiaux
+
+    rd.shuffle(positions) # pour éviter d'avoir des positions voisines quand on ne teste pas toutes les cases
+
     if progressive:
         fileName = fileName.split('.')[-2]
         positions_sim = []
@@ -399,7 +402,6 @@ def setup_sim(control,answers,recursive, progressive, fileName):
             
     else:
         if n_pos_sim < n_pos :
-            rd.shuffle(positions)
             positions_sim = positions[:n_pos_sim]
         else:
             positions_sim = positions
