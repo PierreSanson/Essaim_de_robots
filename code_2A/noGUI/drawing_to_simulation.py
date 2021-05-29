@@ -9,7 +9,6 @@ import time
 
 import numpy as np
 
-import explorerBot as eb
 import refPointBot as rpb
 import measuringBot as mb
 from room import *
@@ -124,7 +123,6 @@ def drawing_to_simulation(table,width,height,tileWidth):
     room = Room(walls_corners,width,height)
 
     measuringBots = []
-    explorerBots = []
     refPointBots = []
     
     for bot in robots_centers:
@@ -132,11 +130,9 @@ def drawing_to_simulation(table,width,height,tileWidth):
         if botType == 1:
             measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 10, room, objective = None, haveObjective = False, showDetails=False))
         elif botType == 2:
-            explorerBots.append(eb.ExplorerBot(bot[0][0], bot[0][1], 8, room, objective = [0, 0], randomObjective = True, randomInterval =1, showDetails = False))
-        elif botType == 3:
             refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 6, room, objective = None, haveObjective = False, showDetails = False))
 
-    bots = measuringBots + explorerBots + refPointBots
+    bots = measuringBots + refPointBots
 
     room.addBots(bots)
 

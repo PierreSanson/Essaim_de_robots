@@ -246,10 +246,8 @@ def SaveFile(gridObject, filePath):
                     fileTable[row][column] = 0
                 elif gridObject.grid[row][column].color[0] == 255 and gridObject.grid[row][column].color[1] == 0:  # 1 pour un mesureur (rouge) ####### on y rentre dans tous les cas pour du blanc 
                     fileTable[row][column] = 1
-                elif gridObject.grid[row][column].color[1] == 255 and gridObject.grid[row][column].color[0] == 0:  # 2 pour un mesureur (vert)
+                elif gridObject.grid[row][column].color[2] == 255 and gridObject.grid[row][column].color[0] == 0:  # 2 pour un point de repère (bleu)
                     fileTable[row][column] = 2
-                elif gridObject.grid[row][column].color[2] == 255 and gridObject.grid[row][column].color[0] == 0:  # 3 pour un mesureur (bleu)
-                    fileTable[row][column] = 3
                 else:                                               # -1 pour rien du tout
                     fileTable[row][column] = -1          
 
@@ -276,8 +274,6 @@ def OpenFile(filePath, gridObject):
                     elif colors[row][column] == 1:
                         gridObject.change_color(row,column,[255,0,0])
                     elif colors[row][column] == 2:
-                        gridObject.change_color(row,column,[0,255,0])
-                    elif colors[row][column] == 3:
                         gridObject.change_color(row,column,[0,0,255])
                     else:
                         gridObject.change_color(row,column,[255,255,255])
@@ -290,8 +286,6 @@ def OpenFile(filePath, gridObject):
                     elif colors[column][row] == 1:
                         gridObject.change_color(row,column,[255,0,0])
                     elif colors[column][row] == 2:
-                        gridObject.change_color(row,column,[0,255,0])
-                    elif colors[column][row] == 3:
                         gridObject.change_color(row,column,[0,0,255])
                     else:
                         gridObject.change_color(row,column,[255,255,255])  
@@ -313,12 +307,10 @@ def Clean(gridObject):
         for column in range(gridObject.xCount):
             if gridObject.grid[row][column].color[0] == 0 and gridObject.grid[row][column].color[1] == 0 and gridObject.grid[row][column].color[2] == 0:      # 0 pour un mur (noir)
                 colors[row][column] = 0
-            elif gridObject.grid[row][column].color[0] == 255 and gridObject.grid[row][column].color[1] == 0:  # 1 pour un mesureur (rouge) ####### on y rentre dans tous les cas pour du blanc 
+            elif gridObject.grid[row][column].color[0] == 255 and gridObject.grid[row][column].color[1] == 0:  # 1 pour un mesureur (rouge) 
                 colors[row][column] = 1
-            elif gridObject.grid[row][column].color[1] == 255 and gridObject.grid[row][column].color[0] == 0:  # 2 pour un mesureur (vert)
+            elif gridObject.grid[row][column].color[2] == 255 and gridObject.grid[row][column].color[0] == 0:  # 2 pour un point de repère (bleu)
                 colors[row][column] = 2
-            elif gridObject.grid[row][column].color[2] == 255 and gridObject.grid[row][column].color[0] == 0:  # 3 pour un mesureur (bleu)
-                colors[row][column] = 3
             else:                                               # -1 pour rien du tout
                 colors[row][column] = -1 
 
@@ -331,8 +323,6 @@ def Clean(gridObject):
             elif colors[row][column] == 1:
                 gridObject.change_color(row,column,[255,0,0])
             elif colors[row][column] == 2:
-                gridObject.change_color(row,column,[0,255,0])
-            elif colors[row][column] == 3:
                 gridObject.change_color(row,column,[0,0,255])
             else:
                 gridObject.change_color(row,column,[255,255,255])     
@@ -346,12 +336,10 @@ def Straighten(gridObject):
         for column in range(len(gridObject.grid[row])):
             if gridObject.grid[row][column].color[0] == 0 and gridObject.grid[row][column].color[1] == 0 and gridObject.grid[row][column].color[2] == 0:      # 0 pour un mur (noir)
                 colors[row][column] = 0
-            elif gridObject.grid[row][column].color[0] == 255 and gridObject.grid[row][column].color[1] == 0:  # 1 pour un mesureur (rouge) ####### on y rentre dans tous les cas pour du blanc 
+            elif gridObject.grid[row][column].color[0] == 255 and gridObject.grid[row][column].color[1] == 0:  # 1 pour un mesureur (rouge) 
                 colors[row][column] = 1
-            elif gridObject.grid[row][column].color[1] == 255 and gridObject.grid[row][column].color[0] == 0:  # 2 pour un mesureur (vert)
+            elif gridObject.grid[row][column].color[2] == 255 and gridObject.grid[row][column].color[0] == 0:  # 3 pour un point de repère (bleu)
                 colors[row][column] = 2
-            elif gridObject.grid[row][column].color[2] == 255 and gridObject.grid[row][column].color[0] == 0:  # 3 pour un mesureur (bleu)
-                colors[row][column] = 3
             else:                                               # -1 pour rien du tout
                 colors[row][column] = -1 
 
@@ -365,8 +353,6 @@ def Straighten(gridObject):
             elif colors[row][column] == 1:
                 gridObject.change_color(row,column,[255,0,0])
             elif colors[row][column] == 2:
-                gridObject.change_color(row,column,[0,255,0])
-            elif colors[row][column] == 3:
                 gridObject.change_color(row,column,[0,0,255])
             else:
                 gridObject.change_color(row,column,[255,255,255])    
@@ -415,7 +401,7 @@ def draw_initial_config():
     eraserImage = pg.transform.scale(pg.image.load(os.path.join(dirname, './img/eraser.jpg')), (25,25))
     trashImage = pg.transform.scale(pg.image.load(os.path.join(dirname, './img/trash.jpg')), (25,25))
 
-    colors = [ [0, 0, 0], [255,0,0], [0,255,0], [0,0,255] ]
+    colors = [ [0, 0, 0], [255,0,0], [0,0,255] ]
     colorCells = []
 
     for color in colors:

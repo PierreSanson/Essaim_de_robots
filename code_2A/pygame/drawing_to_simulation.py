@@ -8,7 +8,6 @@ import sys
 import pickle
 import pygame
 
-import explorerBot as eb
 import refPointBot as rpb
 import measuringBot as mb
 from room import *
@@ -134,7 +133,6 @@ def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mod
     room = Room(walls_corners,surface1,surface2)
 
     measuringBots = []
-    explorerBots = []
     refPointBots = []
     
     for bot in robots_centers:
@@ -142,12 +140,10 @@ def drawing_to_simulation(table,surface1,surface2,surface3,surface4,surface5,mod
         if botType == 1:
             measuringBots.append(mb.MeasuringBot(bot[0][0], bot[0][1], 10, room, objective = None, haveObjective = False, showDetails=True))
         elif botType == 2:
-            explorerBots.append(eb.ExplorerBot(bot[0][0], bot[0][1], 8, room, objective = [0, 0], randomObjective = True, randomInterval =1, showDetails = True))
-        elif botType == 3:
             refPointBots.append(rpb.RefPointBot(bot[0][0], bot[0][1], 6, room, objective = None, haveObjective = False, showDetails = True))
 
             
-    bots = measuringBots + explorerBots + refPointBots
+    bots = measuringBots + refPointBots
 
     room.addBots(bots)
 
@@ -176,15 +172,11 @@ def redrawGameWindow(room, background, control):
     #     obstacle.draw()
 
     # mise à jour des murs vus
-    # t= time.time()
     room.draw_walls()
-    # print("duration of draw_walls : ", time.time() - t)
     background.blit(room.surface1, (0,0))
 
     # on ajoute à l'arrière plan tous les affichages spécifiques à la méthode de contrôle de l'essaim choisie
-    # t= time.time()
     control.draw()
-    # print("duration of control.draw : ", time.time() - t)
     background.blit(control.surfaceUWB, (0,0))
     background.blit(control.surfaceGrid, (0,0))
     background.blit(control.surfaceReferenceBot,(0,0))
