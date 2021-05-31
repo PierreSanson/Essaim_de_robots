@@ -333,17 +333,15 @@ class Grid():
 
     # Méthode utilisée pour détecter un ensemble de cases connectées (non interrompues par un mur)
     def findCluster(self,start):
-        print(start)
         cluster = []
         neighbours = []
 
         straight, diag = self.getNeighbours(start)
         tmp = straight + diag
         for coord in tmp:
-            print(coord)
+            
             if coord in self.tiles and self.tiles[coord].containsWall == 0:
                 neighbours.append(coord)
-            print(neighbours)
         
         while neighbours != []:
             current = neighbours.pop()
