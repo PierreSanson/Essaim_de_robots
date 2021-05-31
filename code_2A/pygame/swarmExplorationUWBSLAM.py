@@ -237,8 +237,7 @@ class SwarmExploratorUWBSLAM():
         ### Résumé des entrées du simulateur
         print('Nombre de robots points de repère : %s' %self.nbRefPointBots)
         print('Nombre de robots mesureurs : %s' %(len(self.room.bots)-self.nbRefPointBots))
-        print('Algorithme : déplacement vers la case la plus proche non explorée')  # intégrer le nom de l'algo dans le code, et pouvoir sélectionner
-                                                                                    # spéarer algo UWB et algo mesureur
+        
         # autres entrées, pas top à afficher : positions de départ, directions de départ pour les points de repère
         
         print('\r\n')
