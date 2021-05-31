@@ -33,4 +33,4 @@ def combineAllResultsAfterSim(nb_cores, file_names, file_path_results = "results
             writer.writerow([data_list[i] for data_list in list(data.values())] + [filename.split("\\")[-1]])
 
 
-combineAllResultsAfterSim(16, [], file_path_results="./", file_path="./", multithreaded=True, delete=False)
+combineAllResultsAfterSim(int(input("Combien de threads ? ")), [], file_path_results="./", file_path="./", multithreaded=True, delete=False)
