@@ -234,7 +234,7 @@ def get_answers():
         print("\nYou will now select the different methods that need to be tested.\r")
         print("If you want to select multiple methods in each category, simply type more than one number.\n")
         globalMethodRPB = str(input("Global Methods : 1='progressive' 2='reset' "))
-        target_method = str(input("Target Methods : 1='findTargetV1' 2='findTargerV2' 3='findTargetV3' "))
+        target_method = str(input("Target Methods : 1='findTargetV1' 2='findTargetV2' "))
         cluster_exploration_method = str(input("Cluster Exploartion Methods : 1='findClosestClusterToOrigin' 2='findClosestClusterToMeasurerBot' "))
         visited_cluster_exploration_method = str(input("Visited Cluster Exploartion Methods: same choices "))
         RPB_selection_method = str(input("RPB Selection Methods : 1='self.findLeastUsefulBotsEuclidian', 2='self.findLeastUsefulBotsDijkstra', 3='self.findLeastUsefulBotsV2Euclidian', 4='self.findLeastUsefulBotsV2Dijkstra', 5='self.findFurthestBotEuclidian', 6='self.findFurthestBotDijkstra' "))

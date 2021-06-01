@@ -101,7 +101,7 @@ class SwarmExploratorUWBSLAM():
         self.infiniteLoopCount = 0
         self.infiniteLoopFirstIndex = None
 
-        self.targetMethod = self.findTargetV3
+        self.targetMethod = self.findTargetV2
         self.globalMethodRPB = "progressive"
         self.clusterExplorationMethod = self.findClosestClusterToOrigin
         self.visitedClusterExplorationMethod = self.findClosestClusterToMeasurerBot
@@ -110,7 +110,7 @@ class SwarmExploratorUWBSLAM():
         self.antiLoopMethod = "aggressive"
 
         self.methods_dic = {'globalMethodRPB':{1:"progressive",2:"reset"},
-                            'targetMethod':{1:self.findTargetV1,2:self.findTargetV2,3:self.findTargetV3},
+                            'targetMethod':{1:self.findTargetV1,2:self.findTargetV2},
                             'clusterExplorationMethod':{1:self.findClosestClusterToOrigin,2:self.findClosestClusterToMeasurerBot},
                             'visitedClusterExplorationMethod':{1:self.findClosestClusterToOrigin,2:self.findClosestClusterToMeasurerBot},
                             'RPBSelectionMethod':{1:self.findLeastUsefulBotsEuclidian, 2:self.findLeastUsefulBotsDijkstra, 3: self.findLeastUsefulBotsV2Euclidian, 4:self.findLeastUsefulBotsV2Dijkstra, 5:self.findFurthestBotEuclidian, 6:self.findFurthestBotDijkstra},
@@ -527,37 +527,8 @@ class SwarmExploratorUWBSLAM():
         return minCoord
     
 
+
     def findTargetV2(self, exclusionList=[]):
-        minDist = 10000
-        minCoord = []
-        for coord in self.grid.graph:
-            if self.grid.graph[coord] == 0.5 and coord not in exclusionList:
-                dist = distObjList(self.measurerBot, coord)
-                if dist < minDist:
-                    minDist = dist
-                    minCoord = [coord]
-                elif dist == minDist:
-                    minCoord.append(coord)
-        minx = 10000
-        minCoordx = []
-        for coord in minCoord:
-            if coord[0] < minx:
-                minCoordx = [coord]
-            elif coord[0] == minx:
-                    minCoordx.append(coord)
-        miny = 10000
-        minCoordy = []
-        for coord in minCoordx:
-            if coord[0] < miny:
-                minCoordy = [coord]
-            elif coord[0] == miny:
-                    minCoordy.append(coord)
-        if len(minCoordy) == 0:
-            return None
-        return minCoordy[0]
-
-
-    def findTargetV3(self, exclusionList=[]):
         minDist = 10000
         minCoord = None
         for coord in self.grid.graph:
