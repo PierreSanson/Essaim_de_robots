@@ -21,13 +21,13 @@ mytheme.title_bar_style = pygame_menu.widgets.MENUBAR_STYLE_SIMPLE
 mytheme.selection_color = (0,0,0)
 
 # Paramètres de la simulation
-defaultParameters = ["progressive", "findTargetV3", "findClosestClusterToOrigin", "findClosestClusterToMeasurerBot", "findLeastUsefulBotsDjikstra", "cluster", "aggressive"]
+defaultParameters = ["progressive", "findTargetV3", "findClosestClusterToOrigin", "findClosestClusterToMeasurerBot", "findLeastUsefulBotsDijkstra", "cluster", "aggressive"]
 parameters = {}
 parameters["globalMethodRPB"] = [("progressive",), ("reset",)]
 parameters["targetMethod"] = [("findTargetV3",), ("findTargetV1",), ("findTargetV2",)]
 parameters["clusterExplorationMethod"] = [("findClosestClusterToOrigin",), ("findClosestClusterToMeasurerBot",)]
 parameters["visitedClusterExplorationMethod"]=[("findClosestClusterToMeasurerBot",), ("findClosestClusterToOrigin",)]
-parameters["RPBSelectionMethod"]=[("findLeastUsefulBotsEuclidian",), ("findLeastUsefulBotsDjikstra",), ("findLeastUsefulBotsV2Euclidian",), ("findLeastUsefulBotsV2Djikstra",),("findFurthestBotEuclidian",), ("findFurthestBotDjikstra",)]
+parameters["RPBSelectionMethod"]=[("findLeastUsefulBotsEuclidian",), ("findLeastUsefulBotsDijkstra",), ("findLeastUsefulBotsV2Euclidian",), ("findLeastUsefulBotsV2Dijkstra",),("findFurthestBotEuclidian",), ("findFurthestBotDijkstra",)]
 parameters["changeFirst"]=[("cluster",), ("RPB",)]
 parameters["antiLoopMethod"]=[("aggressive",), ("patient",)]
 

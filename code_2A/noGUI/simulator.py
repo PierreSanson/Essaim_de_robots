@@ -237,7 +237,7 @@ def get_answers():
         target_method = str(input("Target Methods : 1='findTargetV1' 2='findTargerV2' 3='findTargetV3' "))
         cluster_exploration_method = str(input("Cluster Exploartion Methods : 1='findClosestClusterToOrigin' 2='findClosestClusterToMeasurerBot' "))
         visited_cluster_exploration_method = str(input("Visited Cluster Exploartion Methods: same choices "))
-        RPB_selection_method = str(input("RPB Selection Methods : 1='self.findLeastUsefulBotsEuclidian', 2='self.findLeastUsefulBotsDjikstra', 3='self.findLeastUsefulBotsV2Euclidian', 4='self.findLeastUsefulBotsV2Djikstra', 5='self.findFurthestBotEuclidian', 6='self.findFurthestBotDjikstra' "))
+        RPB_selection_method = str(input("RPB Selection Methods : 1='self.findLeastUsefulBotsEuclidian', 2='self.findLeastUsefulBotsDijkstra', 3='self.findLeastUsefulBotsV2Euclidian', 4='self.findLeastUsefulBotsV2Dijkstra', 5='self.findFurthestBotEuclidian', 6='self.findFurthestBotDijkstra' "))
         change_first = str(input("Change First : 1='cluster' 2='RPB' "))
         anti_loop_method = str(input("Anti Loop Method : 1='aggressive' 2='patient' "))
 

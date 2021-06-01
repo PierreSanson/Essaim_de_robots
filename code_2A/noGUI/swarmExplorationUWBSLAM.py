@@ -113,7 +113,7 @@ class SwarmExploratorUWBSLAM():
                             'targetMethod':{1:self.findTargetV1,2:self.findTargetV2,3:self.findTargetV3},
                             'clusterExplorationMethod':{1:self.findClosestClusterToOrigin,2:self.findClosestClusterToMeasurerBot},
                             'visitedClusterExplorationMethod':{1:self.findClosestClusterToOrigin,2:self.findClosestClusterToMeasurerBot},
-                            'RPBSelectionMethod':{1:self.findLeastUsefulBotsEuclidian, 2:self.findLeastUsefulBotsDjikstra, 3: self.findLeastUsefulBotsV2Euclidian, 4:self.findLeastUsefulBotsV2Djikstra, 5:self.findFurthestBotEuclidian, 6:self.findFurthestBotDjikstra},
+                            'RPBSelectionMethod':{1:self.findLeastUsefulBotsEuclidian, 2:self.findLeastUsefulBotsDijkstra, 3: self.findLeastUsefulBotsV2Euclidian, 4:self.findLeastUsefulBotsV2Dijkstra, 5:self.findFurthestBotEuclidian, 6:self.findFurthestBotDijkstra},
                             'changeFirst':{1:"cluster",2:"RPB"},
                             'antiLoopMethod':{1:"aggressive",2:"patient"}}
 
@@ -392,7 +392,7 @@ class SwarmExploratorUWBSLAM():
                             source = self.lastObj
                             # temporary solution!
                             self.grid.updateNeighOneNode(target)
-                            weight, self.mainPath = (self.djikstra(source, target))
+                            weight, self.mainPath = (self.dijkstra(source, target))
                             if self.mainPath is None:
                                 exclusionList.append(target)
                             else:
@@ -413,7 +413,7 @@ class SwarmExploratorUWBSLAM():
                     if target is not None: 
                         source = self.mainPath[self.mainPathIndex-1][0]
                         self.mainPathIndex = 0
-                        weight, self.mainPath = (self.djikstra(source, target))
+                        weight, self.mainPath = (self.dijkstra(source, target))
                         self.addWeigthToPath()
                     else : 
                         self.hasObj = False
@@ -428,7 +428,7 @@ class SwarmExploratorUWBSLAM():
                     target = self.lastObj
                     source = self.mainPath[self.mainPathIndex-1][0]
                     self.mainPathIndex = 0
-                    weight, self.mainPath = (self.djikstra(source, target))
+                    weight, self.mainPath = (self.dijkstra(source, target))
                     self.addWeigthToPath()
 
         if self.status == "FirsttransferRefPointBotToMeasuringBot":
@@ -445,7 +445,7 @@ class SwarmExploratorUWBSLAM():
                 target = self.targetMethod()
                 if target is not None:
                     source = (self.grid.origin[0], self.grid.origin[1])
-                    weight, self.mainPath = (self.djikstra(source, target))
+                    weight, self.mainPath = (self.dijkstra(source, target))
                     while self.mainPath is None:
                         self.targetExclusionList.append(target)
                         target = self.targetMethod(self.targetExclusionList)
@@ -453,7 +453,7 @@ class SwarmExploratorUWBSLAM():
                             self.end_simulation = True
                             break
                         else:
-                            weight, self.mainPath = (self.djikstra(source, target))
+                            weight, self.mainPath = (self.dijkstra(source, target))
                     if self.mainPath is not None:
                         self.addWeigthToPath()
                         self.hasObj = True
@@ -487,7 +487,7 @@ class SwarmExploratorUWBSLAM():
                         source = self.lastObj
                         # temporary solution!
                         self.grid.updateNeighOneNode(target)
-                        weight, self.mainPath = (self.djikstra(source, target))
+                        weight, self.mainPath = (self.dijkstra(source, target))
                         if self.mainPath is None:
                             exclusionList.append(target)
                         else:
@@ -514,7 +514,7 @@ class SwarmExploratorUWBSLAM():
 
 
 
-    # find closest cell to define as objective for Djikstra    
+    # find closest cell to define as objective for Dijkstra    
     def findTargetV1(self, exclusionList=[]):
         minDist = 10000
         minCoord = None
@@ -646,7 +646,7 @@ class SwarmExploratorUWBSLAM():
                 return minCoord
 
               
-    # add status of all the cells in the paths as info for dynamic Djikstra
+    # add status of all the cells in the paths as info for dynamic Dijkstra
     def addWeigthToPath(self):
         for i in range(len(self.mainPath)):
             self.mainPath[i] = [self.mainPath[i], self.grid.graph[self.mainPath[i]]]
@@ -694,7 +694,7 @@ class SwarmExploratorUWBSLAM():
         return maxCoord
 
 
-    def djikstra(self, s, t):
+    def dijkstra(self, s, t):
         M = set()
         d = {s: 0}
         p = {}
@@ -775,7 +775,7 @@ class SwarmExploratorUWBSLAM():
             key = self.findFurthestBotEuclidian()
         return key
 
-    def findLeastUsefulBotsDjikstra(self):
+    def findLeastUsefulBotsDijkstra(self):
         self.defineConvexHulls()
         self.polygons = []
         polygonsBot = []
@@ -806,7 +806,7 @@ class SwarmExploratorUWBSLAM():
 
         key = leastUseful[1]
         if key is None:
-            key = self.findFurthestBotDjikstra()
+            key = self.findFurthestBotDijkstra()
         return key
 
     def findFurthestBotEuclidian(self):
@@ -868,7 +868,7 @@ class SwarmExploratorUWBSLAM():
                 bestBot = element
         return element
       
-    def findLeastUsefulBotsV2Djikstra(self):
+    def findLeastUsefulBotsV2Dijkstra(self):
         self.defineConvexHulls()
         self.polygons = []
         polygonsBot = []
@@ -903,7 +903,7 @@ class SwarmExploratorUWBSLAM():
                     leastUsefulDict[selfKey] = (abs(abs(theta)-np.pi), dist)
         bestBot = leastUseful[1]
         if bestBot is None:
-            bestBot = self.findFurthestBotDjikstra()
+            bestBot = self.findFurthestBotDijkstra()
             return bestBot
         bestAngle = leastUseful[0]
         maxDist = leastUsefulDict[leastUseful[1]][1]
@@ -914,7 +914,7 @@ class SwarmExploratorUWBSLAM():
         return element
 
 
-    def findFurthestBotDjikstra(self):
+    def findFurthestBotDijkstra(self):
         maxDist = 0
         bestBot = None
         for bot in self.refPointBots:
@@ -930,7 +930,7 @@ class SwarmExploratorUWBSLAM():
     def getSmartDist(self, bot, coord):
         sourceCell = self.findClosestVisitedCellSmart((bot.x, bot.y), source=True)
         if sourceCell != None:
-            dist, path = (self.djikstra(sourceCell, coord))
+            dist, path = (self.dijkstra(sourceCell, coord))
             return dist
         return None
 
@@ -965,7 +965,7 @@ class SwarmExploratorUWBSLAM():
 
         for coord in minCoords:
             if sourceCell is not None:
-                weight, path = (self.djikstra(sourceCell, coord))
+                weight, path = (self.dijkstra(sourceCell, coord))
                 if weight is not None and weight<minDist:
                     minDist=weight
                     minCoord = coord
@@ -1041,7 +1041,7 @@ class SwarmExploratorUWBSLAM():
             targetCell = self.findClosestVisitedCellSmart(nextGoal)
             sourceCell = self.findClosestVisitedCellSmart((self.measurerBot.x, self.measurerBot.y), source=True)
             if sourceCell is not None and targetCell is not None:
-                weight, self.mainPath = (self.djikstra(sourceCell, targetCell))
+                weight, self.mainPath = (self.dijkstra(sourceCell, targetCell))
                 self.mainPathIndex = 0
                 if self.mainPath is not None:
                     self.infiniteLoopDetectionAggressive(nextGoal)
@@ -1203,7 +1203,7 @@ class SwarmExploratorUWBSLAM():
                         self.RPBExclusionListWholeStep.append(key)
                         self.moveRefPointBotsStep()
                     else:
-                        weight, self.mainPath = (self.djikstra(sourceCell, targetCell))
+                        weight, self.mainPath = (self.dijkstra(sourceCell, targetCell))
                         self.mainPathIndex = 0
                         if self.mainPath is not None:
                             if self.antiLoopMethod == "aggressive":
